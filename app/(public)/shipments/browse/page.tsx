@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ShipmentCard, ShipmentCardData } from '@/components/shipment-card';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { shipmentApi } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
@@ -27,8 +27,11 @@ export default function BrowseShipmentsPage() {
   const [mode, setMode] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
+  const [allShipments, setAllShipments] = useState<ShipmentCardData[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   const [pagination, setPagination] = useState({
-    limit: 10,
+    limit: 100, // Fetch more items to enable pagination
     offset: 0,
     total: 0,
     hasMore: false,
@@ -77,9 +80,10 @@ export default function BrowseShipmentsPage() {
       );
       
       if (resetOffset) {
-        setShipments(availableShipments);
+        setAllShipments(availableShipments);
+        setCurrentPage(1);
       } else {
-        setShipments([...shipments, ...availableShipments]);
+        setAllShipments([...allShipments, ...availableShipments]);
       }
       
       // Update pagination to reflect filtered results
@@ -95,7 +99,20 @@ export default function BrowseShipmentsPage() {
     }
   };
 
+  // Calculate pagination
+  const totalPages = Math.ceil(allShipments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentShipments = allShipments.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of results
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSearch = () => {
+    setCurrentPage(1);
     fetchShipments(true);
   };
 
@@ -107,6 +124,7 @@ export default function BrowseShipmentsPage() {
     setDateFrom('');
     setDateTo('');
     setMode('all');
+    setCurrentPage(1);
     setTimeout(() => fetchShipments(true), 0);
   };
 
@@ -125,9 +143,9 @@ export default function BrowseShipmentsPage() {
 
             {/* Search Filters */}
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Search Filters</CardTitle>
+                  <CardTitle className="text-lg">Search Filters</CardTitle>
                   {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={handleClearFilters}>
                       <X className="h-4 w-4 mr-1" />
@@ -136,9 +154,9 @@ export default function BrowseShipmentsPage() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="space-y-2">
+              <CardContent className="pt-0 pb-3">
+                <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
+                  <div className="space-y-1">
                     <CountrySelect
                       value={originCountry}
                       onChange={(value) => {
@@ -149,7 +167,7 @@ export default function BrowseShipmentsPage() {
                       placeholder="Select origin country"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CitySelect
                       value={originCity}
                       onChange={(value) => setOriginCity(value)}
@@ -159,7 +177,7 @@ export default function BrowseShipmentsPage() {
                       disabled={!originCountry}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CountrySelect
                       value={destinationCountry}
                       onChange={(value) => {
@@ -170,7 +188,7 @@ export default function BrowseShipmentsPage() {
                       placeholder="Select destination country"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CitySelect
                       value={destinationCity}
                       onChange={(value) => setDestinationCity(value)}
@@ -180,43 +198,46 @@ export default function BrowseShipmentsPage() {
                       disabled={!destinationCountry}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dateFrom">From Date</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="dateFrom" className="text-xs">From Date</Label>
                     <Input
                       id="dateFrom"
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dateTo">To Date</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="dateTo" className="text-xs">To Date</Label>
                     <Input
                       id="dateTo"
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
+                      className="h-9 text-sm"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Mode</Label>
+                    <Select value={mode} onValueChange={setMode}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Modes</SelectItem>
+                        <SelectItem value="TRUCK">Truck</SelectItem>
+                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="AIR">Air</SelectItem>
+                        <SelectItem value="TRAIN">Train</SelectItem>
+                        <SelectItem value="SHIP">Ship</SelectItem>
+                        <SelectItem value="RIDER">Rider</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <Select value={mode} onValueChange={setMode}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Transport Mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Modes</SelectItem>
-                      <SelectItem value="TRUCK">Truck</SelectItem>
-                      <SelectItem value="VAN">Van</SelectItem>
-                      <SelectItem value="AIR">Air</SelectItem>
-                      <SelectItem value="TRAIN">Train</SelectItem>
-                      <SelectItem value="SHIP">Ship</SelectItem>
-                      <SelectItem value="RIDER">Rider</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-4">
-                  <Button onClick={handleSearch} className="w-full md:w-auto" disabled={loading}>
+                <div className="mt-2 flex justify-end">
+                  <Button onClick={handleSearch} className="h-9" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -235,13 +256,13 @@ export default function BrowseShipmentsPage() {
 
             {/* Results */}
             <div>
-              {loading && shipments.length === 0 ? (
+              {loading && allShipments.length === 0 ? (
                 <Card>
                   <CardContent className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
                   </CardContent>
                 </Card>
-              ) : shipments.length === 0 ? (
+              ) : allShipments.length === 0 ? (
                 <Card>
                   <CardContent className="text-center py-12">
                     <p className="text-gray-600 mb-4">No slots found</p>
@@ -250,16 +271,97 @@ export default function BrowseShipmentsPage() {
                 </Card>
               ) : (
                 <>
-                  <div className="mb-4 text-sm text-gray-600">
-                    Found {pagination.total} {pagination.total === 1 ? 'slot' : 'slots'}
+                  <div className="mb-6 flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+                      <span className="font-semibold text-gray-900">{Math.min(endIndex, allShipments.length)}</span> of{' '}
+                      <span className="font-semibold text-gray-900">{allShipments.length}</span> slots
+                    </div>
                   </div>
-                  <div className="grid gap-4">
-                    {shipments.map((shipment) => (
-                      <ShipmentCard key={shipment.id} shipment={shipment} />
-                    ))}
-                  </div>
+
+                  {/* Scrollable Results Container */}
+                  <Card className="overflow-hidden">
+                    <div className="max-h-[800px] overflow-y-auto scrollbar-hide p-6">
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {currentShipments.map((shipment, index) => (
+                          <div
+                            key={shipment.id}
+                            className="animate-slide-in"
+                            style={{
+                              animationDelay: `${(index % itemsPerPage) * 0.05}s`,
+                            }}
+                          >
+                            <ShipmentCard shipment={shipment} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="mt-6 flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || loading}
+                        className="flex items-center gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter((page) => {
+                            // Show first page, last page, current page, and pages around current
+                            if (page === 1 || page === totalPages) return true;
+                            if (Math.abs(page - currentPage) <= 1) return true;
+                            return false;
+                          })
+                          .map((page, index, array) => {
+                            // Add ellipsis if there's a gap
+                            const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                            return (
+                              <div key={page} className="flex items-center gap-1">
+                                {showEllipsisBefore && (
+                                  <span className="px-2 text-gray-400">...</span>
+                                )}
+                                <Button
+                                  variant={currentPage === page ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => handlePageChange(page)}
+                                  disabled={loading}
+                                  className={`min-w-[40px] ${
+                                    currentPage === page
+                                      ? 'bg-orange-600 hover:bg-orange-700'
+                                      : ''
+                                  }`}
+                                >
+                                  {page}
+                                </Button>
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || loading}
+                        className="flex items-center gap-1"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Load More for additional results */}
                   {pagination.hasMore && (
-                    <div className="mt-6 text-center">
+                    <div className="mt-4 text-center">
                       <Button
                         variant="outline"
                         onClick={() => fetchShipments(false)}
@@ -271,7 +373,7 @@ export default function BrowseShipmentsPage() {
                             Loading...
                           </>
                         ) : (
-                          'Load More'
+                          'Load More Results'
                         )}
                       </Button>
                     </div>

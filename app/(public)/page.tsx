@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Footer } from '@/components/footer';
 import { ShipmentCard } from '@/components/shipment-card';
 import { shipmentApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -24,6 +24,12 @@ export default function LandingPage() {
   const [searchDestinationCountry, setSearchDestinationCountry] = useState('');
   const [searchDestination, setSearchDestination] = useState('');
   const [searchDate, setSearchDate] = useState('');
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch available shipments
   const { data: shipmentsData, isLoading: shipmentsLoading, error: shipmentsError } = useQuery({
@@ -54,6 +60,94 @@ export default function LandingPage() {
       departureTime: shipment.departureTime,
     })
   );
+
+  // Check scroll position for navigation buttons
+  const checkScrollPosition = () => {
+    if (sliderRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollPosition();
+    // Also check on window resize
+    const handleResize = () => checkScrollPosition();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [shipments]);
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (!sliderRef.current || shipments.length === 0 || isPaused) {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Clear any existing interval
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+    }
+
+    // Set up auto-scroll
+    autoScrollIntervalRef.current = setInterval(() => {
+      if (sliderRef.current && !isPaused) {
+        const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+        const maxScroll = scrollWidth - clientWidth;
+        
+        // If we're at the end, scroll back to the beginning
+        if (scrollLeft >= maxScroll - 10) {
+          sliderRef.current.scrollTo({
+            left: 0,
+            behavior: 'smooth'
+          });
+        } else {
+          // Otherwise, scroll forward
+          const scrollAmount = clientWidth * 0.5; // Scroll half a viewport at a time
+          sliderRef.current.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, 1500); // Auto-scroll every 1.5 seconds
+
+    return () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      if (scrollResumeTimeoutRef.current) {
+        clearTimeout(scrollResumeTimeoutRef.current);
+        scrollResumeTimeoutRef.current = null;
+      }
+    };
+  }, [shipments, isPaused]);
+
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (sliderRef.current) {
+      setIsPaused(true); // Pause auto-scroll when user manually scrolls
+      const scrollAmount = sliderRef.current.clientWidth * 0.8;
+      const targetScroll = direction === 'left' 
+        ? sliderRef.current.scrollLeft - scrollAmount
+        : sliderRef.current.scrollLeft + scrollAmount;
+      
+      sliderRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      });
+      
+      // Resume auto-scroll after 5 seconds of inactivity
+      if (scrollResumeTimeoutRef.current) {
+        clearTimeout(scrollResumeTimeoutRef.current);
+      }
+      scrollResumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 5000);
+    }
+  };
 
   return (
     <GoogleMapsLoader>
@@ -88,12 +182,12 @@ export default function LandingPage() {
         </section>
 
         {/* Search Bar */}
-        <section className="py-8 bg-white border-b">
+        <section className="py-4 bg-white border-b">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <form onSubmit={handleSearch} className="p-6 bg-white border rounded-lg shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
+            <div className="max-w-6xl mx-auto">
+              <form onSubmit={handleSearch} className="p-3 bg-white border rounded-lg shadow-sm">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
+                  <div className="space-y-1">
                     <CountrySelect
                       value={searchOriginCountry}
                       onChange={(value) => {
@@ -104,7 +198,7 @@ export default function LandingPage() {
                       placeholder="Select origin country"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CitySelect
                       value={searchOrigin}
                       onChange={(value) => setSearchOrigin(value)}
@@ -114,7 +208,7 @@ export default function LandingPage() {
                       disabled={!searchOriginCountry}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CountrySelect
                       value={searchDestinationCountry}
                       onChange={(value) => {
@@ -125,7 +219,7 @@ export default function LandingPage() {
                       placeholder="Select destination country"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <CitySelect
                       value={searchDestination}
                       onChange={(value) => setSearchDestination(value)}
@@ -135,17 +229,18 @@ export default function LandingPage() {
                       disabled={!searchDestinationCountry}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium block">Date</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium block">Date</label>
                     <Input 
                       type="date" 
                       value={searchDate}
                       onChange={(e) => setSearchDate(e.target.value)}
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
-                <div className="flex items-end">
-                  <Button type="submit" className="w-full md:w-auto">
+                <div className="mt-2 flex justify-end">
+                  <Button type="submit" className="h-9">
                     <Search className="mr-2 h-4 w-4" />
                     Search
                   </Button>
@@ -184,10 +279,68 @@ export default function LandingPage() {
                   <p className="text-sm text-gray-500">Please try again later</p>
                 </div>
               ) : shipments.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {shipments.map((shipment: any) => (
-                    <ShipmentCard key={shipment.id} shipment={shipment} />
+                <div 
+                  className="relative group"
+                  onMouseEnter={() => setIsPaused(true)}
+                  onMouseLeave={() => setIsPaused(false)}
+                  onTouchStart={() => setIsPaused(true)}
+                  onTouchEnd={() => {
+                    // Resume after touch ends, with a delay
+                    if (scrollResumeTimeoutRef.current) {
+                      clearTimeout(scrollResumeTimeoutRef.current);
+                    }
+                    scrollResumeTimeoutRef.current = setTimeout(() => setIsPaused(false), 3000);
+                  }}
+                >
+                  {/* Navigation Buttons */}
+                  {canScrollLeft && (
+                    <button
+                      onClick={() => scrollSlider('left')}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 md:opacity-0 md:group-hover:opacity-100 opacity-100 active:scale-95"
+                      aria-label="Scroll left"
+                    >
+                      <ChevronLeft className="h-6 w-6 text-orange-600" />
+                    </button>
+                  )}
+                  {canScrollRight && (
+                    <button
+                      onClick={() => scrollSlider('right')}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 md:opacity-0 md:group-hover:opacity-100 opacity-100 active:scale-95"
+                      aria-label="Scroll right"
+                    >
+                      <ChevronRight className="h-6 w-6 text-orange-600" />
+                    </button>
+                  )}
+
+                  {/* Slider Container */}
+                  <div
+                    ref={sliderRef}
+                    className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-4 px-4 snap-x snap-mandatory"
+                    onScroll={() => {
+                      checkScrollPosition();
+                      // Pause auto-scroll when user manually scrolls
+                      setIsPaused(true);
+                      // Resume after 3 seconds of no scrolling
+                      if (scrollResumeTimeoutRef.current) {
+                        clearTimeout(scrollResumeTimeoutRef.current);
+                      }
+                      scrollResumeTimeoutRef.current = setTimeout(() => {
+                        setIsPaused(false);
+                      }, 3000);
+                    }}
+                  >
+                    {shipments.map((shipment: any, index: number) => (
+                      <div
+                        key={shipment.id}
+                        className="flex-shrink-0 w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(33.333%-16px)] snap-start animate-slide-in transform transition-transform duration-300 hover:scale-[1.02]"
+                        style={{
+                          animationDelay: `${index * 0.08}s`,
+                        }}
+                      >
+                        <ShipmentCard shipment={shipment} />
+                      </div>
                   ))}
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 bg-white rounded-lg border">
