@@ -8,7 +8,7 @@ import { Notification, NotificationListResponse, UnreadCountResponse, Notificati
 export interface Plan {
   id: string;
   name: string;
-  priceMonthly: number;
+  priceMonthly: number | string; // API returns as string, but can be converted to number
   maxActiveShipmentSlots: number | null;
   maxTeamMembers: number | null;
   isDefault: boolean;

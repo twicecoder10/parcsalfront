@@ -7,10 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Navbar } from '@/components/navbar';
 import { OnboardingChecklist } from '@/components/onboarding-checklist';
-import { 
-  CheckCircle2, 
+import {
+  CheckCircle2,
   ArrowRight,
-  Sparkles,
   CreditCard,
   Loader2,
   Check,
@@ -22,7 +21,6 @@ import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
 import { companyApi, Plan } from '@/lib/company-api';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 
 /**
@@ -35,7 +33,7 @@ function PaymentOnboardingContent() {
   const queryClient = useQueryClient();
   const user = getStoredUser();
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Check if user is COMPANY_STAFF (invited team member)
   const isStaff = user?.role === 'COMPANY_STAFF';
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -86,7 +84,7 @@ function PaymentOnboardingContent() {
       refetchUserStatus();
       refetchCompanyStatus();
       queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
-      
+
       // Also refresh user data
       authApi.getCurrentUser().then((updatedUser) => {
         setStoredUser(updatedUser);
@@ -101,7 +99,7 @@ function PaymentOnboardingContent() {
   const isProfileComplete = userOnboardingStatus?.steps?.profile_completion?.completed === true;
   const isCompanyProfileComplete = companyOnboardingStatus?.steps?.company_profile?.completed === true;
   const isPaymentSetupComplete = companyOnboardingStatus?.steps?.payment_setup?.completed === true;
-  const isAllComplete = user?.onboardingCompleted === true || 
+  const isAllComplete = user?.onboardingCompleted === true ||
     (isEmailVerified && isProfileComplete && isCompanyProfileComplete && isPaymentSetupComplete);
 
   // Calculate progress
@@ -126,21 +124,21 @@ function PaymentOnboardingContent() {
   // Transform plans for display
   const displayPlans = plans?.map((plan: Plan) => {
     const features: string[] = [];
-    
+
     // Add shipment slots feature
     if (plan.maxActiveShipmentSlots === null) {
       features.push('Unlimited active shipment slots');
     } else {
       features.push(`Up to ${plan.maxActiveShipmentSlots} active shipment slots`);
     }
-    
+
     // Add team members feature
     if (plan.maxTeamMembers === null) {
       features.push('Unlimited team members');
     } else {
       features.push(`Up to ${plan.maxTeamMembers} team members`);
     }
-    
+
     // Add plan-specific features
     if (plan.name === 'Basic') {
       features.push('Basic analytics', 'Email support');
@@ -162,14 +160,14 @@ function PaymentOnboardingContent() {
         'On-premise deployment'
       );
     }
-    
+
     // Safely convert priceMonthly to number and format
-    const priceMonthly = typeof plan.priceMonthly === 'number' 
-      ? plan.priceMonthly 
-      : typeof plan.priceMonthly === 'string' 
-        ? parseFloat(plan.priceMonthly) 
+    const priceMonthly = typeof plan.priceMonthly === 'number'
+      ? plan.priceMonthly
+      : typeof plan.priceMonthly === 'string'
+        ? parseFloat(plan.priceMonthly)
         : 0;
-    
+
     return {
       id: plan.id,
       name: plan.name,
@@ -177,7 +175,7 @@ function PaymentOnboardingContent() {
       priceDisplay: `£${priceMonthly.toFixed(2)}`,
       billingCycle: 'monthly',
       features,
-      recommended: plan.isDefault || plan.name === 'Pro',
+      recommended: plan.isDefault,
     };
   }) || [];
 
@@ -190,19 +188,19 @@ function PaymentOnboardingContent() {
     setIsProcessing(true);
     setError('');
     setSuccessMessage(null);
-    
+
     try {
       // Get current URL for return redirect
-      const returnUrl = typeof window !== 'undefined' 
+      const returnUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/onboarding/company/payment`
         : '/onboarding/company/payment';
-      
+
       const response = await companyApi.createCheckoutSession({
         planId,
         returnUrl,
         fromOnboarding: true,
       });
-      
+
       // Redirect to Stripe checkout
       // After successful payment, Stripe will redirect back to returnUrl with ?success=true&fromOnboarding=true
       // The webhook will process the payment and mark payment_setup as complete
@@ -226,65 +224,14 @@ function PaymentOnboardingContent() {
     );
   }
 
-  // If payment is already complete, show completion screen
+  // If payment is already complete, redirect to main onboarding page to show completion screen
   if (isAllComplete) {
+    router.push('/onboarding/company');
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-4xl">
-            <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div className="rounded-full bg-green-100 p-6 animate-bounce">
-                        <CheckCircle2 className="h-16 w-16 text-green-600" />
-                      </div>
-                      <div className="absolute -top-2 -right-2 rounded-full bg-orange-100 p-3">
-                        <Sparkles className="h-6 w-6 text-orange-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                    🎉 Onboarding Complete!
-                  </h2>
-                  <p className="text-lg text-gray-600 mb-8">
-                    You&apos;re all set! Your company is ready to accept bookings and start growing.
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">User Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={userOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Company Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={companyOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => router.push('/company/overview')}
-                    className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg"
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 text-orange-600 animate-spin" />
         </div>
       </div>
     );
@@ -353,27 +300,17 @@ function PaymentOnboardingContent() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Onboarding Checklists */}
+            {/* Onboarding Checklist */}
             <div className="md:col-span-1 space-y-4">
               <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-lg">User Steps</CardTitle>
+                  <CardTitle className="text-lg">Onboarding Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <OnboardingChecklist 
-                    status={userOnboardingStatus || null} 
-                    type="company" 
-                  />
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">Company Steps</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <OnboardingChecklist 
-                    status={companyOnboardingStatus || null} 
-                    type="company" 
+                  <OnboardingChecklist
+                    userStatus={userOnboardingStatus || null}
+                    companyStatus={companyOnboardingStatus || null}
+                    type="company"
                   />
                 </CardContent>
               </Card>
@@ -410,29 +347,28 @@ function PaymentOnboardingContent() {
                       {error}
                     </div>
                   )}
-                  
+
                   {plansLoading && (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="h-8 w-8 text-orange-600 animate-spin" />
                     </div>
                   )}
-                  
+
                   {plansError && (
                     <div className="mb-6 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
                       Failed to load plans. Please try again.
                     </div>
                   )}
-                  
+
                   {!plansLoading && !plansError && displayPlans.length > 0 && (
                     <div className="grid md:grid-cols-3 gap-4 mb-6">
                       {displayPlans.map((plan) => (
                         <Card
                           key={plan.id}
-                          className={`cursor-pointer transition-all ${
-                            selectedPlan === plan.id
+                          className={`cursor-pointer transition-all ${selectedPlan === plan.id
                               ? 'border-orange-600 border-2 shadow-lg'
                               : 'border-gray-200 hover:border-gray-300'
-                          } ${plan.recommended ? 'md:scale-105' : ''}`}
+                            } ${plan.recommended ? 'md:scale-105' : ''}`}
                           onClick={() => setSelectedPlan(plan.id)}
                         >
                           <CardHeader>

@@ -9,11 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Navbar } from '@/components/navbar';
 import { OnboardingChecklist } from '@/components/onboarding-checklist';
-import { 
-  Building2, 
-  MapPin, 
-  CheckCircle2, 
-  ArrowRight, 
+import {
+  Building2,
+  MapPin,
+  CheckCircle2,
+  ArrowRight,
   Sparkles,
   Truck,
   Globe,
@@ -21,7 +21,8 @@ import {
   CreditCard,
   Loader2,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Circle
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
@@ -49,7 +50,7 @@ export default function CompanyOnboardingPage() {
   const user = getStoredUser();
   const [error, setError] = useState('');
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Check if user is COMPANY_STAFF (invited team member)
   const isStaff = user?.role === 'COMPANY_STAFF';
   const [formData, setFormData] = useState({
@@ -99,7 +100,7 @@ export default function CompanyOnboardingPage() {
   const isCompanyProfileComplete = companyOnboardingStatus?.steps?.company_profile?.completed === true;
   const isPaymentSetupComplete = companyOnboardingStatus?.steps?.payment_setup?.completed === true;
   const isFirstShipmentComplete = companyOnboardingStatus?.steps?.first_shipment_slot?.completed === true;
-  const isAllComplete = user?.onboardingCompleted === true || 
+  const isAllComplete = user?.onboardingCompleted === true ||
     (isEmailVerified && isProfileComplete && isCompanyProfileComplete && isPaymentSetupComplete);
 
   // Calculate current step (1-4) based on the updated guide
@@ -145,14 +146,14 @@ export default function CompanyOnboardingPage() {
         refetchCompanyStatus(),
         queryClient.invalidateQueries({ queryKey: ['onboarding-status'] }),
       ]);
-      
+
       try {
         const updatedUser = await authApi.getCurrentUser();
         setStoredUser(updatedUser);
       } catch (error) {
         console.warn('Failed to refresh user data:', error);
       }
-      
+
       setError('');
     },
     onError: (error: any) => {
@@ -172,7 +173,7 @@ export default function CompanyOnboardingPage() {
     if (!formData.contactEmail.trim()) {
       setError('Contact email is required');
       return;
-      }
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.contactEmail)) {
@@ -239,24 +240,17 @@ export default function CompanyOnboardingPage() {
                   <Progress value={companyOnboardingStatus?.progress || 0} className="h-2 max-w-md mx-auto" />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="mb-8">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Your Steps</CardTitle>
+                      <CardTitle className="text-lg">Onboarding Progress</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <OnboardingChecklist status={userOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Company Steps</CardTitle>
-                      <CardDescription className="text-xs text-gray-500">
-                        (Admin only - waiting for completion)
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={companyOnboardingStatus || null} type="company" />
+                      <OnboardingChecklist 
+                        userStatus={userOnboardingStatus || null} 
+                        companyStatus={companyOnboardingStatus || null}
+                        type="company" 
+                      />
                     </CardContent>
                   </Card>
                 </div>
@@ -321,11 +315,11 @@ export default function CompanyOnboardingPage() {
 
   // STEP 1: Email Verification Required
   if (!isEmailVerified) {
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      <Navbar />
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-4xl">
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
@@ -344,26 +338,22 @@ export default function CompanyOnboardingPage() {
                     Step 1 of 3 - {overallProgress}% Complete
                   </div>
                   <Progress value={overallProgress} className="h-2 max-w-md mx-auto" />
-            </div>
+                </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="mb-8">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">User Steps</CardTitle>
+                      <CardTitle className="text-lg">Onboarding Progress</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <OnboardingChecklist status={userOnboardingStatus || null} type="company" />
+                      <OnboardingChecklist 
+                        userStatus={userOnboardingStatus || null} 
+                        companyStatus={companyOnboardingStatus || null}
+                        type="company" 
+                      />
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Company Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={companyOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-          </div>
+                </div>
 
                 <div className="flex justify-center gap-4">
                   <Link href="/auth/verify-email">
@@ -388,16 +378,16 @@ export default function CompanyOnboardingPage() {
         <Navbar />
         <div className="flex-1 flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-4xl">
-          <Card className="border-0 shadow-xl">
-            <CardContent className="p-8">
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="rounded-full bg-green-100 p-6">
                       <CheckCircle2 className="h-12 w-12 text-green-600" />
-                </div>
+                    </div>
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                    Step 2 Complete! 🎉
+                    Company Profile Complete! 🎉
                   </h2>
                   <p className="text-lg text-gray-600 mb-2">
                     Your company profile is set up. Now set up payment to complete onboarding.
@@ -411,26 +401,22 @@ export default function CompanyOnboardingPage() {
                     Company steps: {companyOnboardingStatus?.progress || 0}% complete
                   </p>
                   <div className="text-sm text-gray-500 mb-6">
-                    Step {currentStep} of 3 - {overallProgress}% Overall Complete
+                    Step 3 of 3 - {overallProgress}% Overall Complete
                   </div>
                   <Progress value={overallProgress} className="h-2 max-w-md mx-auto" />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="mb-8">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">User Steps</CardTitle>
+                      <CardTitle className="text-lg">Onboarding Progress</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <OnboardingChecklist status={userOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Company Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={companyOnboardingStatus || null} type="company" />
+                      <OnboardingChecklist 
+                        userStatus={userOnboardingStatus || null} 
+                        companyStatus={companyOnboardingStatus || null}
+                        type="company" 
+                      />
                     </CardContent>
                   </Card>
                 </div>
@@ -449,17 +435,17 @@ export default function CompanyOnboardingPage() {
                     Go to Dashboard
                   </Button>
                 </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // STEP 4: All Complete
   if (isAllComplete) {
-  return (
+    return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
         <div className="flex-1 flex items-center justify-center px-4 py-12">
@@ -467,7 +453,7 @@ export default function CompanyOnboardingPage() {
             <Card className="border-0 shadow-xl">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
-      <div className="flex justify-center mb-6">
+                  <div className="flex justify-center mb-6">
                     <div className="relative">
                       <div className="rounded-full bg-green-100 p-6 animate-bounce">
                         <CheckCircle2 className="h-16 w-16 text-green-600" />
@@ -475,11 +461,11 @@ export default function CompanyOnboardingPage() {
                       <div className="absolute -top-2 -right-2 rounded-full bg-orange-100 p-3">
                         <Sparkles className="h-6 w-6 text-orange-600" />
                       </div>
-        </div>
-      </div>
-      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                    </div>
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
                     🎉 Onboarding Complete!
-      </h2>
+                  </h2>
                   <p className="text-lg text-gray-600 mb-2">
                     You&apos;re all set! Your company is ready to accept bookings and start growing.
                   </p>
@@ -490,28 +476,110 @@ export default function CompanyOnboardingPage() {
                   )}
                   <div className="text-sm text-gray-500 mb-6">
                     All 3 steps completed - 100% Complete
-          </div>
+                  </div>
                   <Progress value={100} className="h-2 max-w-md mx-auto" />
-        </div>
+                </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="mb-8">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">User Steps</CardTitle>
+                      <CardTitle className="text-lg">Completed Steps</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <OnboardingChecklist status={userOnboardingStatus || null} type="company" />
+                      <div className="space-y-4">
+                        {/* User Steps Section */}
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                            User Steps
+                          </h3>
+                          {userOnboardingStatus?.steps?.email_verification?.completed && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50 border-green-200">
+                              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900">Email Verification</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Verify your email address</p>
+                                {userOnboardingStatus.steps.email_verification.completedAt && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Completed {new Date(userOnboardingStatus.steps.email_verification.completedAt).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {userOnboardingStatus?.steps?.profile_completion?.completed && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50 border-green-200">
+                              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900">Profile Completion</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Complete your profile</p>
+                                {userOnboardingStatus.steps.profile_completion.completedAt && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Completed {new Date(userOnboardingStatus.steps.profile_completion.completedAt).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Company Steps Section */}
+                        <div className="space-y-3 pt-4 border-t">
+                          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                            Company Steps
+                          </h3>
+                          {companyOnboardingStatus?.steps?.company_profile?.completed && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50 border-green-200">
+                              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900">Company Profile</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Complete company information</p>
+                                {companyOnboardingStatus.steps.company_profile.completedAt && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Completed {new Date(companyOnboardingStatus.steps.company_profile.completedAt).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {companyOnboardingStatus?.steps?.payment_setup?.completed && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50 border-green-200">
+                              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900">Payment Setup</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Set up payment/subscription</p>
+                                {companyOnboardingStatus.steps.payment_setup.completedAt && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Completed {new Date(companyOnboardingStatus.steps.payment_setup.completedAt).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {!isFirstShipmentComplete && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200">
+                              <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-600">First Shipment</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Create your first shipment slot (optional)</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Overall Progress */}
+                        <div className="pt-4 border-t">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+                            <span className="text-sm font-semibold text-orange-600">100%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-orange-600 h-2 rounded-full transition-all duration-300" style={{ width: '100%' }} />
+                          </div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Company Steps</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <OnboardingChecklist status={companyOnboardingStatus || null} type="company" />
-                    </CardContent>
-                  </Card>
-          </div>
+                </div>
 
                 <div className="flex justify-center gap-4">
                   <Button
@@ -529,14 +597,14 @@ export default function CompanyOnboardingPage() {
                       </Button>
                     </Link>
                   )}
-        </div>
+                </div>
               </CardContent>
             </Card>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // STEP 2: Company Profile Form (only shown if email is verified)
   return (
@@ -558,27 +626,17 @@ export default function CompanyOnboardingPage() {
             <div className="md:col-span-1 space-y-4">
               <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-lg">User Steps</CardTitle>
+                  <CardTitle className="text-lg">Onboarding Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <OnboardingChecklist 
-                    status={userOnboardingStatus} 
-                    type="company" 
+                  <OnboardingChecklist
+                    userStatus={userOnboardingStatus || null}
+                    companyStatus={companyOnboardingStatus || null}
+                    type="company"
                   />
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-lg">Company Steps</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <OnboardingChecklist 
-                    status={companyOnboardingStatus || null} 
-                    type="company" 
-                  />
-                </CardContent>
-              </Card>
-      </div>
+            </div>
 
             <div className="md:col-span-2">
               <Card className="border-0 shadow-xl">
@@ -603,153 +661,153 @@ export default function CompanyOnboardingPage() {
                       </div>
                     )}
 
-        <div className="space-y-2">
-          <Label htmlFor="companyDescription" className="text-sm font-medium">
-            Company Description
-          </Label>
-          <Textarea
-            id="companyDescription"
-            placeholder="Describe your company, services, and what makes you unique..."
-            value={formData.companyDescription}
-            onChange={(e) => setFormData({ ...formData, companyDescription: e.target.value })}
+                    <div className="space-y-2">
+                      <Label htmlFor="companyDescription" className="text-sm font-medium">
+                        Company Description
+                      </Label>
+                      <Textarea
+                        id="companyDescription"
+                        placeholder="Describe your company, services, and what makes you unique..."
+                        value={formData.companyDescription}
+                        onChange={(e) => setFormData({ ...formData, companyDescription: e.target.value })}
                         className="min-h-[100px]"
                         rows={4}
-          />
-          <p className="text-xs text-gray-500">
-            This will be visible to customers when they view your shipments
-          </p>
-        </div>
+                      />
+                      <p className="text-xs text-gray-500">
+                        This will be visible to customers when they view your shipments
+                      </p>
+                    </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="companyWebsite" className="text-sm font-medium">
-            Website
-          </Label>
-          <div className="relative">
-            <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              id="companyWebsite"
-              type="url"
+                    <div className="space-y-2">
+                      <Label htmlFor="companyWebsite" className="text-sm font-medium">
+                        Website
+                      </Label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="companyWebsite"
+                          type="url"
                           placeholder="https://yourcompany.com (optional)"
-              value={formData.companyWebsite}
-              onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })}
-              className="pl-10 h-11"
-            />
-          </div>
-        </div>
+                          value={formData.companyWebsite}
+                          onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })}
+                          className="pl-10 h-11"
+                        />
+                      </div>
+                    </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="companyLogoUrl" className="text-sm font-medium">
+                    <div className="space-y-2">
+                      <Label htmlFor="companyLogoUrl" className="text-sm font-medium">
                         Logo URL
-          </Label>
-          <Input
-            id="companyLogoUrl"
-            type="url"
+                      </Label>
+                      <Input
+                        id="companyLogoUrl"
+                        type="url"
                         placeholder="https://yourcompany.com/logo.png (optional)"
-            value={formData.companyLogoUrl}
-            onChange={(e) => setFormData({ ...formData, companyLogoUrl: e.target.value })}
-            className="h-11"
-          />
-          <p className="text-xs text-gray-500">
-            Provide a direct link to your company logo image
-        </p>
-      </div>
+                        value={formData.companyLogoUrl}
+                        onChange={(e) => setFormData({ ...formData, companyLogoUrl: e.target.value })}
+                        className="h-11"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Provide a direct link to your company logo image
+                      </p>
+                    </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="contactEmail" className="text-sm font-medium">
-            Contact Email <span className="text-red-500">*</span>
-          </Label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              id="contactEmail"
-              type="email"
-              placeholder="contact@company.com"
-              value={formData.contactEmail}
-              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-              className="pl-10 h-11"
-              required
-            />
-          </div>
-        </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contactEmail" className="text-sm font-medium">
+                        Contact Email <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="contactEmail"
+                          type="email"
+                          placeholder="contact@company.com"
+                          value={formData.contactEmail}
+                          onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
+                          className="pl-10 h-11"
+                          required
+                        />
+                      </div>
+                    </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="contactPhone" className="text-sm font-medium">
-            Contact Phone <span className="text-red-500">*</span>
-          </Label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              id="contactPhone"
-              type="tel"
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPhone" className="text-sm font-medium">
+                        Contact Phone <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="contactPhone"
+                          type="tel"
                           placeholder="+447340515936"
-              value={formData.contactPhone}
-              onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-              className="pl-10 h-11"
-              required
-            />
-          </div>
+                          value={formData.contactPhone}
+                          onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                          className="pl-10 h-11"
+                          required
+                        />
+                      </div>
                       <p className="text-xs text-gray-500">
                         Include country code (e.g., +44 for UK, +1 for US)
                       </p>
-        </div>
+                    </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="address" className="text-sm font-medium">
-            Street Address
-          </Label>
-          <Input
-            id="address"
-            type="text"
-            placeholder="123 Business Street"
-            value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            className="h-11"
-          />
-        </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-sm font-medium">
+                        Street Address
+                      </Label>
+                      <Input
+                        id="address"
+                        type="text"
+                        placeholder="123 Business Street"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="h-11"
+                      />
+                    </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="city" className="text-sm font-medium">
-              City
-            </Label>
-            <Input
-              id="city"
-              type="text"
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city" className="text-sm font-medium">
+                          City
+                        </Label>
+                        <Input
+                          id="city"
+                          type="text"
                           placeholder="Birmingham"
-              value={formData.city}
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              className="h-11"
-            />
-          </div>
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          className="h-11"
+                        />
+                      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="state" className="text-sm font-medium">
-              State/Province
-            </Label>
-            <Input
-              id="state"
-              type="text"
+                      <div className="space-y-2">
+                        <Label htmlFor="state" className="text-sm font-medium">
+                          State/Province
+                        </Label>
+                        <Input
+                          id="state"
+                          type="text"
                           placeholder="West Midlands"
-              value={formData.state}
-              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-              className="h-11"
-            />
-          </div>
+                          value={formData.state}
+                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                          className="h-11"
+                        />
+                      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="postalCode" className="text-sm font-medium">
-              Postal Code
-            </Label>
-            <Input
-              id="postalCode"
-              type="text"
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode" className="text-sm font-medium">
+                          Postal Code
+                        </Label>
+                        <Input
+                          id="postalCode"
+                          type="text"
                           placeholder="B1 1AA"
-              value={formData.postalCode}
-              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-              className="h-11"
-            />
-          </div>
-        </div>
+                          value={formData.postalCode}
+                          onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
 
                     <div className="flex items-center justify-between pt-4 border-t">
                       <Button
@@ -777,11 +835,11 @@ export default function CompanyOnboardingPage() {
                           </>
                         )}
                       </Button>
-      </div>
+                    </div>
                   </form>
                 </CardContent>
               </Card>
-          </div>
+            </div>
           </div>
         </div>
       </div>

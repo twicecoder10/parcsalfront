@@ -5,7 +5,9 @@ import { cn } from '@/lib/utils';
 import { OnboardingStatusResponse } from '@/lib/api';
 
 interface OnboardingChecklistProps {
-  status: OnboardingStatusResponse | null;
+  status?: OnboardingStatusResponse | null;
+  userStatus?: OnboardingStatusResponse | null;
+  companyStatus?: OnboardingStatusResponse | null;
   type: 'customer' | 'company';
   className?: string;
 }
@@ -54,18 +56,252 @@ const COMPANY_STEPS: StepDefinition[] = [
     description: 'Complete company information',
   },
   {
+    key: 'payment_setup',
+    label: 'Payment Setup',
+    description: 'Set up subscription',
+  },
+  {
     key: 'first_shipment_slot',
     label: 'First Shipment',
     description: 'Create your first shipment slot',
   },
-  {
-    key: 'payment_setup',
-    label: 'Payment Setup',
-    description: 'Set up payment/subscription',
-  },
 ];
 
-export function OnboardingChecklist({ status, type, className }: OnboardingChecklistProps) {
+export function OnboardingChecklist({ 
+  status, 
+  userStatus, 
+  companyStatus, 
+  type, 
+  className 
+}: OnboardingChecklistProps) {
+  // Support both old API (single status) and new API (separate user/company statuses)
+  const userOnboardingStatus = userStatus || (type === 'company' ? null : status);
+  const companyOnboardingStatus = companyStatus || (type === 'company' ? status : null);
+  const legacyStatus = status && !userStatus && !companyStatus ? status : null;
+
+  // For customer type, use legacy status if provided
+  if (type === 'customer' && legacyStatus) {
+
+    const steps = CUSTOMER_STEPS;
+    return (
+      <div className={cn('space-y-4', className)}>
+        <div className="space-y-3">
+          {steps.map((step) => {
+            const stepStatus = legacyStatus.steps[step.key];
+            const isCompleted = stepStatus?.completed === true;
+            const isCurrent = !isCompleted && !legacyStatus.completed;
+
+            return (
+              <div
+                key={step.key}
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                  isCompleted && 'bg-green-50 border-green-200',
+                  isCurrent && 'bg-orange-50 border-orange-200',
+                  !isCompleted && !isCurrent && 'bg-gray-50 border-gray-200'
+                )}
+              >
+                <div className="mt-0.5">
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : isCurrent ? (
+                    <Circle className="h-5 w-5 text-orange-600 fill-orange-600" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      isCompleted && 'text-green-900',
+                      isCurrent && 'text-orange-900',
+                      !isCompleted && !isCurrent && 'text-gray-600'
+                    )}
+                  >
+                    {step.label}
+                  </p>
+                  {step.description && (
+                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  )}
+                  {isCompleted && stepStatus.completedAt && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Completed {new Date(stepStatus.completedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+            <span className="text-sm font-semibold text-orange-600">{legacyStatus.progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${legacyStatus.progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For company type with merged statuses
+  if (type === 'company') {
+    if (!userOnboardingStatus && !companyOnboardingStatus) {
+      return (
+        <div className={cn('space-y-3', className)}>
+          <p className="text-sm text-gray-500">Loading onboarding status...</p>
+        </div>
+      );
+    }
+
+    const steps = COMPANY_STEPS;
+    const userSteps = COMPANY_USER_STEPS;
+    
+    // Calculate overall progress from both statuses
+    const userProgress = userOnboardingStatus?.progress || 0;
+    const companyProgress = companyOnboardingStatus?.progress || 0;
+    const overallProgress = Math.round((userProgress + companyProgress) / 2);
+
+    return (
+      <div className={cn('space-y-4', className)}>
+        {/* User-level steps for company admins */}
+        {userSteps.length > 0 && userOnboardingStatus && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              User Steps
+            </h3>
+            {userSteps.map((step) => {
+              const stepStatus = userOnboardingStatus.steps[step.key];
+              const isCompleted = stepStatus?.completed === true;
+              const isCurrent = !isCompleted && !userOnboardingStatus.completed;
+
+              return (
+              <div
+                key={step.key}
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                  isCompleted && 'bg-green-50 border-green-200',
+                  isCurrent && 'bg-orange-50 border-orange-200',
+                  !isCompleted && !isCurrent && 'bg-gray-50 border-gray-200'
+                )}
+              >
+                <div className="mt-0.5">
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : isCurrent ? (
+                    <Circle className="h-5 w-5 text-orange-600 fill-orange-600" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      isCompleted && 'text-green-900',
+                      isCurrent && 'text-orange-900',
+                      !isCompleted && !isCurrent && 'text-gray-600'
+                    )}
+                  >
+                    {step.label}
+                  </p>
+                  {step.description && (
+                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  )}
+                  {isCompleted && stepStatus.completedAt && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Completed {new Date(stepStatus.completedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Main steps */}
+      {companyOnboardingStatus && (
+        <div className="space-y-3">
+          {userSteps.length > 0 && (
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Company Steps
+            </h3>
+          )}
+          {steps.map((step) => {
+            const stepStatus = companyOnboardingStatus.steps[step.key];
+            const isCompleted = stepStatus?.completed === true;
+            const isCurrent = !isCompleted && !companyOnboardingStatus.completed;
+
+            return (
+            <div
+              key={step.key}
+              className={cn(
+                'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                isCompleted && 'bg-green-50 border-green-200',
+                isCurrent && 'bg-orange-50 border-orange-200',
+                !isCompleted && !isCurrent && 'bg-gray-50 border-gray-200'
+              )}
+            >
+              <div className="mt-0.5">
+                {isCompleted ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : isCurrent ? (
+                  <Circle className="h-5 w-5 text-orange-600 fill-orange-600" />
+                ) : (
+                  <Lock className="h-5 w-5 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    'text-sm font-medium',
+                    isCompleted && 'text-green-900',
+                    isCurrent && 'text-orange-900',
+                    !isCompleted && !isCurrent && 'text-gray-600'
+                  )}
+                >
+                  {step.label}
+                </p>
+                {step.description && (
+                  <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                )}
+                {isCompleted && stepStatus.completedAt && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Completed {new Date(stepStatus.completedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+          })}
+        </div>
+      )}
+
+      {/* Progress Summary */}
+      <div className="pt-4 border-t">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+          <span className="text-sm font-semibold text-orange-600">{overallProgress}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${overallProgress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+    );
+  }
+
+  // Fallback for legacy single status (shouldn't reach here for company type with new API)
   if (!status) {
     return (
       <div className={cn('space-y-3', className)}>
@@ -74,8 +310,79 @@ export function OnboardingChecklist({ status, type, className }: OnboardingCheck
     );
   }
 
-  const steps = type === 'customer' ? CUSTOMER_STEPS : COMPANY_STEPS;
-  const userSteps = type === 'company' ? COMPANY_USER_STEPS : [];
+  // This fallback only handles customer type or legacy company type
+  if (type === 'customer') {
+    const steps = CUSTOMER_STEPS;
+    return (
+      <div className={cn('space-y-4', className)}>
+        <div className="space-y-3">
+          {steps.map((step) => {
+            const stepStatus = status.steps[step.key];
+            const isCompleted = stepStatus?.completed === true;
+            const isCurrent = !isCompleted && !status.completed;
+
+            return (
+              <div
+                key={step.key}
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                  isCompleted && 'bg-green-50 border-green-200',
+                  isCurrent && 'bg-orange-50 border-orange-200',
+                  !isCompleted && !isCurrent && 'bg-gray-50 border-gray-200'
+                )}
+              >
+                <div className="mt-0.5">
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  ) : isCurrent ? (
+                    <Circle className="h-5 w-5 text-orange-600 fill-orange-600" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      isCompleted && 'text-green-900',
+                      isCurrent && 'text-orange-900',
+                      !isCompleted && !isCurrent && 'text-gray-600'
+                    )}
+                  >
+                    {step.label}
+                  </p>
+                  {step.description && (
+                    <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                  )}
+                  {isCompleted && stepStatus.completedAt && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Completed {new Date(stepStatus.completedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Overall Progress</span>
+            <span className="text-sm font-semibold text-orange-600">{status.progress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${status.progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy company type fallback (shouldn't normally reach here)
+  const steps = COMPANY_STEPS;
+  const userSteps = COMPANY_USER_STEPS;
 
   return (
     <div className={cn('space-y-4', className)}>
