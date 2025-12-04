@@ -2,7 +2,12 @@ import Image from 'next/image';
 
 export function PoweredByCosonas() {
   return (
-    <div className="flex items-center gap-1.5 text-[11px] text-gray-500 opacity-80">
+    <a
+      href="https://cosonas.com/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-1.5 text-[11px] text-gray-500 opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+    >
       <span>Powered by</span>
       <Image
         src="/cosonas-logo.svg"
@@ -12,7 +17,7 @@ export function PoweredByCosonas() {
         className="h-4 w-4"
       />
       <span>Cosonas Ltd</span>
-    </div>
+    </a>
   );
 }
 
