@@ -1,0 +1,262 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, DollarSign, Loader2 } from 'lucide-react';
+import { adminApi } from '@/lib/admin-api';
+import type { CompanyDetail } from '@/lib/admin-api';
+
+export default function CompanyDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [company, setCompany] = useState<CompanyDetail | null>(null);
+  const [stats, setStats] = useState<{
+    totalShipments: number;
+    activeShipments: number;
+    totalBookings: number;
+    revenue: number;
+    teamSize: number;
+  } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      if (!params.id || typeof params.id !== 'string') return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const [companyData, statsData] = await Promise.all([
+          adminApi.getCompany(params.id),
+          adminApi.getCompanyStats(params.id),
+        ]);
+        setCompany(companyData);
+        setStats(statsData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load company');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompany();
+  }, [params.id]);
+
+  const handleVerify = async () => {
+    if (!company) return;
+    try {
+      setActionLoading(true);
+      await adminApi.verifyCompany(company.id);
+      setCompany({ ...company, isVerified: true });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to verify company');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnverify = async () => {
+    if (!company) return;
+    try {
+      setActionLoading(true);
+      await adminApi.unverifyCompany(company.id);
+      setCompany({ ...company, isVerified: false });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to unverify company');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!company) return;
+    if (!confirm('Are you sure you want to deactivate this company?')) return;
+    try {
+      setActionLoading(true);
+      await adminApi.deactivateCompany(company.id);
+      alert('Company deactivated successfully');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to deactivate company');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      </div>
+    );
+  }
+
+  if (error || !company) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Company not found'}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{company.name}</h1>
+            <p className="text-gray-600 mt-2">Company ID: {company.id}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {company.isVerified ? (
+            <Button variant="outline" onClick={handleUnverify} disabled={actionLoading}>
+              <XCircle className="mr-2 h-4 w-4" />
+              Unverify
+            </Button>
+          ) : (
+            <Button onClick={handleVerify} disabled={actionLoading}>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Verify Company
+            </Button>
+          )}
+          <Button variant="destructive" onClick={handleDeactivate} disabled={actionLoading}>
+            Deactivate Company
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalShipments || 0}</div>
+            <p className="text-xs text-muted-foreground">{stats?.activeShipments || 0} active</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalBookings || 0}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">£{(stats?.revenue || 0).toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total revenue</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.teamSize || 0}</div>
+            <p className="text-xs text-muted-foreground">Active users</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Company Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Company Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-orange-600" />
+            <div>
+              <p className="font-medium">Company Name</p>
+              <p className="text-sm text-gray-600">{company.name}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="font-medium">Location</p>
+              <p className="text-sm text-gray-600">
+                {company.city}, {company.country}
+              </p>
+            </div>
+          </div>
+          {company.description && (
+            <div className="flex items-start gap-2">
+              <Building2 className="h-5 w-5 text-gray-600 mt-0.5" />
+              <div>
+                <p className="font-medium">Description</p>
+                <p className="text-sm text-gray-600">{company.description}</p>
+              </div>
+            </div>
+          )}
+          {company.admin && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="font-medium">Admin Email</p>
+                <p className="text-sm text-gray-600">{company.admin.email}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Subscription Info */}
+      {company.activePlan && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Subscription</CardTitle>
+              <Badge className="bg-green-100 text-green-800">Active</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Plan</span>
+                <span className="font-medium">{company.activePlan.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Monthly Price</span>
+                <span className="font-medium">£{company.activePlan.priceMonthly}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
