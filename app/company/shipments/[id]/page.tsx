@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { MapPin, Clock, Package, DollarSign, Edit, X, ArrowLeft, Loader2, Truck, PackageCheck } from 'lucide-react';
+import { MapPin, Clock, Package, DollarSign, Edit, X, ArrowLeft, Loader2, Truck, PackageCheck, Send, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -94,6 +94,7 @@ export default function ShipmentDetailPage() {
   const [bookingsLoading, setBookingsLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updatingTrackingStatus, setUpdatingTrackingStatus] = useState(false);
 
   useEffect(() => {
@@ -124,6 +125,35 @@ export default function ShipmentDetailPage() {
       console.error('Failed to fetch bookings:', error);
     } finally {
       setBookingsLoading(false);
+    }
+  };
+
+  const handlePublishShipment = async () => {
+    if (!shipment) return;
+    setProcessing(true);
+    try {
+      await companyApi.updateShipmentStatus(shipmentId, 'PUBLISHED');
+      setShipment({ ...shipment, status: 'PUBLISHED' });
+    } catch (error: any) {
+      console.error('Failed to publish shipment:', error);
+      alert(error.message || 'Failed to publish shipment. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteShipment = async () => {
+    if (!shipment) return;
+    setProcessing(true);
+    try {
+      await companyApi.deleteShipment(shipmentId);
+      router.push('/company/shipments');
+    } catch (error: any) {
+      console.error('Failed to delete shipment:', error);
+      alert(error.message || 'Failed to delete shipment. Please try again.');
+    } finally {
+      setProcessing(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -217,6 +247,8 @@ export default function ShipmentDetailPage() {
 
   const canEdit = shipment && shipment.status !== 'CLOSED';
   const canClose = shipment && shipment.status === 'PUBLISHED';
+  const canPublish = shipment && shipment.status === 'DRAFT';
+  const canDelete = shipment && shipment.status === 'DRAFT';
   const capacityPercentage = shipment ? (shipment.remainingCapacityKg / shipment.totalCapacityKg) * 100 : 0;
 
   return (
@@ -242,6 +274,62 @@ export default function ShipmentDetailPage() {
                 Edit
               </Button>
             </Link>
+          )}
+          {canPublish && (
+            <Button
+              onClick={handlePublishShipment}
+              disabled={processing}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Publish
+                </>
+              )}
+            </Button>
+          )}
+          {canDelete && (
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Shipment</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this draft shipment? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteShipment}
+                    disabled={processing}
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
           {canClose && (
             <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>

@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, Edit, X, Plus, Search, Loader2, Calendar } from 'lucide-react';
+import { Eye, Edit, X, Plus, Search, Loader2, Calendar, Send } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -124,6 +124,17 @@ export default function ShipmentsPage() {
     } catch (error: any) {
       console.error('Failed to delete shipment:', error);
       alert(error.message || 'Failed to delete shipment. Please try again.');
+    }
+  };
+
+  const handlePublishShipment = async (shipmentId: string) => {
+    try {
+      await companyApi.updateShipmentStatus(shipmentId, 'PUBLISHED');
+      // Refresh the list
+      fetchShipments();
+    } catch (error: any) {
+      console.error('Failed to publish shipment:', error);
+      alert(error.message || 'Failed to publish shipment. Please try again.');
     }
   };
 
@@ -293,16 +304,29 @@ export default function ShipmentsPage() {
                           </>
                         )}
                         {shipment.status === 'DRAFT' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setShipmentToDelete(shipment.id);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <X className="h-4 w-4 text-red-600" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePublishShipment(shipment.id)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Publish"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShipmentToDelete(shipment.id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Delete"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
