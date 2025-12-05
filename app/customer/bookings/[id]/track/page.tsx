@@ -195,7 +195,7 @@ function TrackContent() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Track Booking</h1>
-        <p className="text-gray-600 mt-2">Booking #{booking.id?.slice(-8) || bookingId}</p>
+        <p className="text-gray-600 mt-2">Booking #{booking.id || bookingId}</p>
       </div>
 
       {/* Current Status Card */}

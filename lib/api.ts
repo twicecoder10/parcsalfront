@@ -291,3 +291,28 @@ export const contactApi = {
   },
 };
 
+// Public API instance (no authentication required)
+const publicApiInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Public API (no authentication required)
+export const publicApi = {
+  // Public tracking endpoint - doesn't require authentication
+  getBookingTrack: async (bookingId: string): Promise<any> => {
+    const response = await publicApiInstance.get<ApiResponse<any>>(
+      `/shipments/track/${bookingId}`
+    );
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to fetch tracking information');
+    }
+    if (!response.data.data) {
+      throw new Error('Invalid response format');
+    }
+    return response.data.data;
+  },
+};
+

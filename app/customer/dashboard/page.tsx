@@ -178,7 +178,7 @@ export default function CustomerDashboardPage() {
                     <Link key={booking.id} href={`/customer/bookings/${booking.id}`}>
                       <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className="flex-1">
-                          <p className="text-sm font-medium">Booking #{booking.id.slice(-6)}</p>
+                          <p className="text-sm font-medium">Booking #{booking.id}</p>
                           <p className="text-xs text-muted-foreground">
                             {originCity} → {destinationCity}
                           </p>

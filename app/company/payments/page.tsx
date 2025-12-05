@@ -305,12 +305,12 @@ export default function PaymentsPage() {
                 payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell className="font-mono text-xs">
-                      {payment.id.slice(0, 8)}...
+                      {payment.id}...
                     </TableCell>
                     <TableCell>
                       {payment.booking ? (
                         <Link href={`/company/bookings/${payment.bookingId}`} className="text-orange-600 hover:underline">
-                          Booking #{payment.bookingId.slice(0, 8)}
+                          Booking #{payment.bookingId}
                         </Link>
                       ) : (
                         <span className="text-gray-400">N/A</span>
@@ -422,7 +422,7 @@ export default function PaymentsPage() {
             <DialogDescription>
               {paymentToRefund && (
                 <>
-                  Refund payment for booking #{paymentToRefund.bookingId.slice(0, 8)}.
+                  Refund payment for booking #{paymentToRefund.bookingId}.
                   {paymentToRefund.status === 'PARTIALLY_REFUNDED' && (
                     <span className="block mt-2 text-sm text-gray-600">
                       Already refunded: £{paymentToRefund.refundedAmount?.toFixed(2) || '0.00'}. 

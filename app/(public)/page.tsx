@@ -11,7 +11,7 @@ import { Footer } from '@/components/footer';
 import { ShipmentCard } from '@/components/shipment-card';
 import { shipmentApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -164,11 +164,17 @@ export default function LandingPage() {
               <p className="text-xl text-gray-600 mb-8">
                 Connect shippers with available capacity. Find routes, book slots, or list your shipping capacity.
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex gap-4 justify-center flex-wrap">
                 <Link href="/shipments/browse">
                   <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
                     Find a Slot
                     <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/track">
+                  <Button size="lg" variant="outline" className="border-2">
+                    <Navigation className="mr-2 h-5 w-5" />
+                    Track Shipment
                   </Button>
                 </Link>
                 <Link href="/auth/register-company">

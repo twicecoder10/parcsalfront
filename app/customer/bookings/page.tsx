@@ -141,7 +141,7 @@ export default function BookingsPage() {
                   {filteredBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell className="font-mono text-sm">
-                        #{booking.id.slice(-8)}
+                        #{booking.id}
                       </TableCell>
                       <TableCell className="font-medium">
                         {booking.shipmentSlot?.originCity || booking.originCity} → {booking.shipmentSlot?.destinationCity || booking.destinationCity}

@@ -254,7 +254,7 @@ export default function CompanyOverviewPage() {
                   {recentBookings.map((booking) => (
                     <div key={booking.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
                       <div>
-                        <p className="text-sm font-medium">Booking #{booking.id.slice(0, 8)}</p>
+                        <p className="text-sm font-medium">Booking #{booking.id}</p>
                         <p className="text-xs text-muted-foreground">
                           {booking.route.origin} → {booking.route.destination}
                         </p>
