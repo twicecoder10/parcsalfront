@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, PoundSterling, ArrowRight, Star } from 'lucide-react';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export interface ShipmentCardData {
   id: string;
@@ -20,8 +21,11 @@ export interface ShipmentCardData {
   mode?: string;
   companyName?: string;
   company?: {
+    id?: string;
+    slug?: string;
     name?: string;
     rating?: number;
+    logoUrl?: string;
   };
   companyRating?: number;
   priceFrom?: number;
@@ -66,6 +70,7 @@ export function ShipmentCard({ shipment, showViewButton = true }: ShipmentCardPr
   // Get company name from nested company object or direct property
   const companyName = shipment.company?.name || shipment.companyName || 'Shipping Company';
   const companyRating = shipment.company?.rating || shipment.companyRating;
+  const companyLogoUrl = shipment.company?.logoUrl;
   
   // Get remaining capacity
   const remainingCapacity = shipment.remainingCapacityKg || shipment.remainingCapacity;
@@ -133,9 +138,26 @@ export function ShipmentCard({ shipment, showViewButton = true }: ShipmentCardPr
             <CardTitle className="text-lg font-semibold mb-1">
               {origin || 'Origin'} → {destination || 'Destination'}
             </CardTitle>
-            <CardDescription className="text-sm">
-              {companyName}
-            </CardDescription>
+            <div className="flex items-center gap-2 mt-1">
+              {companyLogoUrl && (
+                <div className="relative w-6 h-6 rounded overflow-hidden flex-shrink-0">
+                  <Image
+                    src={companyLogoUrl}
+                    alt={`${companyName} logo`}
+                    fill
+                    className="object-cover"
+                    sizes="24px"
+                  />
+                </div>
+              )}
+              <Link 
+                href={`/companies/${shipment.company?.slug || shipment.company?.id || 'unknown'}`}
+                className="text-sm hover:text-orange-600 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {companyName}
+              </Link>
+            </div>
           </div>
           {companyRating && (
             <Badge variant="outline" className="flex items-center gap-1">

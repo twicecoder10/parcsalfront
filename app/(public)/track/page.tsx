@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -381,7 +382,12 @@ function TrackContent() {
                     <div className="flex items-center gap-3">
                       <Truck className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="font-medium">{trackingData.company.name}</p>
+                        <Link 
+                          href={`/companies/${trackingData.company.slug || trackingData.company.id || 'unknown'}`}
+                          className="font-medium hover:text-orange-600 transition-colors"
+                        >
+                          {trackingData.company.name}
+                        </Link>
                       </div>
                     </div>
                   </CardContent>

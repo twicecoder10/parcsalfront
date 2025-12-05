@@ -22,8 +22,10 @@ export default function BrowseShipmentsPage() {
   const [originCity, setOriginCity] = useState('');
   const [destinationCountry, setDestinationCountry] = useState('');
   const [destinationCity, setDestinationCity] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [departureDateFrom, setDepartureDateFrom] = useState('');
+  const [departureDateTo, setDepartureDateTo] = useState('');
+  const [arrivalDateFrom, setArrivalDateFrom] = useState('');
+  const [arrivalDateTo, setArrivalDateTo] = useState('');
   const [mode, setMode] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
@@ -37,6 +39,31 @@ export default function BrowseShipmentsPage() {
     hasMore: false,
   });
 
+  // Helper to convert date string to ISO 8601 datetime
+  const dateToISO = (dateString: string, isEndDate = false): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isEndDate) {
+      // Set to end of day (23:59:59)
+      date.setHours(23, 59, 59, 999);
+    } else {
+      // Set to start of day (00:00:00)
+      date.setHours(0, 0, 0, 0);
+    }
+    return date.toISOString();
+  };
+
+  // Helper to extract date from ISO string (for display in date inputs)
+  const isoToDateInput = (isoString: string): string => {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  };
+
   useEffect(() => {
     // Get URL params and populate search form
     const params = new URLSearchParams(window.location.search);
@@ -44,11 +71,22 @@ export default function BrowseShipmentsPage() {
     if (params.get('originCity')) setOriginCity(params.get('originCity') || '');
     if (params.get('destinationCountry')) setDestinationCountry(params.get('destinationCountry') || '');
     if (params.get('destinationCity')) setDestinationCity(params.get('destinationCity') || '');
-    if (params.get('date')) {
-      setDateFrom(params.get('date') || '');
-      setDateTo(params.get('date') || '');
+    if (params.get('mode')) setMode(params.get('mode') || 'all');
+
+    // Parse dateFrom and dateTo from ISO strings
+    if (params.get('dateFrom')) {
+      setDepartureDateFrom(isoToDateInput(params.get('dateFrom') || ''));
     }
-    
+    if (params.get('dateTo')) {
+      setDepartureDateTo(isoToDateInput(params.get('dateTo') || ''));
+    }
+    if (params.get('arrivalFrom')) {
+      setArrivalDateFrom(isoToDateInput(params.get('arrivalFrom') || ''));
+    }
+    if (params.get('arrivalTo')) {
+      setArrivalDateTo(isoToDateInput(params.get('arrivalTo') || ''));
+    }
+
     fetchShipments(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -65,12 +103,19 @@ export default function BrowseShipmentsPage() {
       if (originCity) params.originCity = originCity;
       if (destinationCountry) params.destinationCountry = destinationCountry;
       if (destinationCity) params.destinationCity = destinationCity;
-      if (dateFrom) params.dateFrom = dateFrom;
-      if (dateTo) params.dateTo = dateTo;
+
+      // Departure date filters (convert to ISO 8601)
+      if (departureDateFrom) params.dateFrom = dateToISO(departureDateFrom);
+      if (departureDateTo) params.dateTo = dateToISO(departureDateTo, true);
+
+      // Arrival date filters (convert to ISO 8601)
+      if (arrivalDateFrom) params.arrivalFrom = dateToISO(arrivalDateFrom);
+      if (arrivalDateTo) params.arrivalTo = dateToISO(arrivalDateTo, true);
+
       if (mode && mode !== 'all') params.mode = mode;
 
       const response = await shipmentApi.search(params);
-      
+
       // Filter out shipments where cutoff time or departure time has passed
       const availableShipments = response.data.filter((shipment: any) =>
         isShipmentAvailable({
@@ -78,14 +123,14 @@ export default function BrowseShipmentsPage() {
           departureTime: shipment.departureTime,
         })
       );
-      
+
       if (resetOffset) {
         setAllShipments(availableShipments);
         setCurrentPage(1);
       } else {
         setAllShipments([...allShipments, ...availableShipments]);
       }
-      
+
       // Update pagination to reflect filtered results
       setPagination({
         ...response.pagination,
@@ -121,14 +166,17 @@ export default function BrowseShipmentsPage() {
     setOriginCity('');
     setDestinationCountry('');
     setDestinationCity('');
-    setDateFrom('');
-    setDateTo('');
+    setDepartureDateFrom('');
+    setDepartureDateTo('');
+    setArrivalDateFrom('');
+    setArrivalDateTo('');
     setMode('all');
     setCurrentPage(1);
     setTimeout(() => fetchShipments(true), 0);
   };
 
-  const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity || dateFrom || dateTo || (mode && mode !== 'all');
+  const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity ||
+    departureDateFrom || departureDateTo || arrivalDateFrom || arrivalDateTo || (mode && mode !== 'all');
 
   return (
     <GoogleMapsLoader>
@@ -199,26 +247,6 @@ export default function BrowseShipmentsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="dateFrom" className="text-xs">From Date</Label>
-                    <Input
-                      id="dateFrom"
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="dateTo" className="text-xs">To Date</Label>
-                    <Input
-                      id="dateTo"
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
                     <Label className="text-xs">Mode</Label>
                     <Select value={mode} onValueChange={setMode}>
                       <SelectTrigger className="h-9 text-sm">
@@ -234,6 +262,67 @@ export default function BrowseShipmentsPage() {
                         <SelectItem value="RIDER">Rider</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Departure Date Range */}
+                  <div className="border rounded-lg p-3 bg-gray-50/50">
+                    <Label className="text-sm font-medium block mb-2 text-gray-700">
+                      Departure Range
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="departureDateFrom" className="text-xs text-gray-600">From</Label>
+                        <Input
+                          id="departureDateFrom"
+                          type="date"
+                          value={departureDateFrom}
+                          onChange={(e) => setDepartureDateFrom(e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="departureDateTo" className="text-xs text-gray-600">To</Label>
+                        <Input
+                          id="departureDateTo"
+                          type="date"
+                          value={departureDateTo}
+                          onChange={(e) => setDepartureDateTo(e.target.value)}
+                          className="h-9 text-sm"
+                          min={departureDateFrom || undefined}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Arrival Date Range */}
+                  <div className="border rounded-lg p-3 bg-gray-50/50">
+                    <Label className="text-sm font-medium block mb-2 text-gray-700">
+                      Arrival Range
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="arrivalDateFrom" className="text-xs text-gray-600">From</Label>
+                        <Input
+                          id="arrivalDateFrom"
+                          type="date"
+                          value={arrivalDateFrom}
+                          onChange={(e) => setArrivalDateFrom(e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="arrivalDateTo" className="text-xs text-gray-600">To</Label>
+                        <Input
+                          id="arrivalDateTo"
+                          type="date"
+                          value={arrivalDateTo}
+                          onChange={(e) => setArrivalDateTo(e.target.value)}
+                          className="h-9 text-sm"
+                          min={arrivalDateFrom || undefined}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-2 flex justify-end">
@@ -333,11 +422,10 @@ export default function BrowseShipmentsPage() {
                                   size="sm"
                                   onClick={() => handlePageChange(page)}
                                   disabled={loading}
-                                  className={`min-w-[40px] ${
-                                    currentPage === page
+                                  className={`min-w-[40px] ${currentPage === page
                                       ? 'bg-orange-600 hover:bg-orange-700'
                                       : ''
-                                  }`}
+                                    }`}
                                 >
                                   {page}
                                 </Button>

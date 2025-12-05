@@ -14,6 +14,9 @@ import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { AddressAutocomplete } from '@/components/address-autocomplete';
+import { uploadCompanyLogo, createImagePreview } from '@/lib/upload-api';
+import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 
 export default function CompanySettingsPage() {
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
@@ -23,6 +26,11 @@ export default function CompanySettingsPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Logo upload state
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -69,6 +77,9 @@ export default function CompanySettingsPage() {
         state: profileData.state || '',
         postalCode: profileData.postalCode || '',
       });
+      // Reset logo preview when profile is loaded
+      setLogoFile(null);
+      setLogoPreview(null);
       
       setSettings(settingsData);
       if (settingsData) {
@@ -179,6 +190,146 @@ export default function CompanySettingsPage() {
         </CardHeader>
         <CardContent>
               <form onSubmit={handleSubmitProfile} className="space-y-4">
+                {/* Logo Upload Section */}
+                <div className="space-y-2">
+                  <Label>Company Logo</Label>
+                  <div className="flex items-start gap-4">
+                    {(profile?.logoUrl || logoPreview) && (
+                      <div className="relative w-24 h-24 rounded-lg border overflow-hidden flex-shrink-0">
+                        <Image
+                          src={logoPreview || profile?.logoUrl || ''}
+                          alt="Company logo"
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <label htmlFor="logo-upload" className="cursor-pointer">
+                        <div className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg hover:bg-gray-50 transition-colors">
+                          <Upload className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">
+                            {logoFile ? logoFile.name : profile?.logoUrl ? 'Change logo' : 'Upload logo'}
+                          </span>
+                        </div>
+                      </label>
+                      <input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          // Validate file
+                          if (file.size > 10 * 1024 * 1024) {
+                            setError('Logo file is too large. Maximum size is 10MB.');
+                            return;
+                          }
+                          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+                          if (!allowedTypes.includes(file.type)) {
+                            setError('Logo must be a valid image format (JPEG, PNG, WebP, or GIF).');
+                            return;
+                          }
+
+                          setError(null);
+                          setLogoFile(file);
+                          const preview = await createImagePreview(file);
+                          setLogoPreview(preview);
+                        }}
+                      />
+                      {logoFile && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            if (!logoFile) return;
+
+                            setUploadingLogo(true);
+                            setError(null);
+                            setSuccessMessage(null);
+
+                            try {
+                              // Upload logo
+                              const logoUrl = await uploadCompanyLogo(logoFile);
+
+                              // Update company profile with logo URL
+                              const updatedProfile = await companyApi.updateCompanyProfile({
+                                logoUrl: logoUrl,
+                              });
+
+                              setProfile(updatedProfile);
+                              setLogoFile(null);
+                              setLogoPreview(null);
+                              setSuccessMessage('Logo updated successfully!');
+                              setTimeout(() => setSuccessMessage(null), 5000);
+                            } catch (error: any) {
+                              console.error('Failed to upload logo:', error);
+                              setError(error.message || 'Failed to upload logo. Please try again.');
+                            } finally {
+                              setUploadingLogo(false);
+                            }
+                          }}
+                          disabled={uploadingLogo}
+                        >
+                          {uploadingLogo ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            'Upload Logo'
+                          )}
+                        </Button>
+                      )}
+                      {profile?.logoUrl && !logoFile && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            setUploadingLogo(true);
+                            setError(null);
+                            setSuccessMessage(null);
+
+                            try {
+                              // Remove logo by setting to empty string
+                              const updatedProfile = await companyApi.updateCompanyProfile({
+                                logoUrl: '',
+                              });
+
+                              setProfile(updatedProfile);
+                              setSuccessMessage('Logo removed successfully!');
+                              setTimeout(() => setSuccessMessage(null), 5000);
+                            } catch (error: any) {
+                              console.error('Failed to remove logo:', error);
+                              setError(error.message || 'Failed to remove logo. Please try again.');
+                            } finally {
+                              setUploadingLogo(false);
+                            }
+                          }}
+                          disabled={uploadingLogo}
+                        >
+                          {uploadingLogo ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Removing...
+                            </>
+                          ) : (
+                            'Remove Logo'
+                          )}
+                        </Button>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        Recommended: Square image, at least 200x200px. Max 10MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
                     <Label htmlFor="name">Company Name</Label>

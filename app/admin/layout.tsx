@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { getStoredUser, hasRoleAccess } from '@/lib/auth';
-import { LayoutDashboard, Building2, Users, Package, ShoppingCart, Settings } from 'lucide-react';
+import { getStoredUser, hasRoleAccess, getLoginUrlWithRedirect } from '@/lib/auth';
+import { LayoutDashboard, Building2, Users, Package, ShoppingCart, Settings, Warehouse } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { title: 'Users', href: '/admin/users', icon: Users },
   { title: 'Shipments', href: '/admin/shipments', icon: Package },
   { title: 'Bookings', href: '/admin/bookings', icon: ShoppingCart },
+  { title: 'Warehouses', href: '/admin/warehouses', icon: Warehouse },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
@@ -23,13 +24,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const user = getStoredUser();
     if (!user || !hasRoleAccess(user.role, ['SUPER_ADMIN'])) {
-      router.push('/auth/login');
+      router.push(getLoginUrlWithRedirect(pathname));
     }
-  }, [router]);
+  }, [router, pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden">

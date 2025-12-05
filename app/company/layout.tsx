@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { getStoredUser, hasRoleAccess, setStoredUser } from '@/lib/auth';
+import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 
 const navItems = [
@@ -18,6 +18,7 @@ const navItems = [
   { title: 'Payments', href: '/company/payments', icon: Wallet },
   { title: 'Subscription', href: '/company/subscription', icon: CreditCard },
   { title: 'Team', href: '/company/team', icon: Users },
+  { title: 'Warehouses', href: '/company/warehouses', icon: Warehouse },
   { title: 'Settings', href: '/company/settings', icon: Settings },
 ];
 
@@ -34,7 +35,7 @@ export default function CompanyLayout({
     const checkAuth = async () => {
       const user = getStoredUser();
       if (!user || !hasRoleAccess(user.role, ['COMPANY_ADMIN', 'COMPANY_STAFF'])) {
-        router.push('/auth/login');
+        router.push(getLoginUrlWithRedirect(pathname));
         return;
       }
       

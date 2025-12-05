@@ -142,3 +142,25 @@ export const hasRoleAccess = (userRole: UserRole, requiredRoles: UserRole[]): bo
   return requiredRoles.includes(userRole);
 };
 
+/**
+ * Build login URL with redirect parameter to return user to the page they were trying to access
+ * @param redirectPath - The path to redirect to after login (defaults to current pathname if not provided)
+ * @returns Login URL with redirect query parameter
+ */
+export const getLoginUrlWithRedirect = (redirectPath?: string): string => {
+  if (typeof window === 'undefined') {
+    return '/auth/login';
+  }
+  
+  // Use provided path or current pathname (including search params for full URL context)
+  const targetPath = redirectPath || window.location.pathname + window.location.search;
+  
+  // Don't redirect back to auth pages or login itself
+  if (targetPath.startsWith('/auth/') || targetPath === '/auth/login') {
+    return '/auth/login';
+  }
+  
+  // Encode the redirect path as a query parameter
+  return `/auth/login?redirect=${encodeURIComponent(targetPath)}`;
+};
+

@@ -14,9 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, DollarSign, Loader2 } from 'lucide-react';
+import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, DollarSign, Loader2, Warehouse } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
-import type { CompanyDetail } from '@/lib/admin-api';
+import type { CompanyDetail, AdminWarehouseAddress } from '@/lib/admin-api';
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -31,6 +31,8 @@ export default function CompanyDetailPage() {
     revenue: number;
     teamSize: number;
   } | null>(null);
+  const [warehouses, setWarehouses] = useState<AdminWarehouseAddress[]>([]);
+  const [warehousesLoading, setWarehousesLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -53,7 +55,23 @@ export default function CompanyDetailPage() {
       }
     };
 
+    const fetchWarehouses = async () => {
+      if (!params.id || typeof params.id !== 'string') return;
+      
+      try {
+        setWarehousesLoading(true);
+        const warehousesData = await adminApi.getCompanyWarehouseAddresses(params.id);
+        setWarehouses(warehousesData);
+      } catch (err) {
+        // Silently fail for warehouses - not all companies may have them
+        console.error('Failed to load warehouses:', err);
+      } finally {
+        setWarehousesLoading(false);
+      }
+    };
+
     fetchCompany();
+    fetchWarehouses();
   }, [params.id]);
 
   const handleVerify = async () => {
@@ -256,6 +274,91 @@ export default function CompanyDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Warehouse Addresses */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Warehouse className="h-5 w-5 text-orange-600" />
+              <CardTitle>Warehouse Addresses</CardTitle>
+            </div>
+            <Badge variant="outline">{warehouses.length} {warehouses.length === 1 ? 'warehouse' : 'warehouses'}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {warehousesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+            </div>
+          ) : warehouses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Warehouse className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No warehouse addresses found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {warehouses.map((warehouse) => (
+                    <TableRow key={warehouse.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {warehouse.name}
+                          {warehouse.isDefault && (
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">Default</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs">
+                          <p className="text-sm">{warehouse.address}</p>
+                          {warehouse.postalCode && (
+                            <p className="text-xs text-gray-500">{warehouse.postalCode}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="text-sm">{warehouse.city}</p>
+                          {warehouse.state && (
+                            <p className="text-xs text-gray-500">{warehouse.state}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{warehouse.country}</span>
+                      </TableCell>
+                      <TableCell>
+                        {warehouse.isDefault ? (
+                          <Badge className="bg-green-100 text-green-800">Default</Badge>
+                        ) : (
+                          <Badge variant="outline">Standard</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-600">
+                          {new Date(warehouse.createdAt).toLocaleDateString()}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

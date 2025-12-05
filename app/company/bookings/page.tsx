@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,17 +42,13 @@ export default function BookingsPage() {
     hasMore: false,
   });
 
-  useEffect(() => {
-    fetchBookings();
-    fetchBookingStats();
-  }, [currentPage, statusFilter, searchQuery]);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
+      const limit = 20; // Fixed limit
       const response = await companyApi.getBookings({
-        limit: pagination.limit,
-        offset: currentPage * pagination.limit,
+        limit,
+        offset: currentPage * limit,
         status: statusFilter !== 'all' ? statusFilter : undefined,
         search: searchQuery || undefined,
       });
@@ -64,16 +60,21 @@ export default function BookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery]);
 
-  const fetchBookingStats = async () => {
+  const fetchBookingStats = useCallback(async () => {
     try {
       const statsData = await companyApi.getBookingStats();
       setStats(statsData);
     } catch (error) {
       console.error('Failed to fetch booking stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchBookings();
+    fetchBookingStats();
+  }, [fetchBookings, fetchBookingStats]);
 
   return (
     <div className="space-y-6">

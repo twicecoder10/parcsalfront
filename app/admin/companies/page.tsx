@@ -205,7 +205,14 @@ export default function CompaniesPage() {
               ) : (
                 companies.map((company) => (
                   <TableRow key={company.id}>
-                    <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link 
+                        href={`/companies/${company.slug || company.id}`}
+                        className="hover:text-orange-600 transition-colors"
+                      >
+                        {company.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>{company.country}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{company.activePlan?.name || 'N/A'}</Badge>

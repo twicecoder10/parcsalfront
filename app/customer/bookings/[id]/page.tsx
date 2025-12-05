@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 import { MapPin, Clock, Package, CheckCircle2, XCircle, Truck, AlertCircle, Loader2, ArrowLeft, CreditCard, Navigation } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 function BookingDetailContent() {
   const params = useParams();
@@ -33,9 +34,21 @@ function BookingDetailContent() {
   const [paymentVerificationAttempts, setPaymentVerificationAttempts] = useState(0);
   const maxVerificationAttempts = 5;
 
+  const fetchBookingData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await customerApi.getBookingById(bookingId);
+      setBooking(data);
+    } catch (error) {
+      console.error('Failed to fetch booking data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId]);
+
   useEffect(() => {
     fetchBookingData();
-  }, [bookingId]);
+  }, [fetchBookingData]);
 
   const pollPaymentStatus = async (attempt = 0): Promise<void> => {
     if (attempt >= maxVerificationAttempts) {
@@ -119,19 +132,9 @@ function BookingDetailContent() {
       // Clean URL
       window.history.replaceState({}, '', `/customer/bookings/${bookingId}`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, bookingId]);
 
-  const fetchBookingData = async () => {
-    setLoading(true);
-    try {
-      const data = await customerApi.getBookingById(bookingId);
-      setBooking(data);
-    } catch (error) {
-      console.error('Failed to fetch booking data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -403,14 +406,145 @@ function BookingDetailContent() {
           {booking.shipmentSlot?.company?.name && (
             <div className="flex items-center gap-3">
               <Truck className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium">Company</p>
-                <p className="text-sm text-gray-600">{booking.shipmentSlot.company.name}</p>
+              <div className="flex items-center gap-2 flex-1">
+                {booking.shipmentSlot.company.logoUrl && (
+                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                    <Image
+                      src={booking.shipmentSlot.company.logoUrl}
+                      alt={`${booking.shipmentSlot.company.name} logo`}
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                    />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">Company</p>
+                  <Link 
+                    href={`/companies/${booking.shipmentSlot.company.slug || booking.shipmentSlot.company.id}`}
+                    className="text-sm text-gray-600 hover:text-orange-600 transition-colors"
+                  >
+                    {booking.shipmentSlot.company.name}
+                  </Link>
+                </div>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Parcel Information */}
+      {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || booking.pickupMethod || booking.deliveryMethod || (booking.images && booking.images.length > 0)) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Parcel Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {booking.parcelType && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-medium">Parcel Type</p>
+                  <p className="text-sm text-gray-600">{booking.parcelType}</p>
+                </div>
+              </div>
+            )}
+            {booking.weight && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-medium">Actual Weight</p>
+                  <p className="text-sm text-gray-600">{booking.weight} kg</p>
+                </div>
+              </div>
+            )}
+            {booking.value && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium">Parcel Value</p>
+                  <p className="text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+            {(booking.length || booking.width || booking.height) && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Dimensions</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.length && booking.width && booking.height
+                      ? `${booking.length} × ${booking.width} × ${booking.height} cm`
+                      : booking.length
+                      ? `Length: ${booking.length} cm`
+                      : booking.width
+                      ? `Width: ${booking.width} cm`
+                      : booking.height
+                      ? `Height: ${booking.height} cm`
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.description && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Description</p>
+                  <p className="text-sm text-gray-600">{booking.description}</p>
+                </div>
+              </div>
+            )}
+            {booking.pickupMethod && (
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Pickup Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupMethod === 'PICKUP_FROM_SENDER'
+                      ? 'Company picks up from sender'
+                      : 'Sender drops off at company'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.deliveryMethod && (
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium">Delivery Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryMethod === 'RECEIVER_PICKS_UP'
+                      ? 'Receiver picks up from company'
+                      : 'Company delivers to receiver'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.images && booking.images.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-purple-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium mb-2">Images</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {booking.images.map((image: string, index: number) => (
+                      <div key={index} className="relative w-full h-32 rounded-lg border overflow-hidden">
+                        <Image
+                          src={image}
+                          alt={`Parcel image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Payment Info */}
       <Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Package, CheckCircle2, Truck, AlertCircle, Loader2, ArrowLeft, Navigation, Map, Phone, Mail, Plane, Ship, Train, Bus, Bike } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 function TrackContent() {
   const params = useParams();
@@ -19,11 +20,7 @@ function TrackContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTrackingData();
-  }, [bookingId]);
-
-  const fetchTrackingData = async () => {
+  const fetchTrackingData = useCallback(async () => {
     try {
       setError(null);
       const data = await customerApi.getBookingTrack(bookingId);
@@ -34,7 +31,11 @@ function TrackContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    fetchTrackingData();
+  }, [fetchTrackingData]);
 
   const statusColors: Record<string, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
@@ -392,11 +393,29 @@ function TrackContent() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <Truck className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium">{company.name}</p>
-                {company.slug && (
-                  <p className="text-sm text-gray-500">{company.slug}</p>
+              <div className="flex items-center gap-2 flex-1">
+                {company.logoUrl && (
+                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                    <Image
+                      src={company.logoUrl}
+                      alt={`${company.name} logo`}
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                    />
+                  </div>
                 )}
+                <div>
+                  <Link 
+                    href={`/companies/${company.slug || company.id || 'unknown'}`}
+                    className="font-medium hover:text-orange-600 transition-colors"
+                  >
+                    {company.name}
+                  </Link>
+                  {company.slug && (
+                    <p className="text-sm text-gray-500">{company.slug}</p>
+                  )}
+                </div>
               </div>
             </div>
             {company.contactPhone && (
@@ -435,7 +454,7 @@ function TrackContent() {
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="font-medium">Weight</p>
+                <p className="font-medium">Requested Weight</p>
                 <p className="text-sm text-gray-600">{booking.requestedWeightKg} kg</p>
               </div>
             </div>
@@ -444,7 +463,7 @@ function TrackContent() {
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="font-medium">Items</p>
+                <p className="font-medium">Requested Items</p>
                 <p className="text-sm text-gray-600">{booking.requestedItemsCount} items</p>
               </div>
             </div>
@@ -462,6 +481,119 @@ function TrackContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Parcel Information */}
+      {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || booking.pickupMethod || booking.deliveryMethod) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Parcel Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {booking.parcelType && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-medium">Parcel Type</p>
+                  <p className="text-sm text-gray-600">{booking.parcelType}</p>
+                </div>
+              </div>
+            )}
+            {booking.weight && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-medium">Actual Weight</p>
+                  <p className="text-sm text-gray-600">{booking.weight} kg</p>
+                </div>
+              </div>
+            )}
+            {booking.value && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium">Parcel Value</p>
+                  <p className="text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+            {(booking.length || booking.width || booking.height) && (
+              <div className="flex items-center gap-3">
+                <Package className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Dimensions</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.length && booking.width && booking.height
+                      ? `${booking.length} × ${booking.width} × ${booking.height} cm`
+                      : booking.length
+                      ? `Length: ${booking.length} cm`
+                      : booking.width
+                      ? `Width: ${booking.width} cm`
+                      : booking.height
+                      ? `Height: ${booking.height} cm`
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.description && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="font-medium">Description</p>
+                  <p className="text-sm text-gray-600">{booking.description}</p>
+                </div>
+              </div>
+            )}
+            {booking.pickupMethod && (
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Pickup Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupMethod === 'PICKUP_FROM_SENDER'
+                      ? 'Company picks up from sender'
+                      : 'Sender drops off at company'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.deliveryMethod && (
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium">Delivery Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryMethod === 'RECEIVER_PICKS_UP'
+                      ? 'Receiver picks up from company'
+                      : 'Company delivers to receiver'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.images && booking.images.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-purple-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium mb-2">Images</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {booking.images.map((image: string, index: number) => (
+                      <div key={index} className="relative w-full h-32 rounded-lg border overflow-hidden">
+                        <Image
+                          src={image}
+                          alt={`Parcel image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

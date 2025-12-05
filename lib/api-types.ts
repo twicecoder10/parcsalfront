@@ -130,3 +130,123 @@ export interface UnreadCountResponse {
   count: number;
 }
 
+// Booking Types
+export type ParcelType = 
+  | 'DOCUMENT' 
+  | 'PACKAGE' 
+  | 'FRAGILE' 
+  | 'ELECTRONICS' 
+  | 'CLOTHING' 
+  | 'FOOD' 
+  | 'MEDICINE' 
+  | 'OTHER';
+
+export type PickupMethod = 'PICKUP_FROM_SENDER' | 'DROP_OFF_AT_COMPANY';
+
+export type DeliveryMethod = 'RECEIVER_PICKS_UP' | 'DELIVERED_TO_RECEIVER';
+
+// Warehouse Address
+export interface WarehouseAddress {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string | null;
+  country: string;
+  postalCode: string | null;
+  isDefault: boolean;
+}
+
+export interface CreateBookingRequest {
+  shipmentSlotId: string;
+  requestedWeightKg?: number | null;
+  requestedItemsCount?: number | null;
+  notes?: string | null;
+  
+  // New parcel information fields
+  parcelType?: ParcelType | null;
+  weight?: number | null;
+  value?: number | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  description?: string | null;
+  images?: string[];
+  pickupMethod: PickupMethod;  // Required
+  deliveryMethod: DeliveryMethod; // Required
+  
+  // Pickup address fields (required if pickupMethod === "PICKUP_FROM_SENDER")
+  pickupAddress?: string | null;
+  pickupCity?: string | null;
+  pickupState?: string | null;
+  pickupCountry?: string | null;
+  pickupPostalCode?: string | null;
+  pickupContactName?: string | null;
+  pickupContactPhone?: string | null;
+  
+  // Pickup warehouse (required if pickupMethod === "DROP_OFF_AT_COMPANY")
+  pickupWarehouseId?: string | null;
+  
+  // Delivery address fields (required if deliveryMethod === "DELIVERED_TO_RECEIVER")
+  deliveryAddress?: string | null;
+  deliveryCity?: string | null;
+  deliveryState?: string | null;
+  deliveryCountry?: string | null;
+  deliveryPostalCode?: string | null;
+  deliveryContactName?: string | null;
+  deliveryContactPhone?: string | null;
+  
+  // Delivery warehouse (required if deliveryMethod === "RECEIVER_PICKS_UP")
+  deliveryWarehouseId?: string | null;
+}
+
+export interface Booking {
+  id: string;
+  shipmentSlotId: string;
+  customerId: string;
+  companyId: string;
+  requestedWeightKg?: number | null;
+  requestedItemsCount?: number | null;
+  calculatedPrice: string | number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_TRANSIT' | 'DELIVERED';
+  paymentStatus: 'PENDING' | 'PAID' | 'UNPAID' | 'REFUNDED';
+  notes?: string | null;
+  
+  // New parcel information fields
+  parcelType: ParcelType | null;
+  weight: number | null;
+  value: string | null;  // Decimal as string from API
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  description: string | null;
+  images: string[];
+  pickupMethod: PickupMethod;
+  deliveryMethod: DeliveryMethod;
+  
+  // Address fields
+  pickupAddress?: string | null;
+  pickupCity?: string | null;
+  pickupState?: string | null;
+  pickupCountry?: string | null;
+  pickupPostalCode?: string | null;
+  pickupContactName?: string | null;
+  pickupContactPhone?: string | null;
+  pickupWarehouseId?: string | null;
+  
+  deliveryAddress?: string | null;
+  deliveryCity?: string | null;
+  deliveryState?: string | null;
+  deliveryCountry?: string | null;
+  deliveryPostalCode?: string | null;
+  deliveryContactName?: string | null;
+  deliveryContactPhone?: string | null;
+  deliveryWarehouseId?: string | null;
+  
+  createdAt: string;
+  updatedAt: string;
+  shipmentSlot?: any;
+  customer?: any;
+  payment?: any;
+}
+

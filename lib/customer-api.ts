@@ -79,6 +79,34 @@ export const customerApi = {
     requestedWeightKg?: number;
     requestedItemsCount?: number;
     notes?: string;
+    parcelType?: 'DOCUMENT' | 'PACKAGE' | 'FRAGILE' | 'ELECTRONICS' | 'CLOTHING' | 'FOOD' | 'MEDICINE' | 'OTHER' | null;
+    weight?: number | null;
+    value?: number | null;
+    length?: number | null;
+    width?: number | null;
+    height?: number | null;
+    description?: string | null;
+    images?: string[];
+    pickupMethod: 'PICKUP_FROM_SENDER' | 'DROP_OFF_AT_COMPANY';
+    deliveryMethod: 'RECEIVER_PICKS_UP' | 'DELIVERED_TO_RECEIVER';
+    // Pickup address fields
+    pickupAddress?: string | null;
+    pickupCity?: string | null;
+    pickupState?: string | null;
+    pickupCountry?: string | null;
+    pickupPostalCode?: string | null;
+    pickupContactName?: string | null;
+    pickupContactPhone?: string | null;
+    pickupWarehouseId?: string | null;
+    // Delivery address fields
+    deliveryAddress?: string | null;
+    deliveryCity?: string | null;
+    deliveryState?: string | null;
+    deliveryCountry?: string | null;
+    deliveryPostalCode?: string | null;
+    deliveryContactName?: string | null;
+    deliveryContactPhone?: string | null;
+    deliveryWarehouseId?: string | null;
   }): Promise<any> => {
     const response = await api.post<ApiResponse<any>>('/customer/bookings', data);
     return extractData(response);
@@ -236,6 +264,36 @@ export const customerApi = {
       throw new Error(response.data.message || 'Failed to update notification preferences');
     }
     return { message: response.data.message || 'Notification preferences updated successfully' };
+  },
+
+  // Reviews
+  createReview: async (bookingId: string, data: {
+    rating: number;
+    comment?: string;
+  }): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`, data);
+    return extractData(response);
+  },
+
+  updateReview: async (bookingId: string, data: {
+    rating?: number;
+    comment?: string | null;
+  }): Promise<any> => {
+    const response = await api.put<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`, data);
+    return extractData(response);
+  },
+
+  deleteReview: async (bookingId: string): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/customer/bookings/${bookingId}/reviews`);
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to delete review');
+    }
+    return { message: response.data.message || 'Review deleted successfully' };
+  },
+
+  getReviewByBookingId: async (bookingId: string): Promise<any> => {
+    const response = await api.get<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`);
+    return extractData(response);
   },
 };
 

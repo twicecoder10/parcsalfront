@@ -1,4 +1,5 @@
 import { api, ApiResponse, extractData } from './api';
+import { ParcelType, PickupMethod, DeliveryMethod } from './api-types';
 
 // Helper to extract data and pagination from list responses
 // API returns: { status: "success", data: [...], pagination: {...} }
@@ -323,6 +324,17 @@ export interface AdminBookingDetail extends AdminBooking {
     stripePaymentIntentId?: string;
   } | null;
   updatedAt: string;
+  // New parcel information fields
+  parcelType?: ParcelType | null;
+  weight?: number | null;
+  value?: string | number | null;  // API may return as string or number
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  description?: string | null;
+  images?: string[];
+  pickupMethod?: PickupMethod;
+  deliveryMethod?: DeliveryMethod;
 }
 
 export interface BookingListParams extends PaginationParams {
@@ -390,6 +402,26 @@ export interface ReportParams {
 
 export interface RevenueReportParams extends ReportParams {
   groupBy?: 'day' | 'week' | 'month';
+}
+
+// Warehouse Address Types
+export interface AdminWarehouseAddress {
+  id: string;
+  companyId: string;
+  name: string;
+  address: string;
+  city: string;
+  state?: string;
+  country: string;
+  postalCode?: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+  company?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 }
 
 // ============================================================================
@@ -666,6 +698,31 @@ export const adminApi = {
       params,
     });
     return extractData(response);
+  },
+
+  // ==========================================================================
+  // Warehouse Addresses
+  // ==========================================================================
+
+  getCompanyWarehouseAddresses: async (companyId: string): Promise<AdminWarehouseAddress[]> => {
+    const response = await api.get<ApiResponse<AdminWarehouseAddress[]>>(`/admin/companies/${companyId}/warehouses`);
+    return extractData(response);
+  },
+
+  getWarehouseAddress: async (warehouseId: string): Promise<AdminWarehouseAddress> => {
+    const response = await api.get<ApiResponse<AdminWarehouseAddress>>(`/admin/warehouses/${warehouseId}`);
+    return extractData(response);
+  },
+
+  getAllWarehouseAddresses: async (params?: PaginationParams & {
+    companyId?: string;
+    search?: string;
+  }): Promise<{ data: AdminWarehouseAddress[]; pagination: PaginationResponse }> => {
+    const response = await api.get<ApiResponse<AdminWarehouseAddress[]> & { pagination: PaginationResponse }>(
+      '/admin/warehouses',
+      { params }
+    );
+    return extractListData<AdminWarehouseAddress>(response);
   },
 };
 

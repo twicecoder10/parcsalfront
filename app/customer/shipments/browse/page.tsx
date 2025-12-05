@@ -20,8 +20,10 @@ export default function BrowseShipmentsPage() {
   const [originCity, setOriginCity] = useState('');
   const [destinationCountry, setDestinationCountry] = useState('');
   const [destinationCity, setDestinationCity] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [departureDateFrom, setDepartureDateFrom] = useState('');
+  const [departureDateTo, setDepartureDateTo] = useState('');
+  const [arrivalDateFrom, setArrivalDateFrom] = useState('');
+  const [arrivalDateTo, setArrivalDateTo] = useState('');
   const [mode, setMode] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
@@ -31,6 +33,20 @@ export default function BrowseShipmentsPage() {
     total: 0,
     hasMore: false,
   });
+
+  // Helper to convert date string to ISO 8601 datetime
+  const dateToISO = (dateString: string, isEndDate = false): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isEndDate) {
+      // Set to end of day (23:59:59)
+      date.setHours(23, 59, 59, 999);
+    } else {
+      // Set to start of day (00:00:00)
+      date.setHours(0, 0, 0, 0);
+    }
+    return date.toISOString();
+  };
 
   useEffect(() => {
     fetchShipments();
@@ -48,12 +64,19 @@ export default function BrowseShipmentsPage() {
       if (originCity) params.originCity = originCity;
       if (destinationCountry) params.destinationCountry = destinationCountry;
       if (destinationCity) params.destinationCity = destinationCity;
-      if (dateFrom) params.dateFrom = dateFrom;
-      if (dateTo) params.dateTo = dateTo;
+
+      // Departure date filters (convert to ISO 8601)
+      if (departureDateFrom) params.dateFrom = dateToISO(departureDateFrom);
+      if (departureDateTo) params.dateTo = dateToISO(departureDateTo, true);
+
+      // Arrival date filters (convert to ISO 8601)
+      if (arrivalDateFrom) params.arrivalFrom = dateToISO(arrivalDateFrom);
+      if (arrivalDateTo) params.arrivalTo = dateToISO(arrivalDateTo, true);
+
       if (mode && mode !== 'all') params.mode = mode;
 
       const response = await shipmentApi.search(params);
-      
+
       // Filter out shipments where cutoff time or departure time has passed
       const availableShipments = response.data.filter((shipment: any) =>
         isShipmentAvailable({
@@ -61,13 +84,13 @@ export default function BrowseShipmentsPage() {
           departureTime: shipment.departureTime,
         })
       );
-      
+
       if (resetOffset) {
         setShipments(availableShipments);
       } else {
         setShipments([...shipments, ...availableShipments]);
       }
-      
+
       // Update pagination to reflect filtered results
       setPagination({
         ...response.pagination,
@@ -90,178 +113,221 @@ export default function BrowseShipmentsPage() {
     setOriginCity('');
     setDestinationCountry('');
     setDestinationCity('');
-    setDateFrom('');
-    setDateTo('');
+    setDepartureDateFrom('');
+    setDepartureDateTo('');
+    setArrivalDateFrom('');
+    setArrivalDateTo('');
     setMode('all');
     setTimeout(() => fetchShipments(true), 0);
   };
 
-  const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity || dateFrom || dateTo || (mode && mode !== 'all');
+  const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity ||
+    departureDateFrom || departureDateTo || arrivalDateFrom || arrivalDateTo || (mode && mode !== 'all');
 
   return (
     <GoogleMapsLoader>
       <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Browse Shipments</h1>
-        <p className="text-gray-600 mt-2">Find available shipment slots that match your needs</p>
-      </div>
+        <div>
+          <h1 className="text-3xl font-bold">Browse Shipments</h1>
+          <p className="text-gray-600 mt-2">Find available shipment slots that match your needs</p>
+        </div>
 
-      {/* Search Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Search Filters</CardTitle>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                <X className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
-              <CountrySelect
-                value={originCountry}
-                onChange={(value) => {
-                  setOriginCountry(value);
-                  setOriginCity('');
-                }}
-                label="Origin Country"
-                placeholder="Select origin country"
-              />
-            </div>
-            <div className="space-y-2">
-              <CitySelect
-                value={originCity}
-                onChange={(value) => setOriginCity(value)}
-                country={originCountry}
-                label="Origin City"
-                placeholder="Select origin city"
-                disabled={!originCountry}
-              />
-            </div>
-            <div className="space-y-2">
-              <CountrySelect
-                value={destinationCountry}
-                onChange={(value) => {
-                  setDestinationCountry(value);
-                  setDestinationCity('');
-                }}
-                label="Destination Country"
-                placeholder="Select destination country"
-              />
-            </div>
-            <div className="space-y-2">
-              <CitySelect
-                value={destinationCity}
-                onChange={(value) => setDestinationCity(value)}
-                country={destinationCountry}
-                label="Destination City"
-                placeholder="Select destination city"
-                disabled={!destinationCountry}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom">From Date</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateTo">To Date</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Select value={mode} onValueChange={setMode}>
-              <SelectTrigger>
-                <SelectValue placeholder="Transport Mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Modes</SelectItem>
-                <SelectItem value="TRUCK">Truck</SelectItem>
-                <SelectItem value="VAN">Van</SelectItem>
-                <SelectItem value="AIR">Air</SelectItem>
-                <SelectItem value="TRAIN">Train</SelectItem>
-                <SelectItem value="SHIP">Ship</SelectItem>
-                <SelectItem value="RIDER">Rider</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="mt-4">
-            <Button onClick={handleSearch} className="w-full md:w-auto" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Search
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Results */}
-      <div>
-        {loading && shipments.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-            </CardContent>
-          </Card>
-        ) : shipments.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-gray-600 mb-4">No shipments found</p>
-              <p className="text-sm text-gray-500">Try adjusting your search filters</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <div className="mb-4 text-sm text-gray-600">
-              Found {pagination.total} {pagination.total === 1 ? 'shipment' : 'shipments'}
-            </div>
-            <div className="grid gap-4">
-              {shipments.map((shipment) => (
-                <ShipmentCard key={shipment.id} shipment={shipment} />
-              ))}
-            </div>
-            {pagination.hasMore && (
-              <div className="mt-6 text-center">
-                <Button
-                  variant="outline"
-                  onClick={() => fetchShipments(false)}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load More'
-                  )}
+        {/* Search Filters */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Search Filters</CardTitle>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
                 </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <CountrySelect
+                  value={originCountry}
+                  onChange={(value) => {
+                    setOriginCountry(value);
+                    setOriginCity('');
+                  }}
+                  label="Origin Country"
+                  placeholder="Select origin country"
+                />
               </div>
-            )}
-          </>
-        )}
-      </div>
+              <div className="space-y-2">
+                <CitySelect
+                  value={originCity}
+                  onChange={(value) => setOriginCity(value)}
+                  country={originCountry}
+                  label="Origin City"
+                  placeholder="Select origin city"
+                  disabled={!originCountry}
+                />
+              </div>
+              <div className="space-y-2">
+                <CountrySelect
+                  value={destinationCountry}
+                  onChange={(value) => {
+                    setDestinationCountry(value);
+                    setDestinationCity('');
+                  }}
+                  label="Destination Country"
+                  placeholder="Select destination country"
+                />
+              </div>
+              <div className="space-y-2">
+                <CitySelect
+                  value={destinationCity}
+                  onChange={(value) => setDestinationCity(value)}
+                  country={destinationCountry}
+                  label="Destination City"
+                  placeholder="Select destination city"
+                  disabled={!destinationCountry}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Transport Mode</Label>
+                <Select value={mode} onValueChange={setMode}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Transport Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Modes</SelectItem>
+                    <SelectItem value="TRUCK">Truck</SelectItem>
+                    <SelectItem value="VAN">Van</SelectItem>
+                    <SelectItem value="AIR">Air</SelectItem>
+                    <SelectItem value="TRAIN">Train</SelectItem>
+                    <SelectItem value="SHIP">Ship</SelectItem>
+                    <SelectItem value="RIDER">Rider</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {/* Departure Date Range */}
+              <div className="border rounded-lg p-3 bg-gray-50/50">
+                <Label className="text-sm font-medium block mb-2 text-gray-700">
+                  Departure Range
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="departureDateFrom" className="text-xs text-gray-600">From</Label>
+                    <Input
+                      id="departureDateFrom"
+                      type="date"
+                      value={departureDateFrom}
+                      onChange={(e) => setDepartureDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="departureDateTo" className="text-xs text-gray-600">To</Label>
+                    <Input
+                      id="departureDateTo"
+                      type="date"
+                      value={departureDateTo}
+                      onChange={(e) => setDepartureDateTo(e.target.value)}
+                      min={departureDateFrom || undefined}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrival Date Range */}
+              <div className="border rounded-lg p-3 bg-gray-50/50">
+                <Label className="text-sm font-medium block mb-2 text-gray-700">
+                  Arrival Range
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="arrivalDateFrom" className="text-xs text-gray-600">From</Label>
+                    <Input
+                      id="arrivalDateFrom"
+                      type="date"
+                      value={arrivalDateFrom}
+                      onChange={(e) => setArrivalDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="arrivalDateTo" className="text-xs text-gray-600">To</Label>
+                    <Input
+                      id="arrivalDateTo"
+                      type="date"
+                      value={arrivalDateTo}
+                      onChange={(e) => setArrivalDateTo(e.target.value)}
+                      min={arrivalDateFrom || undefined}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button onClick={handleSearch} className="w-full md:w-auto" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Results */}
+        <div>
+          {loading && shipments.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+              </CardContent>
+            </Card>
+          ) : shipments.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-gray-600 mb-4">No shipments found</p>
+                <p className="text-sm text-gray-500">Try adjusting your search filters</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="mb-4 text-sm text-gray-600">
+                Found {pagination.total} {pagination.total === 1 ? 'shipment' : 'shipments'}
+              </div>
+              <div className="grid gap-4">
+                {shipments.map((shipment) => (
+                  <ShipmentCard key={shipment.id} shipment={shipment} />
+                ))}
+              </div>
+              {pagination.hasMore && (
+                <div className="mt-6 text-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchShipments(false)}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </GoogleMapsLoader>
   );

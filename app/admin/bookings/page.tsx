@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_TRANSIT' | 'DELIVERED' | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,24 +62,22 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery]);
 
   useEffect(() => {
     fetchBookings();
-  }, [currentPage, statusFilter]);
+  }, [fetchBookings]);
 
-  // Debounce search
+  // Debounce search - reset to page 0 when search changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (currentPage === 0) {
-        fetchBookings();
-      } else {
+      if (currentPage !== 0) {
         setCurrentPage(0);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, currentPage]);
 
   if (error && !bookings.length) {
     return (

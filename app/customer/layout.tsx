@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { getStoredUser, hasRoleAccess } from '@/lib/auth';
+import { getStoredUser, hasRoleAccess, getLoginUrlWithRedirect } from '@/lib/auth';
 import { shouldRedirectToOnboarding, checkEmailVerification } from '@/lib/onboarding';
 import { LayoutDashboard, Package, ShoppingCart, Settings } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
@@ -28,7 +28,7 @@ export default function CustomerLayout({
     const checkAuth = async () => {
       const user = getStoredUser();
       if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
-        router.push('/auth/login');
+        router.push(getLoginUrlWithRedirect(pathname));
         return;
       }
       

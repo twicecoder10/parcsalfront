@@ -1,5 +1,5 @@
 import { api, ApiResponse, extractData } from './api';
-import { Notification, NotificationListResponse, UnreadCountResponse, NotificationPagination } from './api-types';
+import { Notification, NotificationListResponse, UnreadCountResponse, NotificationPagination, ParcelType, PickupMethod, DeliveryMethod } from './api-types';
 
 // ============================================
 // Type Definitions
@@ -124,6 +124,19 @@ export interface Booking {
   payment?: any | null;
   createdAt: string;
   updatedAt?: string;
+  // New parcel information fields
+  parcelType?: ParcelType | null;
+  weight?: number | null;
+  value?: string | number | null;  // API may return as string or number
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  description?: string | null;
+  images?: string[];
+  pickupMethod?: PickupMethod;
+  deliveryMethod?: DeliveryMethod;
+  pickupProofImages?: string[];
+  deliveryProofImages?: string[];
 }
 
 export interface BookingStats {
@@ -262,6 +275,40 @@ export interface CompanySettings {
     bookingUpdates: boolean;
     shipmentUpdates: boolean;
   };
+}
+
+export interface WarehouseAddress {
+  id: string;
+  companyId: string;
+  name: string;
+  address: string;
+  city: string;
+  state?: string;
+  country: string;
+  postalCode?: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWarehouseAddressRequest {
+  name: string;
+  address: string;
+  city: string;
+  country: string;
+  state?: string;
+  postalCode?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateWarehouseAddressRequest {
+  name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  isDefault?: boolean;
 }
 
 
@@ -464,6 +511,17 @@ export const companyApi = {
 
   updateBookingStatus: async (bookingId: string, status: 'ACCEPTED' | 'IN_TRANSIT' | 'DELIVERED'): Promise<Booking> => {
     const response = await api.patch<ApiResponse<Booking>>(`/companies/bookings/${bookingId}/status`, { status });
+    return extractData(response);
+  },
+
+  addProofImagesToBooking: async (
+    bookingId: string,
+    data: {
+      pickupProofImages?: string[];
+      deliveryProofImages?: string[];
+    }
+  ): Promise<Booking> => {
+    const response = await api.patch<ApiResponse<Booking>>(`/companies/bookings/${bookingId}/proof-images`, data);
     return extractData(response);
   },
 
@@ -715,5 +773,42 @@ export const companyApi = {
       throw new Error(response.data.message || 'Failed to delete read notifications');
     }
     return { count: response.data.data?.count || 0 };
+  },
+
+  // ============================================
+  // Warehouse Addresses
+  // ============================================
+
+  createWarehouseAddress: async (data: CreateWarehouseAddressRequest): Promise<WarehouseAddress> => {
+    const response = await api.post<ApiResponse<WarehouseAddress>>('/companies/warehouses', data);
+    return extractData(response);
+  },
+
+  getWarehouseAddresses: async (): Promise<WarehouseAddress[]> => {
+    const response = await api.get<ApiResponse<WarehouseAddress[]>>('/companies/warehouses');
+    return extractData(response);
+  },
+
+  updateWarehouseAddress: async (id: string, data: UpdateWarehouseAddressRequest): Promise<WarehouseAddress> => {
+    const response = await api.patch<ApiResponse<WarehouseAddress>>(`/companies/warehouses/${id}`, data);
+    return extractData(response);
+  },
+
+  deleteWarehouseAddress: async (id: string): Promise<void> => {
+    await api.delete<ApiResponse<{ message: string }>>(`/companies/warehouses/${id}`);
+  },
+
+  // ============================================
+  // Reviews
+  // ============================================
+
+  replyToReview: async (bookingId: string, reply: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    return extractData(response);
+  },
+
+  updateReviewReply: async (bookingId: string, reply: string): Promise<any> => {
+    const response = await api.put<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    return extractData(response);
   },
 };

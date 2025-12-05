@@ -174,7 +174,12 @@ export default function PublicShipmentDetailPage() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-lg">{shipment.company.name}</p>
+                      <Link 
+                        href={`/companies/${shipment.company.slug || shipment.company.id}`}
+                        className="font-medium text-lg hover:text-orange-600 transition-colors"
+                      >
+                        {shipment.company.name}
+                      </Link>
                       {shipment.company.isVerified && (
                         <Badge variant="outline" className="mt-1">Verified</Badge>
                       )}

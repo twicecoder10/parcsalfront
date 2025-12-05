@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getLoginUrlWithRedirect } from './auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -42,7 +43,8 @@ api.interceptors.response.use(
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('token'); // legacy
           localStorage.removeItem('user');
-          window.location.href = '/auth/login';
+          // Include current path as redirect parameter to return user after login
+          window.location.href = getLoginUrlWithRedirect();
         } else {
           // Still clear tokens on auth failure, but don't redirect
           localStorage.removeItem('accessToken');
@@ -313,6 +315,68 @@ export const publicApi = {
       throw new Error('Invalid response format');
     }
     return response.data.data;
+  },
+  
+  // Get warehouse addresses for a company (public endpoint)
+  getWarehouseAddresses: async (companyIdOrSlug: string): Promise<any[]> => {
+    const response = await publicApiInstance.get<ApiResponse<any[]>>(
+      `/companies/${companyIdOrSlug}/warehouses`
+    );
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to fetch warehouse addresses');
+    }
+    if (!response.data.data) {
+      throw new Error('Invalid response format');
+    }
+    return response.data.data;
+  },
+
+  // Get public company profile (limited information)
+  getCompanyProfile: async (companyIdOrSlug: string): Promise<{
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    country: string;
+    city: string;
+    website?: string;
+    logoUrl?: string;
+    isVerified: boolean;
+    rating?: number | null;
+    reviewCount: number;
+  }> => {
+    const response = await publicApiInstance.get<ApiResponse<{
+      id: string;
+      name: string;
+      slug: string;
+      description?: string;
+      country: string;
+      city: string;
+      website?: string;
+      logoUrl?: string;
+      isVerified: boolean;
+      rating?: number | null;
+      reviewCount: number;
+    }>>(`/companies/${companyIdOrSlug}`);
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to fetch company profile');
+    }
+    if (!response.data.data) {
+      throw new Error('Invalid response format');
+    }
+    return response.data.data;
+  },
+
+  // Get company reviews (public endpoint)
+  getCompanyReviews: async (companyIdOrSlug: string, params?: {
+    limit?: number;
+    offset?: number;
+    rating?: number;
+  }): Promise<any> => {
+    const response = await publicApiInstance.get(`/companies/${companyIdOrSlug}/reviews`, { params });
+    
+    // The reviews endpoint doesn't wrap in ApiResponse format
+    return response.data;
   },
 };
 

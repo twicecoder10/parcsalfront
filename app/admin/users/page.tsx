@@ -221,7 +221,18 @@ export default function UsersPage() {
                         {user.role.replace('_', ' ')}
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.company ? user.company.name : '-'}</TableCell>
+                    <TableCell>
+                      {user.company ? (
+                        <Link 
+                          href={`/admin/companies/${user.company.id}`}
+                          className="hover:text-orange-600 transition-colors"
+                        >
+                          {user.company.name}
+                        </Link>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
                     <TableCell>
                       {new Date(user.createdAt).toLocaleDateString()}
                     </TableCell>
