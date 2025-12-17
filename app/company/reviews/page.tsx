@@ -133,13 +133,11 @@ export default function ReviewsPage() {
       // Use pagination total for accurate total count (across all pages, not just current page)
       const totalFromPagination = pagination.total > 0 ? pagination.total : reviews.length;
       
-      // If current stats show 0 total but we have reviews, update with calculated stats
-      if (!stats || stats.totalReviews === 0) {
-        setStats({
-          ...calculatedStats,
-          totalReviews: totalFromPagination,
-        });
-      }
+      // Update stats with calculated values from current page reviews
+      setStats({
+        ...calculatedStats,
+        totalReviews: totalFromPagination,
+      });
     } else if (reviews.length === 0 && pagination.total === 0) {
       // If no reviews, ensure stats show 0
       setStats({
@@ -148,7 +146,7 @@ export default function ReviewsPage() {
         ratingDistribution: {},
       });
     }
-  }, [reviews, pagination.total, stats, calculateStatsFromReviews]);
+  }, [reviews, pagination.total, calculateStatsFromReviews]);
 
   const handleReply = async (review: Review) => {
     if (!replyText.trim()) return;

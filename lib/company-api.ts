@@ -137,6 +137,7 @@ export interface Booking {
   deliveryMethod?: DeliveryMethod;
   pickupProofImages?: string[];
   deliveryProofImages?: string[];
+  labelUrl?: string | null; // URL to the printable shipping label PDF
 }
 
 export interface BookingStats {
@@ -566,6 +567,20 @@ export const companyApi = {
 
   getBookingStats: async (): Promise<BookingStats> => {
     const response = await api.get<ApiResponse<BookingStats>>('/companies/bookings/stats');
+    return extractData(response);
+  },
+
+  // ============================================
+  // Booking Labels
+  // ============================================
+
+  getBookingLabel: async (bookingId: string): Promise<{ labelUrl: string; bookingId: string }> => {
+    const response = await api.get<ApiResponse<{ labelUrl: string; bookingId: string }>>(`/companies/bookings/${bookingId}/label`);
+    return extractData(response);
+  },
+
+  regenerateBookingLabel: async (bookingId: string): Promise<Booking> => {
+    const response = await api.post<ApiResponse<Booking>>(`/companies/bookings/${bookingId}/label/regenerate`);
     return extractData(response);
   },
 

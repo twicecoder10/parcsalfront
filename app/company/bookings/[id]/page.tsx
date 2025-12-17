@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Package, DollarSign, User, Mail, Phone, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck } from 'lucide-react';
+import { MapPin, Clock, Package, DollarSign, User, Mail, Phone, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -51,6 +51,11 @@ export default function BookingDetailPage() {
   const [uploadingProofImages, setUploadingProofImages] = useState(false);
   const [proofImageError, setProofImageError] = useState<string | null>(null);
   const [proofImageSuccess, setProofImageSuccess] = useState<string | null>(null);
+  
+  // Label state
+  const [labelLoading, setLabelLoading] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [regeneratingLabel, setRegeneratingLabel] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     setLoading(true);
@@ -110,6 +115,57 @@ export default function BookingDetailPage() {
       alert(error.message || 'Failed to update booking status. Please try again.');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handlePrintLabel = async () => {
+    if (!booking) return;
+    setLabelLoading(true);
+    setLabelError(null);
+    try {
+      let labelUrl = booking.labelUrl;
+      
+      // If label URL is not available, fetch it
+      if (!labelUrl) {
+        const labelData = await companyApi.getBookingLabel(bookingId);
+        labelUrl = labelData.labelUrl;
+        // Update booking with label URL
+        setBooking({ ...booking, labelUrl });
+      }
+      
+      // Open label in new window and trigger print
+      if (labelUrl) {
+        const printWindow = window.open(labelUrl, '_blank');
+        if (printWindow) {
+          printWindow.addEventListener('load', () => {
+            printWindow.print();
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Failed to get label:', error);
+      setLabelError(error.message || 'Failed to get label. Please try again.');
+      // Show error for a few seconds
+      setTimeout(() => setLabelError(null), 5000);
+    } finally {
+      setLabelLoading(false);
+    }
+  };
+
+  const handleRegenerateLabel = async () => {
+    if (!booking) return;
+    setRegeneratingLabel(true);
+    setLabelError(null);
+    try {
+      const updatedBooking = await companyApi.regenerateBookingLabel(bookingId);
+      setBooking(updatedBooking);
+    } catch (error: any) {
+      console.error('Failed to regenerate label:', error);
+      setLabelError(error.message || 'Failed to regenerate label. Please try again.');
+      // Show error for a few seconds
+      setTimeout(() => setLabelError(null), 5000);
+    } finally {
+      setRegeneratingLabel(false);
     }
   };
 
@@ -253,6 +309,107 @@ export default function BookingDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Shipping Label Section */}
+      {booking.status !== 'PENDING' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Shipping Label</CardTitle>
+            <CardDescription>Print or regenerate the shipping label for this booking</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {labelError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{labelError}</p>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Label Status</p>
+                <p className="text-sm text-gray-600">
+                  {booking.labelUrl ? (
+                    <span className="text-green-600">Available</span>
+                  ) : (
+                    <span className="text-yellow-600">Not Generated</span>
+                  )}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {booking.labelUrl ? (
+                  <Button
+                    onClick={handlePrintLabel}
+                    disabled={labelLoading}
+                    variant="default"
+                  >
+                    {labelLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print Label
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleRegenerateLabel}
+                    disabled={regeneratingLabel}
+                    variant="outline"
+                  >
+                    {regeneratingLabel ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Regenerating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Generate Label
+                      </>
+                    )}
+                  </Button>
+                )}
+                {booking.labelUrl && (
+                  <Button
+                    onClick={handleRegenerateLabel}
+                    disabled={regeneratingLabel}
+                    variant="outline"
+                  >
+                    {regeneratingLabel ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Regenerating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Regenerate
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            {booking.labelUrl && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-gray-600 mb-2">Label Preview</p>
+                <div className="border rounded-lg overflow-hidden">
+                  <iframe
+                    src={booking.labelUrl}
+                    className="w-full h-96"
+                    title="Shipping Label Preview"
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Customer Info */}
       <Card>
