@@ -146,6 +146,51 @@ export const extractData = <T>(response: { data: ApiResponse<T> }): T => {
   return response.data.data;
 };
 
+// Helper to extract error message from axios errors
+// Prioritizes API error messages over generic frontend error messages
+export const getErrorMessage = (error: any): string => {
+  // Check if it's an axios error with response data
+  if (error.response?.data) {
+    // Check if the response has the API error format with status: 'error'
+    if (error.response.data.status === 'error' && error.response.data.message) {
+      return error.response.data.message;
+    }
+    // Check if there's a message field directly in the response data
+    if (error.response.data.message) {
+      return error.response.data.message;
+    }
+    // Check for error field (some APIs use 'error' instead of 'message')
+    if (error.response.data.error) {
+      return typeof error.response.data.error === 'string' 
+        ? error.response.data.error 
+        : error.response.data.error.message || String(error.response.data.error);
+    }
+    // Check for errors array (validation errors)
+    if (Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
+      return error.response.data.errors[0].message || String(error.response.data.errors[0]);
+    }
+  }
+  
+  // Fall back to error.message only if it's not a generic axios error message
+  const genericMessages = [
+    'Request failed with status code',
+    'Network Error',
+    'timeout of',
+    'ECONNABORTED',
+  ];
+  
+  const errorMsg = error.message || '';
+  const isGenericMessage = genericMessages.some(msg => errorMsg.includes(msg));
+  
+  // If it's a generic message, return a more user-friendly default
+  if (isGenericMessage) {
+    return 'An error occurred. Please try again.';
+  }
+  
+  // Otherwise, use the error message or default
+  return errorMsg || 'An error occurred';
+};
+
 // Auth API
 export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {

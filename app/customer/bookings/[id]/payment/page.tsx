@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, CreditCard, AlertCircle } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
+import { getErrorMessage } from '@/lib/api';
 import Link from 'next/link';
 
 function PaymentContent() {
@@ -36,7 +37,7 @@ function PaymentContent() {
       }
     } catch (error: any) {
       console.error('Failed to fetch booking data:', error);
-      setError(error.message || 'Failed to load booking');
+      setError(getErrorMessage(error) || 'Failed to load booking');
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ function PaymentContent() {
       window.location.href = url;
     } catch (error: any) {
       console.error('Payment failed:', error);
-      setError(error.message || 'Failed to create payment session. Please try again.');
+      setError(getErrorMessage(error) || 'Failed to create payment session. Please try again.');
       setProcessing(false);
     }
   };

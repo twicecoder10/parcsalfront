@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/dialog';
 import { companyApi } from '@/lib/company-api';
 import type { Shipment } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -45,6 +47,7 @@ const modeLabels: Record<string, string> = {
 };
 
 export default function ShipmentsPage() {
+  const permissions = usePermissions();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,7 +126,7 @@ export default function ShipmentsPage() {
       fetchShipments();
     } catch (error: any) {
       console.error('Failed to delete shipment:', error);
-      alert(error.message || 'Failed to delete shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
     }
   };
 
@@ -134,7 +137,7 @@ export default function ShipmentsPage() {
       fetchShipments();
     } catch (error: any) {
       console.error('Failed to publish shipment:', error);
-      alert(error.message || 'Failed to publish shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
     }
   };
 
@@ -145,7 +148,7 @@ export default function ShipmentsPage() {
       fetchShipments();
     } catch (error: any) {
       console.error('Failed to close shipment:', error);
-      alert(error.message || 'Failed to close shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
     }
   };
 
@@ -156,12 +159,14 @@ export default function ShipmentsPage() {
           <h1 className="text-3xl font-bold">Shipments</h1>
           <p className="text-gray-600 mt-2">Manage your shipment slots</p>
         </div>
-        <Link href="/company/shipments/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Shipment Slot
-          </Button>
-        </Link>
+        {canPerformAction(permissions, 'createShipment') && (
+          <Link href="/company/shipments/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Shipment Slot
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -285,47 +290,49 @@ export default function ShipmentsPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        {shipment.status !== 'CLOSED' && (
-                          <>
-                            <Link href={`/company/shipments/${shipment.id}/edit`}>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            {shipment.status === 'PUBLISHED' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCloseShipment(shipment.id)}
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </Button>
-                            )}
-                          </>
+                        {shipment.status !== 'CLOSED' && canPerformAction(permissions, 'updateShipment') && (
+                          <Link href={`/company/shipments/${shipment.id}/edit`}>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        )}
+                        {shipment.status === 'PUBLISHED' && canPerformAction(permissions, 'updateShipmentStatus') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCloseShipment(shipment.id)}
+                          >
+                            <X className="h-4 w-4 text-red-600" />
+                          </Button>
                         )}
                         {shipment.status === 'DRAFT' && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handlePublishShipment(shipment.id)}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Publish"
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setShipmentToDelete(shipment.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Delete"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                            {canPerformAction(permissions, 'updateShipmentStatus') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handlePublishShipment(shipment.id)}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="Publish"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canPerformAction(permissions, 'deleteShipment') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShipmentToDelete(shipment.id);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

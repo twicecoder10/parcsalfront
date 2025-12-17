@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { Shipment } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -113,9 +114,7 @@ export default function EditShipmentPage() {
     } catch (error: any) {
       console.error('Failed to fetch shipment:', error);
       // Extract error message from API response
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          'Failed to load shipment data. Please try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to load shipment data. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -170,10 +169,7 @@ export default function EditShipmentPage() {
     } catch (error: any) {
       console.error('Failed to update shipment:', error);
       // Extract error message from API response
-      // Check axios error response first, then check the error message from extractData
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          'Failed to update shipment. Please check all fields and try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to update shipment. Please check all fields and try again.';
       setError(errorMessage);
       setSaving(false);
     }

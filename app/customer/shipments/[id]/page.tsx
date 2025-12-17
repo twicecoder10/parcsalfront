@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Truck, Package, Star, AlertCircle, Loader2 } from 'lucide-react';
-import { shipmentApi, publicApi } from '@/lib/api';
+import { shipmentApi, publicApi, getErrorMessage } from '@/lib/api';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
 import type { Shipment, ParcelType, PickupMethod, DeliveryMethod, WarehouseAddress } from '@/lib/api-types';
@@ -301,7 +301,7 @@ export default function ShipmentDetailPage() {
           imageUrls = await uploadParcelImages(selectedImages);
           setUploadedImageUrls(imageUrls);
         } catch (uploadError: any) {
-          setError(uploadError.message || 'Failed to upload images. Please try again.');
+          setError(getErrorMessage(uploadError) || 'Failed to upload images. Please try again.');
           setBooking(false);
           setUploadingImages(false);
           return;
@@ -365,10 +365,7 @@ export default function ShipmentDetailPage() {
     } catch (error: any) {
       console.error('Failed to create booking:', error);
       // Extract error message from API response
-      // Check axios error response first, then check the error message from extractData
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          'Failed to create booking. Please try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to create booking. Please try again.';
       setError(errorMessage);
     } finally {
       setBooking(false);

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { Subscription, Plan } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 
 function SubscriptionContent() {
   const searchParams = useSearchParams();
@@ -61,7 +62,7 @@ function SubscriptionContent() {
       window.location.href = checkoutSession.url;
     } catch (error: any) {
       console.error('Failed to create checkout session:', error);
-      alert(error.message || 'Failed to start checkout. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to start checkout. Please try again.');
       setProcessingPlan(null);
     }
   };
@@ -72,7 +73,7 @@ function SubscriptionContent() {
       window.location.href = url;
     } catch (error: any) {
       console.error('Failed to update payment method:', error);
-      alert(error.message || 'Failed to update payment method. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to update payment method. Please try again.');
     }
   };
 
@@ -201,7 +202,7 @@ function SubscriptionContent() {
                 )}
               </div>
               <Button variant="outline" onClick={handleUpdatePaymentMethod}>
-                Update Payment Method
+                Manage Billing
               </Button>
             </div>
           </CardContent>

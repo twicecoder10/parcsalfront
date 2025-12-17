@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getStoredUser } from '@/lib/auth';
 import { customerApi } from '@/lib/customer-api';
+import { getErrorMessage } from '@/lib/api';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
@@ -88,7 +89,7 @@ export default function SettingsPage() {
       });
       setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
+      setMessage({ type: 'error', text: getErrorMessage(error) || 'Failed to update profile' });
     } finally {
       setSaving(false);
     }
@@ -120,7 +121,7 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to change password' });
+      setMessage({ type: 'error', text: getErrorMessage(error) || 'Failed to change password' });
     } finally {
       setSaving(false);
     }
@@ -137,7 +138,7 @@ export default function SettingsPage() {
       });
       setMessage({ type: 'success', text: 'Notification preferences updated successfully' });
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update notification preferences' });
+      setMessage({ type: 'error', text: getErrorMessage(error) || 'Failed to update notification preferences' });
     } finally {
       setSaving(false);
     }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Package, CheckCircle2, Truck, AlertCircle, Loader2, ArrowLeft, Navigation, Map, Phone, Mail, Plane, Ship, Train, Bus, Bike } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
+import { getErrorMessage } from '@/lib/api';
 import { format } from 'date-fns';
 import Image from 'next/image';
 
@@ -27,7 +28,7 @@ function TrackContent() {
       setTrackingData(data);
     } catch (err: any) {
       console.error('Failed to fetch tracking data:', err);
-      setError(err.message || 'Failed to load tracking information');
+      setError(getErrorMessage(err) || 'Failed to load tracking information');
     } finally {
       setLoading(false);
     }

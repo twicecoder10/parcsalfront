@@ -7,21 +7,63 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
-const navItems = [
-  { title: 'Overview', href: '/company/overview', icon: LayoutDashboard },
-  { title: 'Slots', href: '/company/shipments', icon: Package },
-  { title: 'Bookings', href: '/company/bookings', icon: ShoppingCart },
-  { title: 'Reviews', href: '/company/reviews', icon: Star },
-  { title: 'Analytics', href: '/company/analytics', icon: BarChart3 },
-  { title: 'Payments', href: '/company/payments', icon: Wallet },
-  { title: 'Subscription', href: '/company/subscription', icon: CreditCard },
-  { title: 'Team', href: '/company/team', icon: Users },
-  { title: 'Warehouses', href: '/company/warehouses', icon: Warehouse },
-  { title: 'Settings', href: '/company/settings', icon: Settings },
-];
+// Helper function to get navigation items based on permissions
+function getNavItems(permissions: ReturnType<typeof usePermissions>) {
+  const user = getStoredUser();
+  const isCompanyStaff = user?.role === 'COMPANY_STAFF';
+  
+  const items = [
+    { title: 'Overview', href: '/company/overview', icon: LayoutDashboard },
+  ];
+
+  // Only show Shipments if user can view shipments
+  if (canPerformAction(permissions, 'viewShipments')) {
+    items.push({ title: 'Slots', href: '/company/shipments', icon: Package });
+  }
+
+  // Only show Bookings if user can view bookings
+  if (canPerformAction(permissions, 'viewBookings')) {
+    items.push({ title: 'Bookings', href: '/company/bookings', icon: ShoppingCart });
+  }
+
+  // Scan - always visible for company users (scanning barcodes)
+  items.push({ title: 'Scan', href: '/company/scan', icon: ScanLine });
+
+  // Reviews - typically always visible for company users
+  items.push({ title: 'Reviews', href: '/company/reviews', icon: Star });
+
+  // Only show Analytics if user can view analytics
+  if (canPerformAction(permissions, 'viewAnalytics')) {
+    items.push({ title: 'Analytics', href: '/company/analytics', icon: BarChart3 });
+  }
+
+  // Payments - only if user can view payments
+  if (canPerformAction(permissions, 'viewPayments')) {
+    items.push({ title: 'Payments', href: '/company/payments', icon: Wallet });
+  }
+
+  // Subscription - only visible for company admins, not staff
+  if (!isCompanyStaff) {
+    items.push({ title: 'Subscription', href: '/company/subscription', icon: CreditCard });
+  }
+
+  // Team - only visible for company admins, not staff
+  if (!isCompanyStaff) {
+    items.push({ title: 'Team', href: '/company/team', icon: Users });
+  }
+
+  // Warehouses - typically always visible for company users
+  items.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
+
+  // Settings - typically always visible for company users
+  items.push({ title: 'Settings', href: '/company/settings', icon: Settings });
+
+  return items;
+}
 
 export default function CompanyLayout({
   children,
@@ -31,6 +73,10 @@ export default function CompanyLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
+  const permissions = usePermissions();
+  
+  // Get navigation items based on permissions
+  const navItems = getNavItems(permissions);
 
   useEffect(() => {
     const checkAuth = async () => {

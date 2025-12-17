@@ -27,6 +27,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { companyApi } from '@/lib/company-api';
 import type { Shipment, Booking, SlotTrackingStatus } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -87,6 +89,7 @@ const getValidNextStatuses = (currentStatus: SlotTrackingStatus | undefined): Sl
 export default function ShipmentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const permissions = usePermissions();
   const shipmentId = params.id as string;
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -136,7 +139,7 @@ export default function ShipmentDetailPage() {
       setShipment({ ...shipment, status: 'PUBLISHED' });
     } catch (error: any) {
       console.error('Failed to publish shipment:', error);
-      alert(error.message || 'Failed to publish shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -150,7 +153,7 @@ export default function ShipmentDetailPage() {
       router.push('/company/shipments');
     } catch (error: any) {
       console.error('Failed to delete shipment:', error);
-      alert(error.message || 'Failed to delete shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
     } finally {
       setProcessing(false);
       setDeleteDialogOpen(false);
@@ -166,7 +169,7 @@ export default function ShipmentDetailPage() {
       setCloseDialogOpen(false);
     } catch (error: any) {
       console.error('Failed to close shipment:', error);
-      alert(error.message || 'Failed to close shipment. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -212,7 +215,7 @@ export default function ShipmentDetailPage() {
       }
     } catch (error: any) {
       console.error('Failed to update tracking status:', error);
-      alert(error.message || 'Failed to update tracking status. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to update tracking status. Please try again.');
     } finally {
       setUpdatingTrackingStatus(false);
     }
@@ -245,10 +248,11 @@ export default function ShipmentDetailPage() {
     );
   }
 
-  const canEdit = shipment && shipment.status !== 'CLOSED';
-  const canClose = shipment && shipment.status === 'PUBLISHED';
-  const canPublish = shipment && shipment.status === 'DRAFT';
-  const canDelete = shipment && shipment.status === 'DRAFT';
+  const canEdit = shipment && shipment.status !== 'CLOSED' && canPerformAction(permissions, 'updateShipment');
+  const canClose = shipment && shipment.status === 'PUBLISHED' && canPerformAction(permissions, 'updateShipmentStatus');
+  const canPublish = shipment && shipment.status === 'DRAFT' && canPerformAction(permissions, 'updateShipmentStatus');
+  const canDelete = shipment && shipment.status === 'DRAFT' && canPerformAction(permissions, 'deleteShipment');
+  const canUpdateTracking = canPerformAction(permissions, 'updateShipmentTrackingStatus');
   const capacityPercentage = shipment ? (shipment.remainingCapacityKg / shipment.totalCapacityKg) * 100 : 0;
 
   return (
@@ -485,7 +489,7 @@ export default function ShipmentDetailPage() {
           )}
 
           {/* Tracking Status Update */}
-          {shipment.status === 'PUBLISHED' && (
+          {shipment.status === 'PUBLISHED' && canUpdateTracking && (
             <div className="pt-4 border-t">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

@@ -137,7 +137,7 @@ export interface Booking {
   deliveryMethod?: DeliveryMethod;
   pickupProofImages?: string[];
   deliveryProofImages?: string[];
-  labelUrl?: string | null; // URL to the printable shipping label PDF
+  labelUrl?: string;
 }
 
 export interface BookingStats {
@@ -194,6 +194,28 @@ export interface TeamMember {
   role: 'COMPANY_ADMIN' | 'COMPANY_STAFF';
   status: string;
   joinedAt: string;
+}
+
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'CANCELLED';
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role: 'COMPANY_ADMIN' | 'COMPANY_STAFF';
+  status: InvitationStatus;
+  invitedAt: string;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  invitedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  acceptedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
 }
 
 export interface CompanyProfile {
@@ -269,6 +291,40 @@ export interface PaymentStats {
   };
 }
 
+export interface Review {
+  id: string;
+  bookingId: string;
+  companyId: string;
+  customerId: string;
+  rating: number;
+  comment?: string;
+  companyReply?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+  booking?: {
+    id: string;
+    shipmentSlot?: {
+      originCity: string;
+      originCountry: string;
+      destinationCity: string;
+      destinationCountry: string;
+    };
+  };
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    [key: number]: number;
+  };
+}
+
 export interface CompanySettings {
   notifications: {
     email: boolean;
@@ -276,6 +332,16 @@ export interface CompanySettings {
     bookingUpdates: boolean;
     shipmentUpdates: boolean;
   };
+}
+
+export interface StaffRestrictions {
+  member: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+  restrictions: Record<string, boolean>;
 }
 
 export interface WarehouseAddress {
@@ -325,45 +391,6 @@ export interface PaginatedResponse<T> {
     offset: number;
     total: number;
     hasMore: boolean;
-  };
-}
-
-export interface Review {
-  id: string;
-  bookingId: string;
-  companyId?: string;
-  customerId?: string;
-  customer: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-  rating: number;
-  comment?: string | null;
-  companyReply?: string | null;
-  createdAt: string;
-  updatedAt?: string;
-  booking?: {
-    id: string;
-    shipmentSlot?: {
-      id?: string;
-      originCity: string;
-      destinationCity: string;
-    };
-  };
-  company?: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl?: string;
-  };
-}
-
-export interface ReviewStats {
-  averageRating: number;
-  totalReviews: number;
-  ratingDistribution?: {
-    [key: number]: number; // rating -> count
   };
 }
 
@@ -570,12 +597,8 @@ export const companyApi = {
     return extractData(response);
   },
 
-  // ============================================
-  // Booking Labels
-  // ============================================
-
-  getBookingLabel: async (bookingId: string): Promise<{ labelUrl: string; bookingId: string }> => {
-    const response = await api.get<ApiResponse<{ labelUrl: string; bookingId: string }>>(`/companies/bookings/${bookingId}/label`);
+  getBookingLabel: async (bookingId: string): Promise<{ labelUrl: string }> => {
+    const response = await api.get<ApiResponse<{ labelUrl: string }>>(`/companies/bookings/${bookingId}/label`);
     return extractData(response);
   },
 
@@ -652,6 +675,27 @@ export const companyApi = {
 
   removeTeamMember: async (memberId: string): Promise<void> => {
     await api.delete<ApiResponse<{ message: string }>>(`/companies/team/${memberId}`);
+  },
+
+  // ============================================
+  // Team Invitations
+  // ============================================
+
+  getInvitations: async (status?: InvitationStatus): Promise<TeamInvitation[]> => {
+    const response = await api.get<ApiResponse<TeamInvitation[]>>('/companies/team/invitations', {
+      params: status ? { status } : {},
+    });
+    return extractData(response);
+  },
+
+  getPendingInvitations: async (): Promise<TeamInvitation[]> => {
+    const response = await api.get<ApiResponse<TeamInvitation[]>>('/companies/team/invitations/pending');
+    return extractData(response);
+  },
+
+  revokeInvitation: async (invitationId: string): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/companies/team/invitations/${invitationId}`);
+    return extractData(response);
   },
 
   // ============================================
@@ -860,138 +904,65 @@ export const companyApi = {
     limit?: number;
     offset?: number;
     rating?: number;
-  }): Promise<PaginatedResponse<Review>> => {
-    const response = await api.get<any>('/companies/me/reviews', {
-      params: {
-        limit: params?.limit ?? 20,
-        offset: params?.offset ?? 0,
-        ...(params?.rating && { rating: params.rating }),
-      },
+  }): Promise<{ data: Review[]; pagination: any }> => {
+    const response = await api.get<{ data: Review[]; pagination: any }>('/companies/me/reviews', {
+      params,
     });
-    
-    // Default pagination structure
-    const defaultPagination = {
-      limit: params?.limit ?? 20,
-      offset: params?.offset ?? 0,
-      total: 0,
-      hasMore: false,
-    };
-    
-    const responseData = response.data;
-    
-    // Handle direct paginated response format: { data: [...], pagination: {...} }
-    // This is the actual API response format
-    if (responseData && Array.isArray(responseData.data) && responseData.pagination) {
-      return {
-        data: responseData.data,
-        pagination: responseData.pagination,
-      };
-    }
-    
-    // Handle wrapped response format: { status: 'success', data: [...], pagination: {...} }
-    if (responseData?.status === 'success') {
-      return {
-        data: responseData.data || [],
-        pagination: responseData.pagination || defaultPagination,
-      };
-    }
-    
-    // Fallback: try extractData, but return safe defaults if it fails
-    try {
-      const data = extractData(response as { data: ApiResponse<PaginatedResponse<Review>> });
-      return data;
-    } catch (error) {
-      // Return safe defaults if extraction fails
-      return {
-        data: [],
-        pagination: defaultPagination,
-      };
-    }
+    // The endpoint returns { data: Review[], pagination: {...} } directly (not wrapped in ApiResponse)
+    // axios response.data contains the actual response body
+    return response.data;
   },
 
   getCompanyReviewStats: async (): Promise<ReviewStats> => {
-    try {
-      const response = await api.get<any>('/companies/me/reviews/stats');
-      const responseData = response.data;
-      
-      // Handle wrapped response format: { status: 'success', data: {...} }
-      if (responseData?.status === 'success' && responseData.data) {
-        return responseData.data;
-      }
-      
-      // Handle direct stats object: { averageRating: X, totalReviews: Y, ... }
-      if (responseData && (responseData.averageRating !== undefined || responseData.totalReviews !== undefined)) {
-        return {
-          averageRating: responseData.averageRating ?? 0,
-          totalReviews: responseData.totalReviews ?? 0,
-          ratingDistribution: responseData.ratingDistribution || {},
-        };
-      }
-      
-      // Fallback: try extractData
-      try {
-        return extractData(response as { data: ApiResponse<ReviewStats> });
-      } catch (error) {
-        // If all else fails, return default stats
-        console.warn('Failed to parse review stats, returning defaults:', error);
-        return {
-          averageRating: 0,
-          totalReviews: 0,
-          ratingDistribution: {},
-        };
-      }
-    } catch (error) {
-      console.error('Failed to fetch review stats:', error);
-      // Return default stats on error
-      return {
-        averageRating: 0,
-        totalReviews: 0,
-        ratingDistribution: {},
-      };
-    }
+    const response = await api.get<{ averageRating: number | null; reviewCount: number }>('/companies/me/reviews/stats');
+    // Backend returns { averageRating, reviewCount } directly (not wrapped in ApiResponse)
+    // axios response.data contains the actual response body
+    const data = response.data;
+    return {
+      averageRating: (data.averageRating !== null && data.averageRating !== undefined) ? data.averageRating : 0,
+      totalReviews: data.reviewCount || 0,
+      ratingDistribution: {}, // Backend doesn't return this, will be calculated from reviews
+    };
   },
 
   replyToReview: async (bookingId: string, reply: string): Promise<any> => {
-    const response = await api.post<any>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
-    
-    // Handle API response structure
-    if (response.data?.status === 'success') {
-      return response.data.data || response.data;
-    }
-    
-    // If response.data is already the review object (direct response)
-    if (response.data?.id || response.data?.bookingId) {
-      return response.data;
-    }
-    
-    // Fallback to extractData for nested structure
-    try {
-      return extractData(response as { data: ApiResponse<any> });
-    } catch (error) {
-      // If extraction fails, return the response data as-is
-      return response.data;
-    }
+    const response = await api.post<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    return extractData(response);
   },
 
   updateReviewReply: async (bookingId: string, reply: string): Promise<any> => {
-    const response = await api.put<any>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
-    
-    // Handle API response structure
-    if (response.data?.status === 'success') {
-      return response.data.data || response.data;
-    }
-    
-    // If response.data is already the review object (direct response)
-    if (response.data?.id || response.data?.bookingId) {
-      return response.data;
-    }
-    
-    // Fallback to extractData for nested structure
-    try {
-      return extractData(response as { data: ApiResponse<any> });
-    } catch (error) {
-      // If extraction fails, return the response data as-is
-      return response.data;
-    }
+    const response = await api.put<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    return extractData(response);
+  },
+
+  // ============================================
+  // Barcode Scanning
+  // ============================================
+
+  scanBarcode: async (barcode: string): Promise<Booking> => {
+    const response = await api.post<ApiResponse<Booking>>('/bookings/scan', { barcode });
+    return extractData(response);
+  },
+
+  // ============================================
+  // Staff Restrictions
+  // ============================================
+
+  // Get current user's restrictions (for frontend layout)
+  getMyRestrictions: async (): Promise<{ restrictions: Record<string, boolean>; isAdmin: boolean }> => {
+    const response = await api.get<ApiResponse<{ restrictions: Record<string, boolean>; isAdmin: boolean }>>('/companies/me/restrictions');
+    return extractData(response);
+  },
+
+  // Get restrictions for a specific staff member (admin only)
+  getStaffRestrictions: async (memberId: string): Promise<StaffRestrictions> => {
+    const response = await api.get<ApiResponse<StaffRestrictions>>(`/companies/team/${memberId}/restrictions`);
+    return extractData(response);
+  },
+
+  // Update restrictions for a specific staff member (admin only)
+  updateStaffRestrictions: async (memberId: string, restrictions: Record<string, boolean>): Promise<StaffRestrictions> => {
+    const response = await api.put<ApiResponse<StaffRestrictions>>(`/companies/team/${memberId}/restrictions`, { restrictions });
+    return extractData(response);
   },
 };

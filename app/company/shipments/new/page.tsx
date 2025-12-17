@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -88,10 +89,7 @@ export default function NewShipmentPage() {
     } catch (error: any) {
       console.error('Failed to create shipment:', error);
       // Extract error message from API response
-      // Check axios error response first, then check the error message from extractData
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          'Failed to create shipment. Please check all fields and try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to create shipment. Please check all fields and try again.';
       setError(errorMessage);
       setSaving(false);
     }

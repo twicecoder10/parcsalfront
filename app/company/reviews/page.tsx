@@ -21,8 +21,10 @@ import { Star, MessageSquare, Loader2, User, Calendar, ArrowLeft, ArrowRight, Se
 import { companyApi } from '@/lib/company-api';
 import type { Review, ReviewStats } from '@/lib/company-api';
 import { format } from 'date-fns';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
 export default function ReviewsPage() {
+  const permissions = usePermissions();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ReviewStats | null>(null);
@@ -347,20 +349,21 @@ export default function ReviewsPage() {
                       )}
                     </div>
                     
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant={review.companyReply ? 'outline' : 'default'}
-                          size="sm"
-                          onClick={() => {
-                            setReplyingTo(review.id);
-                            setReplyText(review.companyReply || '');
-                          }}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          {review.companyReply ? 'Edit Reply' : 'Reply'}
-                        </Button>
-                      </DialogTrigger>
+                    {canPerformAction(permissions, 'replyToReview') && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={review.companyReply ? 'outline' : 'default'}
+                            size="sm"
+                            onClick={() => {
+                              setReplyingTo(review.id);
+                              setReplyText(review.companyReply || '');
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            {review.companyReply ? 'Edit Reply' : 'Reply'}
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>
@@ -420,6 +423,7 @@ export default function ReviewsPage() {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
+                    )}
                   </div>
                 </div>
               ))}

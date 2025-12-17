@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { Eye, Search, Loader2, DollarSign, TrendingUp, AlertCircle, RefreshCw, Calendar } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { Payment, PaymentStats } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
 const statusColors: Record<string, string> = {
   PAID: 'bg-green-100 text-green-800',
@@ -39,6 +41,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function PaymentsPage() {
+  const permissions = usePermissions();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<PaymentStats | null>(null);
@@ -61,9 +64,13 @@ export default function PaymentsPage() {
   const [processingRefund, setProcessingRefund] = useState(false);
 
   useEffect(() => {
-    fetchPayments();
-    fetchPaymentStats();
-  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo]);
+    if (canPerformAction(permissions, 'viewPayments')) {
+      fetchPayments();
+    }
+    if (canPerformAction(permissions, 'viewPaymentStats')) {
+      fetchPaymentStats();
+    }
+  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo, permissions]);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -93,6 +100,9 @@ export default function PaymentsPage() {
   };
 
   const fetchPaymentStats = async () => {
+    if (!canPerformAction(permissions, 'viewPaymentStats')) {
+      return;
+    }
     setStatsLoading(true);
     try {
       const statsData = await companyApi.getPaymentStats({
@@ -123,13 +133,17 @@ export default function PaymentsPage() {
       fetchPaymentStats();
     } catch (error: any) {
       console.error('Failed to process refund:', error);
-      alert(error.message || 'Failed to process refund. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to process refund. Please try again.');
     } finally {
       setProcessingRefund(false);
     }
   };
 
   const openRefundDialog = (payment: Payment) => {
+    if (!canPerformAction(permissions, 'processRefund')) {
+      alert('You do not have permission to process refunds.');
+      return;
+    }
     if (payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
       alert('Only paid or partially refunded payments can be refunded.');
       return;
@@ -140,6 +154,21 @@ export default function PaymentsPage() {
     setRefundDialogOpen(true);
   };
 
+  // Check if user has permission to view payments
+  if (!permissions.loading && !canPerformAction(permissions, 'viewPayments')) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="text-center py-8">
+            <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Access Restricted</h2>
+            <p className="text-gray-600">You do not have permission to view payments.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -148,7 +177,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Stats Cards */}
-      {!statsLoading && stats && (
+      {canPerformAction(permissions, 'viewPaymentStats') && !statsLoading && stats && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -368,7 +397,8 @@ export default function PaymentsPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        {(payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && (
+                        {(payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
+                         canPerformAction(permissions, 'processRefund') && (
                           <Button
                             variant="ghost"
                             size="sm"

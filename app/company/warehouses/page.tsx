@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { WarehouseAddress, CreateWarehouseAddressRequest, UpdateWarehouseAddressRequest } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -75,7 +76,7 @@ export default function WarehousesPage() {
       const data = await companyApi.getWarehouseAddresses();
       setWarehouses(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load warehouses');
+      setError(getErrorMessage(err) || 'Failed to load warehouses');
     } finally {
       setLoading(false);
     }
@@ -148,7 +149,7 @@ export default function WarehousesPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
       fetchWarehouses();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create warehouse address');
+      setError(getErrorMessage(err) || 'Failed to create warehouse address');
     } finally {
       setSaving(false);
     }
@@ -180,7 +181,7 @@ export default function WarehousesPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
       fetchWarehouses();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update warehouse address');
+      setError(getErrorMessage(err) || 'Failed to update warehouse address');
     } finally {
       setSaving(false);
     }
@@ -200,7 +201,7 @@ export default function WarehousesPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
       fetchWarehouses();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete warehouse address');
+      setError(getErrorMessage(err) || 'Failed to delete warehouse address');
     } finally {
       setSaving(false);
     }

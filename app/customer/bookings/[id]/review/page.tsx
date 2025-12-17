@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Star, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
+import { getErrorMessage } from '@/lib/api';
 import { format } from 'date-fns';
 
 export default function ReviewPage() {
@@ -51,7 +52,7 @@ export default function ReviewPage() {
       }
     } catch (err: any) {
       console.error('Failed to fetch data:', err);
-      setError(err.message || 'Failed to load booking details');
+      setError(getErrorMessage(err) || 'Failed to load booking details');
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export default function ReviewPage() {
       setSuccess(true);
     } catch (err: any) {
       console.error('Failed to submit review:', err);
-      setError(err.message || 'Failed to submit review. Please try again.');
+      setError(getErrorMessage(err) || 'Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -125,7 +126,7 @@ export default function ReviewPage() {
       }, 3000);
     } catch (err: any) {
       console.error('Failed to delete review:', err);
-      setError(err.message || 'Failed to delete review. Please try again.');
+      setError(getErrorMessage(err) || 'Failed to delete review. Please try again.');
     } finally {
       setDeleting(false);
     }

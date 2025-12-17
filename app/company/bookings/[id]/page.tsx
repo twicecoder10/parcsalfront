@@ -21,8 +21,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { companyApi } from '@/lib/company-api';
 import type { Booking } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 import { uploadProofImages, createImagePreview, MAX_PROOF_IMAGES } from '@/lib/upload-api';
 import { X, Upload } from 'lucide-react';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -36,6 +38,7 @@ const statusColors: Record<string, string> = {
 export default function BookingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const permissions = usePermissions();
   const bookingId = params.id as string;
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ export default function BookingDetailPage() {
       setBooking(updatedBooking);
     } catch (error: any) {
       console.error('Failed to accept booking:', error);
-      alert(error.message || 'Failed to accept booking. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to accept booking. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -98,7 +101,7 @@ export default function BookingDetailPage() {
       setRejectionReason('');
     } catch (error: any) {
       console.error('Failed to reject booking:', error);
-      alert(error.message || 'Failed to reject booking. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to reject booking. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -112,7 +115,7 @@ export default function BookingDetailPage() {
       setBooking(updatedBooking);
     } catch (error: any) {
       console.error('Failed to update booking status:', error);
-      alert(error.message || 'Failed to update booking status. Please try again.');
+      alert(getErrorMessage(error) || 'Failed to update booking status. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -145,7 +148,7 @@ export default function BookingDetailPage() {
     } catch (error: any) {
       console.error('Failed to get label:', error);
       // Extract error message from API response
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to get label. Please try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to get label. Please try again.';
       setLabelError(errorMessage);
       // Show error for a few seconds
       setTimeout(() => setLabelError(null), 5000);
@@ -164,7 +167,7 @@ export default function BookingDetailPage() {
     } catch (error: any) {
       console.error('Failed to regenerate label:', error);
       // Extract error message from API response
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to regenerate label. Please try again.';
+      const errorMessage = getErrorMessage(error) || 'Failed to regenerate label. Please try again.';
       setLabelError(errorMessage);
       // Show error for a few seconds
       setTimeout(() => setLabelError(null), 5000);
@@ -200,10 +203,12 @@ export default function BookingDetailPage() {
     );
   }
 
-  const canAccept = booking.status === 'PENDING';
-  const canReject = booking.status === 'PENDING';
-  const canMarkInTransit = booking.status === 'ACCEPTED';
-  const canMarkDelivered = booking.status === 'IN_TRANSIT';
+  const canAccept = booking.status === 'PENDING' && canPerformAction(permissions, 'acceptBooking');
+  const canReject = booking.status === 'PENDING' && canPerformAction(permissions, 'rejectBooking');
+  const canMarkInTransit = booking.status === 'ACCEPTED' && canPerformAction(permissions, 'updateBookingStatus');
+  const canMarkDelivered = booking.status === 'IN_TRANSIT' && canPerformAction(permissions, 'updateBookingStatus');
+  const canAddProofImages = canPerformAction(permissions, 'addProofImages');
+  const canRegenerateLabel = canPerformAction(permissions, 'regenerateLabel');
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -340,7 +345,7 @@ export default function BookingDetailPage() {
                 </p>
               </div>
               <div className="flex gap-2">
-                {booking.labelUrl ? (
+                {booking.labelUrl && (
                   <Button
                     onClick={handlePrintLabel}
                     disabled={labelLoading}
@@ -358,43 +363,47 @@ export default function BookingDetailPage() {
                       </>
                     )}
                   </Button>
-                ) : (
-                  <Button
-                    onClick={handleRegenerateLabel}
-                    disabled={regeneratingLabel}
-                    variant="outline"
-                  >
-                    {regeneratingLabel ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Regenerating...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Generate Label
-                      </>
-                    )}
-                  </Button>
                 )}
-                {booking.labelUrl && (
-                  <Button
-                    onClick={handleRegenerateLabel}
-                    disabled={regeneratingLabel}
-                    variant="outline"
-                  >
-                    {regeneratingLabel ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Regenerating...
-                      </>
+                {canRegenerateLabel && (
+                  <>
+                    {!booking.labelUrl ? (
+                      <Button
+                        onClick={handleRegenerateLabel}
+                        disabled={regeneratingLabel}
+                        variant="outline"
+                      >
+                        {regeneratingLabel ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Generate Label
+                          </>
+                        )}
+                      </Button>
                     ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Regenerate
-                      </>
+                      <Button
+                        onClick={handleRegenerateLabel}
+                        disabled={regeneratingLabel}
+                        variant="outline"
+                      >
+                        {regeneratingLabel ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Regenerate
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -700,7 +709,7 @@ export default function BookingDetailPage() {
       </Card>
 
       {/* Proof Images Section */}
-      {booking.status !== 'CANCELLED' && booking.status !== 'REJECTED' && (
+      {booking.status !== 'CANCELLED' && booking.status !== 'REJECTED' && canAddProofImages && (
         <Card>
           <CardHeader>
             <CardTitle>Proof Images</CardTitle>
@@ -961,7 +970,7 @@ export default function BookingDetailPage() {
                       setTimeout(() => setProofImageSuccess(null), 5000);
                     } catch (error: any) {
                       console.error('Failed to upload proof images:', error);
-                      setProofImageError(error.message || 'Failed to upload proof images. Please try again.');
+                      setProofImageError(getErrorMessage(error) || 'Failed to upload proof images. Please try again.');
                     } finally {
                       setUploadingProofImages(false);
                     }

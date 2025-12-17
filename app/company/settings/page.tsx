@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { CompanyProfile, CompanySettings } from '@/lib/company-api';
+import { getErrorMessage } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
@@ -52,6 +53,11 @@ export default function CompanySettingsPage() {
     shipmentUpdates: true,
   });
 
+  // Staff restrictions state
+  const [savingRestrictions, setSavingRestrictions] = useState(false);
+  const [restrictions, setRestrictions] = useState<Record<string, boolean>>({});
+  const [staffRestrictions, setStaffRestrictions] = useState<any>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -85,9 +91,10 @@ export default function CompanySettingsPage() {
       if (settingsData) {
         setNotificationSettings(settingsData.notifications);
       }
+      
     } catch (error) {
       console.error('Failed to fetch company data:', error);
-      setError('Failed to load company data. Please refresh the page.');
+      setError(getErrorMessage(error) || 'Failed to load company data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +113,7 @@ export default function CompanySettingsPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error: any) {
       console.error('Failed to update profile:', error);
-      setError(error.message || 'Failed to update company profile. Please try again.');
+      setError(getErrorMessage(error) || 'Failed to update company profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -127,10 +134,36 @@ export default function CompanySettingsPage() {
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error: any) {
       console.error('Failed to update settings:', error);
-      setError(error.message || 'Failed to update settings. Please try again.');
+      setError(getErrorMessage(error) || 'Failed to update settings. Please try again.');
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const handleSubmitRestrictions = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingRestrictions(true);
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      // TODO: This function requires a memberId parameter. Update this when implementing staff restrictions UI.
+      // const updated = await companyApi.updateStaffRestrictions(memberId, restrictions);
+      // setStaffRestrictions(updated);
+      setError('Staff restrictions feature is not yet implemented. A member ID is required.');
+    } catch (error: any) {
+      console.error('Failed to update restrictions:', error);
+      setError(getErrorMessage(error) || 'Failed to update staff restrictions. Please try again.');
+    } finally {
+      setSavingRestrictions(false);
+    }
+  };
+
+  const toggleRestriction = (action: string) => {
+    setRestrictions((prev) => ({
+      ...prev,
+      [action]: !prev[action],
+    }));
   };
 
   if (loading) {
@@ -268,7 +301,7 @@ export default function CompanySettingsPage() {
                               setTimeout(() => setSuccessMessage(null), 5000);
                             } catch (error: any) {
                               console.error('Failed to upload logo:', error);
-                              setError(error.message || 'Failed to upload logo. Please try again.');
+                              setError(getErrorMessage(error) || 'Failed to upload logo. Please try again.');
                             } finally {
                               setUploadingLogo(false);
                             }
@@ -306,7 +339,7 @@ export default function CompanySettingsPage() {
                               setTimeout(() => setSuccessMessage(null), 5000);
                             } catch (error: any) {
                               console.error('Failed to remove logo:', error);
-                              setError(error.message || 'Failed to remove logo. Please try again.');
+                              setError(getErrorMessage(error) || 'Failed to remove logo. Please try again.');
                             } finally {
                               setUploadingLogo(false);
                             }
@@ -585,8 +618,10 @@ export default function CompanySettingsPage() {
         </CardContent>
       </Card>
         </TabsContent>
+
       </Tabs>
       </div>
     </GoogleMapsLoader>
   );
 }
+

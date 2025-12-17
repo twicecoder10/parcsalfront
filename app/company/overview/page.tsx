@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Clock, ShoppingCart, DollarSign, Plus, AlertCircle, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
-import { authApi } from '@/lib/api';
+import { authApi, getErrorMessage } from '@/lib/api';
 import { companyApi } from '@/lib/company-api';
 import type { User } from '@/lib/api';
 import type { OverviewStats, RecentBooking, UpcomingShipment } from '@/lib/company-api';
@@ -55,7 +55,7 @@ export default function CompanyOverviewPage() {
       setUpcomingShipments(shipmentsResponse);
     } catch (error: any) {
       console.error('Failed to fetch overview data:', error);
-      setError(error.message || 'Failed to load overview data. Please try again.');
+      setError(getErrorMessage(error) || 'Failed to load overview data. Please try again.');
     } finally {
       setStatsLoading(false);
     }

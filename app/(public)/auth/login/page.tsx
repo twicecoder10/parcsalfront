@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PasswordInput } from '@/components/password-input';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { authApi } from '@/lib/api';
+import { authApi, getErrorMessage } from '@/lib/api';
 import { saveAuthData, getPostAuthPathAsync, getStoredUser, getDashboardPath } from '@/lib/auth';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, Lock, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
@@ -56,26 +56,8 @@ function LoginForm() {
       }
     },
     onError: (err: any) => {
-      // Try to extract error message from various possible locations
-      let errorMessage = 'Login failed. Please check your credentials and try again.';
-      
-      if (err.response?.data) {
-        // Check for API response format: { status: 'error', message: '...' }
-        if (err.response.data.message) {
-          errorMessage = err.response.data.message;
-        } 
-        // Check for alternative error format
-        else if (err.response.data.error) {
-          errorMessage = err.response.data.error;
-        }
-        // Check for nested error message
-        else if (err.response.data.data?.message) {
-          errorMessage = err.response.data.data.message;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
+      // Extract error message from API response, fallback to default
+      const errorMessage = getErrorMessage(err) || 'Login failed. Please check your credentials and try again.';
       setError(errorMessage);
     },
   });

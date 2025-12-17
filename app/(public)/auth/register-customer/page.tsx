@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { authApi } from '@/lib/api';
+import { authApi, getErrorMessage } from '@/lib/api';
 import { saveAuthData, getPostAuthPathAsync, getStoredUser, getDashboardPath } from '@/lib/auth';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, User, Lock, AlertCircle, Loader2, ArrowRight, Building2, Sparkles } from 'lucide-react';
@@ -43,7 +43,7 @@ export default function RegisterCustomerPage() {
       router.push(redirectPath);
     },
     onError: (err: any) => {
-      const errorMessage = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
+      const errorMessage = getErrorMessage(err) || 'Registration failed. Please try again.';
       setError(errorMessage);
     },
   });
