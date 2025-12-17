@@ -52,7 +52,17 @@ export default function BrowseShipmentsPage() {
     fetchShipments();
   }, []);
 
-  const fetchShipments = async (resetOffset = true) => {
+  const fetchShipments = async (resetOffset = true, overrideFilters?: {
+    originCountry?: string;
+    originCity?: string;
+    destinationCountry?: string;
+    destinationCity?: string;
+    departureDateFrom?: string;
+    departureDateTo?: string;
+    arrivalDateFrom?: string;
+    arrivalDateTo?: string;
+    mode?: string;
+  }) => {
     setLoading(true);
     try {
       const params: any = {
@@ -60,20 +70,33 @@ export default function BrowseShipmentsPage() {
         offset: resetOffset ? 0 : pagination.offset,
       };
 
-      if (originCountry) params.originCountry = originCountry;
-      if (originCity) params.originCity = originCity;
-      if (destinationCountry) params.destinationCountry = destinationCountry;
-      if (destinationCity) params.destinationCity = destinationCity;
+      // Use override filters if provided, otherwise use state values
+      const filters = overrideFilters || {
+        originCountry,
+        originCity,
+        destinationCountry,
+        destinationCity,
+        departureDateFrom,
+        departureDateTo,
+        arrivalDateFrom,
+        arrivalDateTo,
+        mode,
+      };
+
+      if (filters.originCountry) params.originCountry = filters.originCountry;
+      if (filters.originCity) params.originCity = filters.originCity;
+      if (filters.destinationCountry) params.destinationCountry = filters.destinationCountry;
+      if (filters.destinationCity) params.destinationCity = filters.destinationCity;
 
       // Departure date filters (convert to ISO 8601)
-      if (departureDateFrom) params.dateFrom = dateToISO(departureDateFrom);
-      if (departureDateTo) params.dateTo = dateToISO(departureDateTo, true);
+      if (filters.departureDateFrom) params.dateFrom = dateToISO(filters.departureDateFrom);
+      if (filters.departureDateTo) params.dateTo = dateToISO(filters.departureDateTo, true);
 
       // Arrival date filters (convert to ISO 8601)
-      if (arrivalDateFrom) params.arrivalFrom = dateToISO(arrivalDateFrom);
-      if (arrivalDateTo) params.arrivalTo = dateToISO(arrivalDateTo, true);
+      if (filters.arrivalDateFrom) params.arrivalFrom = dateToISO(filters.arrivalDateFrom);
+      if (filters.arrivalDateTo) params.arrivalTo = dateToISO(filters.arrivalDateTo, true);
 
-      if (mode && mode !== 'all') params.mode = mode;
+      if (filters.mode && filters.mode !== 'all') params.mode = filters.mode;
 
       const response = await shipmentApi.search(params);
 
@@ -109,6 +132,7 @@ export default function BrowseShipmentsPage() {
   };
 
   const handleClearFilters = () => {
+    // Clear all filters
     setOriginCountry('');
     setOriginCity('');
     setDestinationCountry('');
@@ -118,7 +142,19 @@ export default function BrowseShipmentsPage() {
     setArrivalDateFrom('');
     setArrivalDateTo('');
     setMode('all');
-    setTimeout(() => fetchShipments(true), 0);
+    
+    // Fetch immediately with cleared filters (empty values)
+    fetchShipments(true, {
+      originCountry: '',
+      originCity: '',
+      destinationCountry: '',
+      destinationCity: '',
+      departureDateFrom: '',
+      departureDateTo: '',
+      arrivalDateFrom: '',
+      arrivalDateTo: '',
+      mode: 'all',
+    });
   };
 
   const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity ||

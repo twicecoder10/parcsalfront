@@ -271,16 +271,52 @@ export const customerApi = {
     rating: number;
     comment?: string;
   }): Promise<any> => {
-    const response = await api.post<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`, data);
-    return extractData(response);
+    const response = await api.post<any>(`/customer/bookings/${bookingId}/reviews`, data);
+    
+    // The API returns the review object directly (not wrapped in { status: 'success', data: ... })
+    // NEVER use extractData here as it will throw "Invalid response format" error
+    const responseData = response?.data;
+    
+    // If responseData is null/undefined, return empty object
+    if (!responseData) {
+      return {};
+    }
+    
+    // Check if it's a direct review object (has id or bookingId)
+    if (responseData.id || responseData.bookingId) {
+      return responseData;
+    }
+    
+    // Handle wrapped response format (if API changes in future)
+    if (responseData.status === 'success' && responseData.data) {
+      return responseData.data;
+    }
+    
+    // If neither format matches, return the data as-is
+    // This prevents "Invalid response format" errors
+    return responseData;
   },
 
   updateReview: async (bookingId: string, data: {
     rating?: number;
     comment?: string | null;
   }): Promise<any> => {
-    const response = await api.put<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`, data);
-    return extractData(response);
+    const response = await api.put<any>(`/customer/bookings/${bookingId}/reviews`, data);
+    
+    // The API returns the review object directly (not wrapped)
+    // Check if response.data is the review object
+    if (response.data && (response.data.id || response.data.bookingId)) {
+      return response.data;
+    }
+    
+    // Handle wrapped response format (if API changes in future)
+    if (response.data?.status === 'success' && response.data.data) {
+      return response.data.data;
+    }
+    
+    // If neither format matches, return the data as-is
+    // This prevents "Invalid response format" errors
+    return response.data || {};
   },
 
   deleteReview: async (bookingId: string): Promise<{ message: string }> => {
@@ -292,8 +328,25 @@ export const customerApi = {
   },
 
   getReviewByBookingId: async (bookingId: string): Promise<any> => {
-    const response = await api.get<ApiResponse<any>>(`/customer/bookings/${bookingId}/reviews`);
-    return extractData(response);
+    const response = await api.get<any>(`/customer/bookings/${bookingId}/reviews`);
+    
+    // Handle API response structure
+    if (response.data?.status === 'success') {
+      return response.data.data || response.data;
+    }
+    
+    // If response.data is already the review object (direct response)
+    if (response.data?.id || response.data?.bookingId) {
+      return response.data;
+    }
+    
+    // Fallback to extractData for nested structure
+    try {
+      return extractData(response as { data: ApiResponse<any> });
+    } catch (error) {
+      // If extraction fails, return the response data as-is
+      return response.data;
+    }
   },
 };
 

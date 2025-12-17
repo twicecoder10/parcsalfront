@@ -327,6 +327,45 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface Review {
+  id: string;
+  bookingId: string;
+  companyId?: string;
+  customerId?: string;
+  customer: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+  rating: number;
+  comment?: string | null;
+  companyReply?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  booking?: {
+    id: string;
+    shipmentSlot?: {
+      id?: string;
+      originCity: string;
+      destinationCity: string;
+    };
+  };
+  company?: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl?: string;
+  };
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution?: {
+    [key: number]: number; // rating -> count
+  };
+}
+
 // ============================================
 // Company API Client
 // ============================================
@@ -802,13 +841,142 @@ export const companyApi = {
   // Reviews
   // ============================================
 
+  getCompanyReviews: async (params?: {
+    limit?: number;
+    offset?: number;
+    rating?: number;
+  }): Promise<PaginatedResponse<Review>> => {
+    const response = await api.get<any>('/companies/me/reviews', {
+      params: {
+        limit: params?.limit ?? 20,
+        offset: params?.offset ?? 0,
+        ...(params?.rating && { rating: params.rating }),
+      },
+    });
+    
+    // Default pagination structure
+    const defaultPagination = {
+      limit: params?.limit ?? 20,
+      offset: params?.offset ?? 0,
+      total: 0,
+      hasMore: false,
+    };
+    
+    const responseData = response.data;
+    
+    // Handle direct paginated response format: { data: [...], pagination: {...} }
+    // This is the actual API response format
+    if (responseData && Array.isArray(responseData.data) && responseData.pagination) {
+      return {
+        data: responseData.data,
+        pagination: responseData.pagination,
+      };
+    }
+    
+    // Handle wrapped response format: { status: 'success', data: [...], pagination: {...} }
+    if (responseData?.status === 'success') {
+      return {
+        data: responseData.data || [],
+        pagination: responseData.pagination || defaultPagination,
+      };
+    }
+    
+    // Fallback: try extractData, but return safe defaults if it fails
+    try {
+      const data = extractData(response as { data: ApiResponse<PaginatedResponse<Review>> });
+      return data;
+    } catch (error) {
+      // Return safe defaults if extraction fails
+      return {
+        data: [],
+        pagination: defaultPagination,
+      };
+    }
+  },
+
+  getCompanyReviewStats: async (): Promise<ReviewStats> => {
+    try {
+      const response = await api.get<any>('/companies/me/reviews/stats');
+      const responseData = response.data;
+      
+      // Handle wrapped response format: { status: 'success', data: {...} }
+      if (responseData?.status === 'success' && responseData.data) {
+        return responseData.data;
+      }
+      
+      // Handle direct stats object: { averageRating: X, totalReviews: Y, ... }
+      if (responseData && (responseData.averageRating !== undefined || responseData.totalReviews !== undefined)) {
+        return {
+          averageRating: responseData.averageRating ?? 0,
+          totalReviews: responseData.totalReviews ?? 0,
+          ratingDistribution: responseData.ratingDistribution || {},
+        };
+      }
+      
+      // Fallback: try extractData
+      try {
+        return extractData(response as { data: ApiResponse<ReviewStats> });
+      } catch (error) {
+        // If all else fails, return default stats
+        console.warn('Failed to parse review stats, returning defaults:', error);
+        return {
+          averageRating: 0,
+          totalReviews: 0,
+          ratingDistribution: {},
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch review stats:', error);
+      // Return default stats on error
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: {},
+      };
+    }
+  },
+
   replyToReview: async (bookingId: string, reply: string): Promise<any> => {
-    const response = await api.post<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
-    return extractData(response);
+    const response = await api.post<any>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    
+    // Handle API response structure
+    if (response.data?.status === 'success') {
+      return response.data.data || response.data;
+    }
+    
+    // If response.data is already the review object (direct response)
+    if (response.data?.id || response.data?.bookingId) {
+      return response.data;
+    }
+    
+    // Fallback to extractData for nested structure
+    try {
+      return extractData(response as { data: ApiResponse<any> });
+    } catch (error) {
+      // If extraction fails, return the response data as-is
+      return response.data;
+    }
   },
 
   updateReviewReply: async (bookingId: string, reply: string): Promise<any> => {
-    const response = await api.put<ApiResponse<any>>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
-    return extractData(response);
+    const response = await api.put<any>(`/companies/bookings/${bookingId}/reviews/reply`, { reply });
+    
+    // Handle API response structure
+    if (response.data?.status === 'success') {
+      return response.data.data || response.data;
+    }
+    
+    // If response.data is already the review object (direct response)
+    if (response.data?.id || response.data?.bookingId) {
+      return response.data;
+    }
+    
+    // Fallback to extractData for nested structure
+    try {
+      return extractData(response as { data: ApiResponse<any> });
+    } catch (error) {
+      // If extraction fails, return the response data as-is
+      return response.data;
+    }
   },
 };

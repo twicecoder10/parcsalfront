@@ -7,13 +7,14 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 
 const navItems = [
   { title: 'Overview', href: '/company/overview', icon: LayoutDashboard },
   { title: 'Slots', href: '/company/shipments', icon: Package },
   { title: 'Bookings', href: '/company/bookings', icon: ShoppingCart },
+  { title: 'Reviews', href: '/company/reviews', icon: Star },
   { title: 'Analytics', href: '/company/analytics', icon: BarChart3 },
   { title: 'Payments', href: '/company/payments', icon: Wallet },
   { title: 'Subscription', href: '/company/subscription', icon: CreditCard },
