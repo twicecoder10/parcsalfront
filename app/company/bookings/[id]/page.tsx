@@ -144,7 +144,9 @@ export default function BookingDetailPage() {
       }
     } catch (error: any) {
       console.error('Failed to get label:', error);
-      setLabelError(error.message || 'Failed to get label. Please try again.');
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to get label. Please try again.';
+      setLabelError(errorMessage);
       // Show error for a few seconds
       setTimeout(() => setLabelError(null), 5000);
     } finally {
@@ -161,7 +163,9 @@ export default function BookingDetailPage() {
       setBooking(updatedBooking);
     } catch (error: any) {
       console.error('Failed to regenerate label:', error);
-      setLabelError(error.message || 'Failed to regenerate label. Please try again.');
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to regenerate label. Please try again.';
+      setLabelError(errorMessage);
       // Show error for a few seconds
       setTimeout(() => setLabelError(null), 5000);
     } finally {
