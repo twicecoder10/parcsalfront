@@ -17,10 +17,13 @@ import {
 import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, DollarSign, Loader2, Warehouse } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { CompanyDetail, AdminWarehouseAddress } from '@/lib/admin-api';
+import { toast } from '@/lib/toast';
+import { useConfirm } from '@/lib/use-confirm';
 
 export default function CompanyDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyDetail | null>(null);
@@ -80,8 +83,9 @@ export default function CompanyDetailPage() {
       setActionLoading(true);
       await adminApi.verifyCompany(company.id);
       setCompany({ ...company, isVerified: true });
+      toast.success('Company verified successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to verify company');
+      toast.error(err instanceof Error ? err.message : 'Failed to verify company');
     } finally {
       setActionLoading(false);
     }
@@ -93,8 +97,9 @@ export default function CompanyDetailPage() {
       setActionLoading(true);
       await adminApi.unverifyCompany(company.id);
       setCompany({ ...company, isVerified: false });
+      toast.success('Company unverified successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to unverify company');
+      toast.error(err instanceof Error ? err.message : 'Failed to unverify company');
     } finally {
       setActionLoading(false);
     }
@@ -102,13 +107,19 @@ export default function CompanyDetailPage() {
 
   const handleDeactivate = async () => {
     if (!company) return;
-    if (!confirm('Are you sure you want to deactivate this company?')) return;
+    const confirmed = await confirm({
+      title: 'Deactivate Company',
+      description: 'Are you sure you want to deactivate this company?',
+      variant: 'destructive',
+      confirmText: 'Deactivate',
+    });
+    if (!confirmed) return;
     try {
       setActionLoading(true);
       await adminApi.deactivateCompany(company.id);
-      alert('Company deactivated successfully');
+      toast.success('Company deactivated successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to deactivate company');
+      toast.error(err instanceof Error ? err.message : 'Failed to deactivate company');
     } finally {
       setActionLoading(false);
     }
@@ -283,7 +294,14 @@ export default function CompanyDetailPage() {
               <Warehouse className="h-5 w-5 text-orange-600" />
               <CardTitle>Warehouse Addresses</CardTitle>
             </div>
-            <Badge variant="outline">{warehouses.length} {warehouses.length === 1 ? 'warehouse' : 'warehouses'}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{warehouses.length} {warehouses.length === 1 ? 'warehouse' : 'warehouses'}</Badge>
+              <Link href={`/admin/companies/${company.id}/warehouses`}>
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -359,6 +377,7 @@ export default function CompanyDetailPage() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }

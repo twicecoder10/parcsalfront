@@ -565,6 +565,14 @@ export const adminApi = {
     return extractData(response);
   },
 
+  deleteUser: async (id: string): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/admin/users/${id}`);
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to delete user');
+    }
+    return { message: response.data.message || 'User deleted successfully' };
+  },
+
   getUserBookings: async (
     id: string,
     params?: PaginationParams & { status?: string }

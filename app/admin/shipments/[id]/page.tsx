@@ -17,6 +17,8 @@ import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Truck, Building2, Loa
 import Link from 'next/link';
 import { adminApi } from '@/lib/admin-api';
 import type { AdminShipmentDetail } from '@/lib/admin-api';
+import { toast } from '@/lib/toast';
+import { useConfirm } from '@/lib/use-confirm';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -45,6 +47,7 @@ const bookingStatusColors: Record<string, string> = {
 export default function ShipmentDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shipment, setShipment] = useState<AdminShipmentDetail | null>(null);
@@ -71,14 +74,21 @@ export default function ShipmentDetailPage() {
 
   const handleClose = async () => {
     if (!shipment) return;
-    if (!confirm('Are you sure you want to close this shipment?')) return;
+    const confirmed = await confirm({
+      title: 'Close Shipment',
+      description: 'Are you sure you want to close this shipment?',
+      variant: 'destructive',
+      confirmText: 'Close',
+    });
+    if (!confirmed) return;
     try {
       setActionLoading(true);
       await adminApi.closeShipment(shipment.id);
       const updatedShipment = await adminApi.getShipment(shipment.id);
       setShipment(updatedShipment);
+      toast.success('Shipment closed successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to close shipment');
+      toast.error(err instanceof Error ? err.message : 'Failed to close shipment');
     } finally {
       setActionLoading(false);
     }
@@ -308,6 +318,7 @@ export default function ShipmentDetailPage() {
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

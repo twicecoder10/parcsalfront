@@ -22,9 +22,10 @@ import { Label } from '@/components/ui/label';
 import { companyApi } from '@/lib/company-api';
 import type { Booking } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
-import { uploadProofImages, createImagePreview, MAX_PROOF_IMAGES } from '@/lib/upload-api';
+import { uploadProofImages, createImagePreview, MAX_PROOF_IMAGES, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, validateImageFile } from '@/lib/upload-api';
 import { X, Upload } from 'lucide-react';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -83,9 +84,10 @@ export default function BookingDetailPage() {
     try {
       const updatedBooking = await companyApi.acceptBooking(bookingId);
       setBooking(updatedBooking);
+      toast.success('Booking accepted successfully');
     } catch (error: any) {
       console.error('Failed to accept booking:', error);
-      alert(getErrorMessage(error) || 'Failed to accept booking. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to accept booking. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -99,9 +101,10 @@ export default function BookingDetailPage() {
       setBooking(updatedBooking);
       setRejectDialogOpen(false);
       setRejectionReason('');
+      toast.success('Booking rejected successfully');
     } catch (error: any) {
       console.error('Failed to reject booking:', error);
-      alert(getErrorMessage(error) || 'Failed to reject booking. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to reject booking. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -113,9 +116,10 @@ export default function BookingDetailPage() {
     try {
       const updatedBooking = await companyApi.updateBookingStatus(bookingId, newStatus);
       setBooking(updatedBooking);
+      toast.success('Booking status updated successfully');
     } catch (error: any) {
       console.error('Failed to update booking status:', error);
-      alert(getErrorMessage(error) || 'Failed to update booking status. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to update booking status. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -320,7 +324,7 @@ export default function BookingDetailPage() {
       </Card>
 
       {/* Shipping Label Section */}
-      {booking.status !== 'PENDING' && (
+      {['ACCEPTED', 'IN_TRANSIT', 'DELIVERED'].includes(booking.status) && booking.paymentStatus === 'PAID' && (
         <Card>
           <CardHeader>
             <CardTitle>Shipping Label</CardTitle>
@@ -814,7 +818,7 @@ export default function BookingDetailPage() {
                 <input
                   id="pickup-proof-upload"
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  accept={ALLOWED_IMAGE_TYPES.join(',')}
                   multiple
                   className="hidden"
                   onChange={async (e) => {
@@ -829,13 +833,9 @@ export default function BookingDetailPage() {
 
                     // Validate files
                     for (const file of files) {
-                      if (file.size > 10 * 1024 * 1024) {
-                        setProofImageError(`File ${file.name} is too large. Maximum size is 10MB.`);
-                        return;
-                      }
-                      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                      if (!allowedTypes.includes(file.type)) {
-                        setProofImageError(`File ${file.name} is not a supported image format.`);
+                      const validation = validateImageFile(file);
+                      if (!validation.valid) {
+                        setProofImageError(validation.error || 'Invalid image file');
                         return;
                       }
                     }
@@ -895,7 +895,7 @@ export default function BookingDetailPage() {
                 <input
                   id="delivery-proof-upload"
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  accept={ALLOWED_IMAGE_TYPES.join(',')}
                   multiple
                   className="hidden"
                   onChange={async (e) => {
@@ -910,13 +910,9 @@ export default function BookingDetailPage() {
 
                     // Validate files
                     for (const file of files) {
-                      if (file.size > 10 * 1024 * 1024) {
-                        setProofImageError(`File ${file.name} is too large. Maximum size is 10MB.`);
-                        return;
-                      }
-                      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                      if (!allowedTypes.includes(file.type)) {
-                        setProofImageError(`File ${file.name} is not a supported image format.`);
+                      const validation = validateImageFile(file);
+                      if (!validation.valid) {
+                        setProofImageError(validation.error || 'Invalid image file');
                         return;
                       }
                     }
@@ -932,6 +928,9 @@ export default function BookingDetailPage() {
                     setDeliveryProofPreviews([...deliveryProofPreviews, ...newPreviews]);
                   }}
                 />
+                <p className="text-xs text-gray-500">
+                  Max {MAX_PROOF_IMAGES} images total, {MAX_FILE_SIZE / (1024 * 1024)}MB per file. Supported formats: JPEG, JPG, PNG, WebP, GIF
+                </p>
               </div>
 
               {(pickupProofFiles.length > 0 || deliveryProofFiles.length > 0) && (

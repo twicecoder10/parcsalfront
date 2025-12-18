@@ -90,6 +90,9 @@ export interface Shipment {
   };
   createdAt?: string;
   updatedAt?: string;
+  _count?: {
+    bookings?: number;
+  };
 }
 
 export interface Booking {

@@ -11,6 +11,7 @@ import { CheckCheck, Trash2, Loader2, Filter, Bell, Check } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { Notification, NotificationType } from '@/lib/api-types';
 import { formatDistanceToNow } from 'date-fns';
+import { useConfirm } from '@/lib/use-confirm';
 
 const notificationTypeLabels: Record<NotificationType, string> = {
   BOOKING_CREATED: 'Booking Created',
@@ -35,6 +36,7 @@ const notificationTypeLabels: Record<NotificationType, string> = {
 
 export default function CustomerNotificationsPage() {
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -125,9 +127,13 @@ export default function CustomerNotificationsPage() {
   };
 
   const handleDeleteAllRead = async () => {
-    if (!confirm('Are you sure you want to delete all read notifications?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete All Read Notifications',
+      description: 'Are you sure you want to delete all read notifications?',
+      variant: 'destructive',
+      confirmText: 'Delete All',
+    });
+    if (!confirmed) return;
     setProcessing('delete-all');
     try {
       await customerApi.deleteAllReadNotifications();
@@ -356,6 +362,7 @@ export default function CustomerNotificationsPage() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Check, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react
 import { companyApi } from '@/lib/company-api';
 import type { Subscription, Plan } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
+import { toast } from '@/lib/toast';
 
 function SubscriptionContent() {
   const searchParams = useSearchParams();
@@ -62,7 +63,7 @@ function SubscriptionContent() {
       window.location.href = checkoutSession.url;
     } catch (error: any) {
       console.error('Failed to create checkout session:', error);
-      alert(getErrorMessage(error) || 'Failed to start checkout. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to start checkout. Please try again.');
       setProcessingPlan(null);
     }
   };
@@ -73,7 +74,7 @@ function SubscriptionContent() {
       window.location.href = url;
     } catch (error: any) {
       console.error('Failed to update payment method:', error);
-      alert(getErrorMessage(error) || 'Failed to update payment method. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to update payment method. Please try again.');
     }
   };
 
@@ -81,14 +82,21 @@ function SubscriptionContent() {
     const success = searchParams.get('success');
     const cancelled = searchParams.get('cancelled');
 
-    if (success === 'true') {
+    // Reset status if no parameters are present
+    if (!success && !cancelled) {
+      setStatus('idle');
+      return;
+    }
+
+    // Handle cancelled first (takes priority if both are present)
+    if (cancelled === 'true') {
+      setStatus('cancelled');
+      // Clean URL
+      window.history.replaceState({}, '', '/company/subscription');
+    } else if (success === 'true') {
       setStatus('success');
       // Fetch updated subscription data
       fetchSubscriptionData();
-      // Clean URL
-      window.history.replaceState({}, '', '/company/subscription');
-    } else if (cancelled === 'true') {
-      setStatus('cancelled');
       // Clean URL
       window.history.replaceState({}, '', '/company/subscription');
     }

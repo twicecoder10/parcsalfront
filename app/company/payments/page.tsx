@@ -31,6 +31,7 @@ import { companyApi } from '@/lib/company-api';
 import type { Payment, PaymentStats } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
   PAID: 'bg-green-100 text-green-800',
@@ -63,14 +64,28 @@ export default function PaymentsPage() {
   const [refundReason, setRefundReason] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
 
+  const canViewPayments = canPerformAction(permissions, 'viewPayments');
+  const canViewPaymentStats = canPerformAction(permissions, 'viewPaymentStats');
+
   useEffect(() => {
-    if (canPerformAction(permissions, 'viewPayments')) {
+    if (permissions.loading) return;
+
+    if (canViewPayments) {
       fetchPayments();
     }
-    if (canPerformAction(permissions, 'viewPaymentStats')) {
+    if (canViewPaymentStats) {
       fetchPaymentStats();
     }
-  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo, permissions]);
+  }, [
+    currentPage,
+    statusFilter,
+    searchQuery,
+    dateFrom,
+    dateTo,
+    canViewPayments,
+    canViewPaymentStats,
+    permissions.loading,
+  ]);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -131,9 +146,10 @@ export default function PaymentsPage() {
       setRefundReason('');
       fetchPayments();
       fetchPaymentStats();
+      toast.success('Refund processed successfully');
     } catch (error: any) {
       console.error('Failed to process refund:', error);
-      alert(getErrorMessage(error) || 'Failed to process refund. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to process refund. Please try again.');
     } finally {
       setProcessingRefund(false);
     }
@@ -141,11 +157,11 @@ export default function PaymentsPage() {
 
   const openRefundDialog = (payment: Payment) => {
     if (!canPerformAction(permissions, 'processRefund')) {
-      alert('You do not have permission to process refunds.');
+      toast.error('You do not have permission to process refunds.');
       return;
     }
     if (payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
-      alert('Only paid or partially refunded payments can be refunded.');
+      toast.error('Only paid or partially refunded payments can be refunded.');
       return;
     }
     setPaymentToRefund(payment);
@@ -155,7 +171,7 @@ export default function PaymentsPage() {
   };
 
   // Check if user has permission to view payments
-  if (!permissions.loading && !canPerformAction(permissions, 'viewPayments')) {
+  if (!permissions.loading && !canViewPayments) {
     return (
       <div className="space-y-6">
         <Card>

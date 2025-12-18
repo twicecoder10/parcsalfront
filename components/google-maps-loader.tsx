@@ -27,7 +27,7 @@ export function GoogleMapsLoader({ children }: GoogleMapsLoaderProps) {
     }
 
     // Check if Google Maps is already loaded
-    if (window.google && window.google.maps && window.google.maps.places) {
+    if (window.google && window.google.maps && window.google.maps.places && window.google.maps.Geocoder) {
       setIsLoaded(true);
       return;
     }
@@ -45,7 +45,28 @@ export function GoogleMapsLoader({ children }: GoogleMapsLoaderProps) {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
-    script.onload = () => setIsLoaded(true);
+    script.onload = () => {
+      // Verify that Geocoder is available (it's part of core maps, but let's be sure)
+      if (window.google?.maps?.Geocoder) {
+        setIsLoaded(true);
+      } else {
+        // Wait a bit more for Geocoder to be available
+        const checkGeocoder = setInterval(() => {
+          if (window.google?.maps?.Geocoder) {
+            clearInterval(checkGeocoder);
+            setIsLoaded(true);
+          }
+        }, 100);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkGeocoder);
+          if (!window.google?.maps?.Geocoder) {
+            setIsError(true);
+          }
+        }, 5000);
+      }
+    };
     script.onerror = () => setIsError(true);
     document.head.appendChild(script);
 

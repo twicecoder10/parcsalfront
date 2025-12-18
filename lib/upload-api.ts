@@ -10,14 +10,15 @@ export const MAX_PROOF_IMAGES = 5;
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
   // Check file size
   if (file.size > MAX_FILE_SIZE) {
-    return { valid: false, error: `File ${file.name} is too large. Maximum size is 10MB.` };
+    const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024);
+    return { valid: false, error: `File ${file.name} is too large. Maximum size is ${maxSizeMB}MB.` };
   }
 
   // Check file type
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `File ${file.name} is not a supported image format. Only JPEG, PNG, WebP, and GIF are allowed.`,
+      error: `File ${file.name} is not a supported image format. Only JPEG, JPG, PNG, WebP, and GIF are allowed.`,
     };
   }
 

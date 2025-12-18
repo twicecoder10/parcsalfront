@@ -343,8 +343,6 @@ export default function ScanPage() {
         <ul className="space-y-1 text-sm text-blue-800">
           <li>• Use the camera scanner to scan barcodes from shipping labels</li>
           <li>• Or manually enter the booking ID (e.g., BKG-2025-0000007)</li>
-          <li>• The barcode contains the booking ID in Code128 format</li>
-          <li>• After scanning, you can view full booking details or scan another</li>
         </ul>
       </Card>
     </div>

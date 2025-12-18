@@ -29,6 +29,7 @@ import { companyApi } from '@/lib/company-api';
 import type { Shipment } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -124,9 +125,10 @@ export default function ShipmentsPage() {
       setShipmentToDelete(null);
       // Refresh the list
       fetchShipments();
+      toast.success('Shipment deleted successfully');
     } catch (error: any) {
       console.error('Failed to delete shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
     }
   };
 
@@ -135,9 +137,10 @@ export default function ShipmentsPage() {
       await companyApi.updateShipmentStatus(shipmentId, 'PUBLISHED');
       // Refresh the list
       fetchShipments();
+      toast.success('Shipment published successfully');
     } catch (error: any) {
       console.error('Failed to publish shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
     }
   };
 
@@ -146,9 +149,10 @@ export default function ShipmentsPage() {
       await companyApi.updateShipmentStatus(shipmentId, 'CLOSED');
       // Refresh the list
       fetchShipments();
+      toast.success('Shipment closed successfully');
     } catch (error: any) {
       console.error('Failed to close shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
     }
   };
 
@@ -281,7 +285,7 @@ export default function ShipmentsPage() {
                       {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">-</Badge>
+                      <Badge variant="outline">{shipment._count?.bookings ?? 0}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

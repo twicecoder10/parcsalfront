@@ -30,9 +30,12 @@ import type { TeamMember, StaffRestrictions, TeamInvitation, InvitationStatus } 
 import { getStoredUser } from '@/lib/auth';
 import { getErrorMessage } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useConfirm } from '@/lib/use-confirm';
+import { toast } from '@/lib/toast';
 
 export default function TeamPage() {
   const user = getStoredUser();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -117,7 +120,13 @@ export default function TeamPage() {
   };
 
   const handleRevokeInvitation = async (invitationId: string) => {
-    if (!confirm('Are you sure you want to revoke this invitation?')) return;
+    const confirmed = await confirm({
+      title: 'Revoke Invitation',
+      description: 'Are you sure you want to revoke this invitation?',
+      variant: 'destructive',
+      confirmText: 'Revoke',
+    });
+    if (!confirmed) return;
     
     setRevokingInvitation(invitationId);
     setMessage(null);
@@ -141,7 +150,13 @@ export default function TeamPage() {
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this team member?')) return;
+    const confirmed = await confirm({
+      title: 'Remove Team Member',
+      description: 'Are you sure you want to remove this team member?',
+      variant: 'destructive',
+      confirmText: 'Remove',
+    });
+    if (!confirmed) return;
     
     setDeletingMember(memberId);
     setMessage(null);
@@ -242,7 +257,7 @@ export default function TeamPage() {
 
   const handleOpenRestrictions = async (member: TeamMember) => {
     if (member.role === 'COMPANY_ADMIN') {
-      alert('Admins cannot have restrictions applied.');
+      toast.warning('Admins cannot have restrictions applied.');
       return;
     }
     
@@ -889,6 +904,7 @@ export default function TeamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog />
     </div>
   );
 }

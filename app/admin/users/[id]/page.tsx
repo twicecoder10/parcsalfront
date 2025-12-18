@@ -14,9 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { User, Mail, Calendar, Building2, ArrowLeft, Package, ShoppingCart, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Calendar, Building2, ArrowLeft, Package, ShoppingCart, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { AdminUserDetail } from '@/lib/admin-api';
+import { toast } from '@/lib/toast';
+import { useConfirm } from '@/lib/use-confirm';
 
 const roleColors: Record<string, string> = {
   CUSTOMER: 'bg-blue-100 text-blue-800',
@@ -37,6 +39,7 @@ const bookingStatusColors: Record<string, string> = {
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<AdminUserDetail | null>(null);
@@ -69,8 +72,9 @@ export default function UserDetailPage() {
       // Refresh user data
       const updatedUser = await adminApi.getUser(user.id);
       setUser(updatedUser);
+      toast.success('User activated successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to activate user');
+      toast.error(err instanceof Error ? err.message : 'Failed to activate user');
     } finally {
       setActionLoading(false);
     }
@@ -78,16 +82,44 @@ export default function UserDetailPage() {
 
   const handleDeactivate = async () => {
     if (!user) return;
-    if (!confirm('Are you sure you want to deactivate this user?')) return;
+    const confirmed = await confirm({
+      title: 'Deactivate User',
+      description: 'Are you sure you want to deactivate this user?',
+      variant: 'destructive',
+      confirmText: 'Deactivate',
+    });
+    if (!confirmed) return;
     try {
       setActionLoading(true);
       await adminApi.deactivateUser(user.id);
       // Refresh user data
       const updatedUser = await adminApi.getUser(user.id);
       setUser(updatedUser);
+      toast.success('User deactivated successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to deactivate user');
+      toast.error(err instanceof Error ? err.message : 'Failed to deactivate user');
     } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!user) return;
+    const confirmed = await confirm({
+      title: 'Delete User',
+      description: `Are you sure you want to permanently delete user "${user.fullName}"? This action cannot be undone.`,
+      variant: 'destructive',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
+    try {
+      setActionLoading(true);
+      await adminApi.deleteUser(user.id);
+      toast.success('User deleted successfully');
+      // Redirect back to users list after successful deletion
+      router.push('/admin/users');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete user');
       setActionLoading(false);
     }
   };
@@ -113,6 +145,9 @@ export default function UserDetailPage() {
 
   // Note: API doesn't return isActive or lastLogin, so we'll handle those differently
   const isActive = true; // This would need to come from API if available
+  
+  // Check if user is deleted (deleted users have email ending with @deleted.local and fullName "Deleted User")
+  const isDeleted = user.email?.endsWith('@deleted.local') || user.fullName === 'Deleted User';
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -127,19 +162,29 @@ export default function UserDetailPage() {
             <p className="text-gray-600 mt-2">User ID: {user.id}</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          {isActive ? (
-            <Button variant="outline" onClick={handleDeactivate} disabled={actionLoading}>
-              <XCircle className="mr-2 h-4 w-4" />
-              Deactivate
+        {!isDeleted && (
+          <div className="flex gap-2">
+            {isActive ? (
+              <Button variant="outline" onClick={handleDeactivate} disabled={actionLoading}>
+                <XCircle className="mr-2 h-4 w-4" />
+                Deactivate
+              </Button>
+            ) : (
+              <Button onClick={handleActivate} disabled={actionLoading}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Activate
+              </Button>
+            )}
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteUser} 
+              disabled={actionLoading}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Account
             </Button>
-          ) : (
-            <Button onClick={handleActivate} disabled={actionLoading}>
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Activate
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -174,58 +219,66 @@ export default function UserDetailPage() {
           <CardTitle>User Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-orange-600" />
-            <div>
-              <p className="font-medium">Full Name</p>
-              <p className="text-sm text-gray-600">{user.fullName}</p>
+          <div className="flex items-start gap-3">
+            <User className="h-5 w-5 text-orange-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm text-gray-500 mb-1">Full Name</p>
+              <p className="text-base text-gray-900">{user.fullName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="font-medium">Email</p>
-              <p className="text-sm text-gray-600">{user.email}</p>
+          <div className="flex items-start gap-3">
+            <Mail className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm text-gray-500 mb-1">Email</p>
+              <p className="text-base text-gray-900">{user.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 flex items-center justify-center text-purple-600">
+          <div className="flex items-start gap-3">
+            <div className="h-5 w-5 flex items-center justify-center mt-0.5">
+              <div className="h-5 w-5 rounded-full bg-purple-100 flex items-center justify-center">
+                <div className="h-2 w-2 rounded-full bg-purple-600"></div>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm text-gray-500 mb-1">Role</p>
               <Badge className={roleColors[user.role] || ''}>
                 {user.role.replace('_', ' ')}
               </Badge>
             </div>
-            <div>
-              <p className="font-medium">Role</p>
-              <p className="text-sm text-gray-600">{user.role.replace('_', ' ')}</p>
-            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-gray-600" />
-            <div>
-              <p className="font-medium">Account Status</p>
-              <Badge className={isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                {isActive ? 'Active' : 'Inactive'}
-              </Badge>
+          <div className="flex items-start gap-3">
+            <User className="h-5 w-5 text-gray-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm text-gray-500 mb-1">Account Status</p>
+              {isDeleted ? (
+                <Badge className="bg-gray-100 text-gray-800">
+                  Deleted
+                </Badge>
+              ) : (
+                <Badge className={isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                  {isActive ? 'Active' : 'Inactive'}
+                </Badge>
+              )}
             </div>
           </div>
           {user.company && (
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium">Company</p>
+            <div className="flex items-start gap-3">
+              <Building2 className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-medium text-sm text-gray-500 mb-1">Company</p>
                 <Link href={`/admin/companies/${user.company.id}`}>
-                  <Button variant="link" className="p-0 h-auto">
+                  <Button variant="link" className="p-0 h-auto text-base text-gray-900 hover:text-blue-600">
                     {user.company.name}
                   </Button>
                 </Link>
               </div>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-gray-600" />
-            <div>
-              <p className="font-medium">Created At</p>
-              <p className="text-sm text-gray-600">
+          <div className="flex items-start gap-3">
+            <Calendar className="h-5 w-5 text-gray-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm text-gray-500 mb-1">Created At</p>
+              <p className="text-base text-gray-900">
                 {new Date(user.createdAt).toLocaleDateString()}
               </p>
             </div>
@@ -268,6 +321,7 @@ export default function UserDetailPage() {
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -29,6 +29,7 @@ import { companyApi } from '@/lib/company-api';
 import type { Shipment, Booking, SlotTrackingStatus } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -139,7 +140,7 @@ export default function ShipmentDetailPage() {
       setShipment({ ...shipment, status: 'PUBLISHED' });
     } catch (error: any) {
       console.error('Failed to publish shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to publish shipment. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -153,7 +154,7 @@ export default function ShipmentDetailPage() {
       router.push('/company/shipments');
     } catch (error: any) {
       console.error('Failed to delete shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to delete shipment. Please try again.');
     } finally {
       setProcessing(false);
       setDeleteDialogOpen(false);
@@ -169,7 +170,7 @@ export default function ShipmentDetailPage() {
       setCloseDialogOpen(false);
     } catch (error: any) {
       console.error('Failed to close shipment:', error);
-      alert(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to close shipment. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -183,12 +184,12 @@ export default function ShipmentDetailPage() {
     
     // Validate status transition
     if (currentStatus === 'DELIVERED') {
-      alert('This shipment has already been delivered and cannot be updated.');
+      toast.error('This shipment has already been delivered and cannot be updated.');
       return;
     }
     
     if (!validNextStatuses.includes(newStatus)) {
-      alert(`Invalid status transition. Cannot change from ${trackingStatusLabels[currentStatus]} to ${trackingStatusLabels[newStatus]}.`);
+      toast.error(`Invalid status transition. Cannot change from ${trackingStatusLabels[currentStatus]} to ${trackingStatusLabels[newStatus]}.`);
       return;
     }
 
@@ -209,13 +210,13 @@ export default function ShipmentDetailPage() {
       });
       
       if (affectedBookings.length > 0) {
-        alert(`Tracking status updated to ${trackingStatusLabels[newStatus]}. ${affectedBookings.length} booking(s) have been updated accordingly.`);
+        toast.success(`Tracking status updated to ${trackingStatusLabels[newStatus]}. ${affectedBookings.length} booking(s) have been updated accordingly.`);
       } else {
-        alert(`Tracking status updated to ${trackingStatusLabels[newStatus]}.`);
+        toast.success(`Tracking status updated to ${trackingStatusLabels[newStatus]}.`);
       }
     } catch (error: any) {
       console.error('Failed to update tracking status:', error);
-      alert(getErrorMessage(error) || 'Failed to update tracking status. Please try again.');
+      toast.error(getErrorMessage(error) || 'Failed to update tracking status. Please try again.');
     } finally {
       setUpdatingTrackingStatus(false);
     }

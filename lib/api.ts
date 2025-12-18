@@ -33,25 +33,29 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         // Don't redirect if we're already on the login page or during auth requests
+        // Also exclude delete account endpoint - errors should be handled by the caller
         const isAuthRequest = error.config?.url?.includes('/auth/login') || 
                             error.config?.url?.includes('/auth/register');
+        const isDeleteAccountRequest = error.config?.url === '/auth/account' && 
+                                      error.config?.method?.toLowerCase() === 'delete';
         const isOnLoginPage = window.location.pathname === '/auth/login';
         
-        // Only redirect if not already on login page and not during auth request
-        if (!isOnLoginPage && !isAuthRequest) {
+        // Only redirect if not already on login page and not during auth request or delete account
+        if (!isOnLoginPage && !isAuthRequest && !isDeleteAccountRequest) {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('token'); // legacy
           localStorage.removeItem('user');
           // Include current path as redirect parameter to return user after login
           window.location.href = getLoginUrlWithRedirect();
-        } else {
-          // Still clear tokens on auth failure, but don't redirect
+        } else if (!isDeleteAccountRequest) {
+          // Still clear tokens on auth failure (but not for delete account - let caller handle it)
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('token'); // legacy
           localStorage.removeItem('user');
         }
+        // For delete account requests, don't clear tokens - let the error be caught and handled by the component
       }
     }
     
@@ -241,6 +245,18 @@ export const authApi = {
     const response = await api.post<ApiResponse<AuthResponse>>(`/auth/accept-invitation?token=${token}`, data);
     return extractData(response);
   },
+  deleteAccount: async (password: string): Promise<{ message: string }> => {
+    // Use POST for delete with body, or configure DELETE to send data
+    const response = await api.request<ApiResponse<{ message: string }>>({
+      method: 'DELETE',
+      url: '/auth/account',
+      data: { password },
+    });
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to delete account');
+    }
+    return { message: response.data.message || 'Account deleted successfully' };
+  },
 };
 
 // Onboarding status types
@@ -421,6 +437,27 @@ export const publicApi = {
     const response = await publicApiInstance.get(`/companies/${companyIdOrSlug}/reviews`, { params });
     
     // The reviews endpoint doesn't wrap in ApiResponse format
+    return response.data;
+  },
+
+  // Get company shipment slots (public endpoint)
+  getCompanyShipments: async (companyIdOrSlug: string, params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<any> => {
+    const response = await publicApiInstance.get(`/companies/${companyIdOrSlug}/shipments`, { params });
+    
+    // Handle both wrapped and direct response formats
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to fetch company shipments');
+    }
+    
+    // Check if response is wrapped
+    if (response.data.status === 'success' && response.data.data) {
+      return response.data;
+    }
+    
+    // Direct format
     return response.data;
   },
 };

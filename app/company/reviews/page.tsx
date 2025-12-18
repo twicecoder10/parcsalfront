@@ -22,6 +22,7 @@ import { companyApi } from '@/lib/company-api';
 import type { Review, ReviewStats } from '@/lib/company-api';
 import { format } from 'date-fns';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { toast } from '@/lib/toast';
 
 export default function ReviewsPage() {
   const permissions = usePermissions();
@@ -167,10 +168,11 @@ export default function ReviewsPage() {
       await fetchReviews();
       setReplyingTo(null);
       setReplyText('');
+      toast.success('Reply submitted successfully');
     } catch (error: any) {
       console.error('Failed to submit reply:', error);
       const errorMessage = error?.message || 'Failed to submit reply. Please try again.';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmittingReply(false);
     }

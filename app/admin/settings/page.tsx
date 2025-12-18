@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, DollarSign, Mail, Shield, Bell, Save, Loader2 } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { PlatformSettings } from '@/lib/admin-api';
+import { toast } from '@/lib/toast';
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -40,10 +41,11 @@ export default function AdminSettingsPage() {
       setSaving(true);
       setError(null);
       await adminApi.updateSettings(settings);
-      alert('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
-      alert(err instanceof Error ? err.message : 'Failed to save settings');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save settings';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

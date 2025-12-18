@@ -6,7 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { authApi } from '@/lib/api';
+import { removeStoredUser, getStoredUser as getStoredUserHelper } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 import { companyApi } from '@/lib/company-api';
 import type { CompanyProfile, CompanySettings } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
@@ -15,11 +26,12 @@ import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { AddressAutocomplete } from '@/components/address-autocomplete';
-import { uploadCompanyLogo, createImagePreview } from '@/lib/upload-api';
+import { uploadCompanyLogo, createImagePreview, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, validateImageFile } from '@/lib/upload-api';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
 export default function CompanySettingsPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +39,15 @@ export default function CompanySettingsPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Delete account state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  
+  // Get user email from stored user
+  const storedUser = getStoredUserHelper();
   
   // Logo upload state
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -166,6 +187,35 @@ export default function CompanySettingsPage() {
     }));
   };
 
+  const handleDeleteAccount = async () => {
+    // Validate email matches
+    if (deleteConfirmEmail !== storedUser?.email) {
+      setError('Email does not match');
+      return;
+    }
+
+    // Validate password is provided
+    if (!deletePassword) {
+      setError('Password is required');
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await authApi.deleteAccount(deletePassword);
+      // Clear user data and redirect to home
+      removeStoredUser();
+      router.push('/');
+    } catch (error: any) {
+      setError(getErrorMessage(error) || 'Failed to delete account');
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -212,6 +262,7 @@ export default function CompanySettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Company Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="delete">Delete Account</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -250,20 +301,16 @@ export default function CompanySettingsPage() {
                       <input
                         id="logo-upload"
                         type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                        accept={ALLOWED_IMAGE_TYPES.join(',')}
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
 
                           // Validate file
-                          if (file.size > 10 * 1024 * 1024) {
-                            setError('Logo file is too large. Maximum size is 10MB.');
-                            return;
-                          }
-                          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                          if (!allowedTypes.includes(file.type)) {
-                            setError('Logo must be a valid image format (JPEG, PNG, WebP, or GIF).');
+                          const validation = validateImageFile(file);
+                          if (!validation.valid) {
+                            setError(validation.error || 'Invalid image file');
                             return;
                           }
 
@@ -619,7 +666,138 @@ export default function CompanySettingsPage() {
       </Card>
         </TabsContent>
 
+        <TabsContent value="delete">
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Delete Account
+              </CardTitle>
+              <CardDescription>
+                Permanently delete your account and all associated data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                  <li>Your account will be permanently deleted</li>
+                  <li>All personal information will be anonymized</li>
+                  <li><strong>Your company will be permanently deleted</strong></li>
+                  <li><strong>All staff members will have their accounts anonymized</strong></li>
+                  <li>All company data (shipments, bookings, warehouses, subscriptions) will be deleted</li>
+                  <li>You will be logged out immediately</li>
+                </ul>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete My Account
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) {
+          setDeleteConfirmEmail('');
+          setDeletePassword('');
+          setError(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Account</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your account, your company, and all company data.
+              All staff members will also have their accounts anonymized. This cannot be reversed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">Warning: This is destructive and cannot be undone</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirm-email">
+                To verify, type your email address <strong className="text-gray-700">{storedUser?.email}</strong>
+              </Label>
+              <Input
+                id="confirm-email"
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                placeholder={storedUser?.email}
+                disabled={deleting}
+                autoComplete="off"
+              />
+              {deleteConfirmEmail && deleteConfirmEmail !== storedUser?.email && (
+                <p className="text-xs text-red-600">Email does not match</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="delete-password">
+                Enter your password to confirm
+              </Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Password"
+                disabled={deleting}
+                autoComplete="current-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeleteConfirmEmail('');
+                setDeletePassword('');
+                setError(null);
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={
+                deleting ||
+                deleteConfirmEmail !== storedUser?.email ||
+                !deletePassword
+              }
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Account
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </GoogleMapsLoader>
   );

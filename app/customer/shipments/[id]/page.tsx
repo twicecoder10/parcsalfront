@@ -19,9 +19,14 @@ import { AddressAutocomplete } from '@/components/address-autocomplete';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
-import { uploadParcelImages, createImagePreview, MAX_PARCEL_IMAGES } from '@/lib/upload-api';
+import { uploadParcelImages, createImagePreview, MAX_PARCEL_IMAGES, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, validateImageFile } from '@/lib/upload-api';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import countries from 'i18n-iso-countries';
+import enLocale from 'i18n-iso-countries/langs/en.json';
+
+// Register the locale
+countries.registerLocale(enLocale);
 
 export default function ShipmentDetailPage() {
   const params = useParams();
@@ -248,6 +253,88 @@ export default function ShipmentDetailPage() {
     }
   }, [weight, shipment?.pricingModel]);
 
+  // Helper function to extract address components from Google Places result
+  const extractAddressComponents = (place: google.maps.places.PlaceResult) => {
+    const components: {
+      country?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+    } = {};
+
+    if (place.address_components) {
+      place.address_components.forEach((component) => {
+        const types = component.types;
+        
+        if (types.includes('country')) {
+          // Get country name from the library using country code
+          const countryCode = component.short_name?.toUpperCase();
+          if (countryCode) {
+            const countryName = countries.getName(countryCode, 'en', { select: 'official' });
+            if (countryName) {
+              components.country = countryName;
+            }
+          }
+        }
+        
+        // City can be in different types, prioritize locality
+        if (types.includes('locality') && !components.city) {
+          components.city = component.long_name;
+        } else if (types.includes('administrative_area_level_2') && !components.city) {
+          // Sometimes city is in level_2
+          components.city = component.long_name;
+        } else if (types.includes('sublocality') && !components.city) {
+          // Sometimes city is in sublocality
+          components.city = component.long_name;
+        }
+        
+        if (types.includes('administrative_area_level_1')) {
+          components.state = component.long_name;
+        }
+        
+        if (types.includes('postal_code')) {
+          components.postalCode = component.long_name;
+        }
+      });
+    }
+
+    return components;
+  };
+
+  // Handler for pickup address selection
+  const handlePickupAddressSelect = (place: google.maps.places.PlaceResult) => {
+    const components = extractAddressComponents(place);
+    if (components.country) {
+      setPickupCountry(components.country);
+    }
+    if (components.city) {
+      setPickupCity(components.city);
+    }
+    if (components.state) {
+      setPickupState(components.state);
+    }
+    if (components.postalCode) {
+      setPickupPostalCode(components.postalCode);
+    }
+  };
+
+  // Handler for delivery address selection
+  const handleDeliveryAddressSelect = (place: google.maps.places.PlaceResult) => {
+    const components = extractAddressComponents(place);
+    if (components.country) {
+      setDeliveryCountry(components.country);
+    }
+    if (components.city) {
+      setDeliveryCity(components.city);
+    }
+    if (components.state) {
+      setDeliveryState(components.state);
+    }
+    if (components.postalCode) {
+      setDeliveryPostalCode(components.postalCode);
+    }
+  };
+
   const validateBookingForm = (): string[] => {
     const errors: string[] = [];
     
@@ -260,6 +347,9 @@ export default function ShipmentDetailPage() {
       if (!pickupAddress || !pickupCity || !pickupCountry) {
         errors.push('Pickup address, city, and country are required');
       }
+      if (!pickupContactName || !pickupContactPhone) {
+        errors.push('Pickup contact name and phone are required');
+      }
     } else if (pickupMethod === 'DROP_OFF_AT_COMPANY') {
       if (!pickupWarehouseId) {
         errors.push('Please select a warehouse for drop-off');
@@ -270,6 +360,9 @@ export default function ShipmentDetailPage() {
     if (deliveryMethod === 'DELIVERED_TO_RECEIVER') {
       if (!deliveryAddress || !deliveryCity || !deliveryCountry) {
         errors.push('Delivery address, city, and country are required');
+      }
+      if (!deliveryContactName || !deliveryContactPhone) {
+        errors.push('Delivery contact name and phone are required');
       }
     } else if (deliveryMethod === 'RECEIVER_PICKS_UP') {
       if (!deliveryWarehouseId) {
@@ -385,6 +478,9 @@ export default function ShipmentDetailPage() {
       if (!pickupAddress || !pickupCity || !pickupCountry) {
         return false;
       }
+      if (!pickupContactName || !pickupContactPhone) {
+        return false;
+      }
     } else if (pickupMethod === 'DROP_OFF_AT_COMPANY') {
       if (!pickupWarehouseId) {
         return false;
@@ -394,6 +490,9 @@ export default function ShipmentDetailPage() {
     // Validate delivery method requirements
     if (deliveryMethod === 'DELIVERED_TO_RECEIVER') {
       if (!deliveryAddress || !deliveryCity || !deliveryCountry) {
+        return false;
+      }
+      if (!deliveryContactName || !deliveryContactPhone) {
         return false;
       }
     } else if (deliveryMethod === 'RECEIVER_PICKS_UP') {
@@ -683,7 +782,7 @@ export default function ShipmentDetailPage() {
                           <Upload className="h-4 w-4 text-gray-500" />
                           <span className="text-sm text-gray-600">
                             {selectedImages.length === 0
-                              ? 'Upload images (max 10)'
+                              ? `Upload images (max ${MAX_PARCEL_IMAGES})`
                               : `${selectedImages.length} / ${MAX_PARCEL_IMAGES} images`}
                           </span>
                         </div>
@@ -691,7 +790,7 @@ export default function ShipmentDetailPage() {
                       <input
                         id="image-upload"
                         type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                        accept={ALLOWED_IMAGE_TYPES.join(',')}
                         multiple
                         className="hidden"
                         onChange={async (e) => {
@@ -706,13 +805,9 @@ export default function ShipmentDetailPage() {
 
                           // Validate files
                           for (const file of files) {
-                            if (file.size > 10 * 1024 * 1024) {
-                              setError(`File ${file.name} is too large. Maximum size is 10MB.`);
-                              return;
-                            }
-                            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                            if (!allowedTypes.includes(file.type)) {
-                              setError(`File ${file.name} is not a supported image format.`);
+                            const validation = validateImageFile(file);
+                            if (!validation.valid) {
+                              setError(validation.error || 'Invalid image file');
                               return;
                             }
                           }
@@ -729,11 +824,11 @@ export default function ShipmentDetailPage() {
                         }}
                       />
                     </div>
-                    {selectedImages.length > 0 && (
-                      <p className="text-xs text-gray-500">
-                        Images will be uploaded when you create the booking
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-500">
+                      {selectedImages.length > 0 
+                        ? `${selectedImages.length} / ${MAX_PARCEL_IMAGES} images selected. Images will be uploaded when you create the booking.`
+                        : `Max ${MAX_PARCEL_IMAGES} images, ${MAX_FILE_SIZE / (1024 * 1024)}MB per file. Supported formats: JPEG, JPG, PNG, WebP, GIF`}
+                    </p>
                   </div>
                 </div>
 
@@ -774,6 +869,7 @@ export default function ShipmentDetailPage() {
                       <AddressAutocomplete
                         value={pickupAddress}
                         onChange={setPickupAddress}
+                        onPlaceSelect={handlePickupAddressSelect}
                         label="Pickup Address"
                         required
                         placeholder="Enter pickup address"
@@ -823,23 +919,25 @@ export default function ShipmentDetailPage() {
                       
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <Label htmlFor="pickupContactName">Contact Name</Label>
+                          <Label htmlFor="pickupContactName">Contact Name <span className="text-red-500">*</span></Label>
                           <Input
                             id="pickupContactName"
                             type="text"
-                            placeholder="Optional"
+                            placeholder="Enter contact name"
                             value={pickupContactName}
                             onChange={(e) => setPickupContactName(e.target.value)}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="pickupContactPhone">Contact Phone</Label>
+                          <Label htmlFor="pickupContactPhone">Contact Phone <span className="text-red-500">*</span></Label>
                           <Input
                             id="pickupContactPhone"
                             type="tel"
-                            placeholder="Optional"
+                            placeholder="Enter contact phone"
                             value={pickupContactPhone}
                             onChange={(e) => setPickupContactPhone(e.target.value)}
+                            required
                           />
                         </div>
                       </div>
@@ -908,6 +1006,7 @@ export default function ShipmentDetailPage() {
                       <AddressAutocomplete
                         value={deliveryAddress}
                         onChange={setDeliveryAddress}
+                        onPlaceSelect={handleDeliveryAddressSelect}
                         label="Delivery Address"
                         required
                         placeholder="Enter delivery address"
@@ -957,23 +1056,25 @@ export default function ShipmentDetailPage() {
                       
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <Label htmlFor="deliveryContactName">Contact Name</Label>
+                          <Label htmlFor="deliveryContactName">Contact Name <span className="text-red-500">*</span></Label>
                           <Input
                             id="deliveryContactName"
                             type="text"
-                            placeholder="Optional"
+                            placeholder="Enter contact name"
                             value={deliveryContactName}
                             onChange={(e) => setDeliveryContactName(e.target.value)}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="deliveryContactPhone">Contact Phone</Label>
+                          <Label htmlFor="deliveryContactPhone">Contact Phone <span className="text-red-500">*</span></Label>
                           <Input
                             id="deliveryContactPhone"
                             type="tel"
-                            placeholder="Optional"
+                            placeholder="Enter contact phone"
                             value={deliveryContactPhone}
                             onChange={(e) => setDeliveryContactPhone(e.target.value)}
+                            required
                           />
                         </div>
                       </div>

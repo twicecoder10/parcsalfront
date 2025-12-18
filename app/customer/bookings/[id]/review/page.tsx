@@ -12,10 +12,12 @@ import { Star, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from 'lucide-reac
 import { customerApi } from '@/lib/customer-api';
 import { getErrorMessage } from '@/lib/api';
 import { format } from 'date-fns';
+import { useConfirm } from '@/lib/use-confirm';
 
 export default function ReviewPage() {
   const params = useParams();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const bookingId = params.id as string;
 
   const [booking, setBooking] = useState<any>(null);
@@ -110,7 +112,13 @@ export default function ReviewPage() {
 
   const handleDelete = async () => {
     if (!existingReview) return;
-    if (!confirm('Are you sure you want to delete your review?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Review',
+      description: 'Are you sure you want to delete your review?',
+      variant: 'destructive',
+      confirmText: 'Delete',
+    });
+    if (!confirmed) return;
 
     setDeleting(true);
     setError(null);
@@ -364,6 +372,7 @@ export default function ReviewPage() {
           </div>
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }

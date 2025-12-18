@@ -10,8 +10,11 @@ import { authApi, getErrorMessage } from '@/lib/api';
 import { companyApi } from '@/lib/company-api';
 import type { User } from '@/lib/api';
 import type { OverviewStats, RecentBooking, UpcomingShipment } from '@/lib/company-api';
+import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { CompanyMapView } from '@/components/company-map-view';
 
 export default function CompanyOverviewPage() {
+  const permissions = usePermissions();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<OverviewStats | null>(null);
@@ -92,12 +95,14 @@ export default function CompanyOverviewPage() {
           <h1 className="text-3xl font-bold">Overview</h1>
           <p className="text-gray-600 mt-2">Monitor your shipment operations at a glance</p>
         </div>
-        <Link href="/company/shipments/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Shipment Slot
-          </Button>
-        </Link>
+        {canPerformAction(permissions, 'createShipment') && (
+          <Link href="/company/shipments/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Shipment Slot
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -225,16 +230,14 @@ export default function CompanyOverviewPage() {
         </Card>
       )}
 
-      {/* Charts placeholder */}
+      {/* Map View */}
       <Card>
         <CardHeader>
-          <CardTitle>Bookings Over Time</CardTitle>
-          <CardDescription>Track your booking trends</CardDescription>
+          <CardTitle>Operations Map</CardTitle>
+          <CardDescription>View your warehouses, shipment slots, and active bookings on a map</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-gray-500">
-            Chart visualization will be implemented here
-          </div>
+          <CompanyMapView />
         </CardContent>
       </Card>
 

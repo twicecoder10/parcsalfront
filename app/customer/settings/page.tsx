@@ -9,7 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getStoredUser } from '@/lib/auth';
 import { customerApi } from '@/lib/customer-api';
 import { getErrorMessage } from '@/lib/api';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { authApi } from '@/lib/api';
+import { removeStoredUser } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -17,9 +28,16 @@ import { AddressAutocomplete } from '@/components/address-autocomplete';
 
 export default function SettingsPage() {
   const user = getStoredUser();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // Delete account state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   
   // Profile state
   const [fullName, setFullName] = useState(user?.fullName || user?.name || '');
@@ -144,6 +162,34 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    // Validate email matches
+    if (deleteConfirmEmail !== user?.email) {
+      setMessage({ type: 'error', text: 'Email does not match' });
+      return;
+    }
+
+    // Validate password is provided
+    if (!deletePassword) {
+      setMessage({ type: 'error', text: 'Password is required' });
+      return;
+    }
+
+    setDeleting(true);
+    setMessage(null);
+
+    try {
+      await authApi.deleteAccount(deletePassword);
+      // Clear user data and redirect to home
+      removeStoredUser();
+      router.push('/');
+    } catch (error: any) {
+      setMessage({ type: 'error', text: getErrorMessage(error) || 'Failed to delete account' });
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
@@ -183,6 +229,7 @@ export default function SettingsPage() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="password">Password</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="delete">Delete Account</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -364,7 +411,136 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="delete">
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600 flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Delete Account
+              </CardTitle>
+              <CardDescription>
+                Permanently delete your account and all associated data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                  <li>Your account will be permanently deleted</li>
+                  <li>All personal information will be anonymized</li>
+                  <li>Booking records will be kept for business purposes but anonymized</li>
+                  <li>Reviews will remain but will be linked to an anonymized account</li>
+                  <li>You will be logged out immediately</li>
+                </ul>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete My Account
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) {
+          setDeleteConfirmEmail('');
+          setDeletePassword('');
+          setMessage(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Account</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete your account and anonymize your data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">Warning: This is destructive and cannot be undone</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirm-email">
+                To verify, type your email address <strong className="text-gray-700">{user?.email}</strong>
+              </Label>
+              <Input
+                id="confirm-email"
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                placeholder={user?.email}
+                disabled={deleting}
+                autoComplete="off"
+              />
+              {deleteConfirmEmail && deleteConfirmEmail !== user?.email && (
+                <p className="text-xs text-red-600">Email does not match</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="delete-password">
+                Enter your password to confirm
+              </Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Password"
+                disabled={deleting}
+                autoComplete="current-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeleteConfirmEmail('');
+                setDeletePassword('');
+                setMessage(null);
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={
+                deleting ||
+                deleteConfirmEmail !== user?.email ||
+                !deletePassword
+              }
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Account
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </GoogleMapsLoader>
   );
