@@ -209,6 +209,8 @@ export default function TeamPage() {
       viewPayments: false,
       viewPaymentStats: false,
       processRefund: false,
+      replyToMessage: true,
+      viewMessages: true,
     },
     staff: {
       createShipment: true,
@@ -228,6 +230,8 @@ export default function TeamPage() {
       viewPayments: true,
       viewPaymentStats: true,
       processRefund: false,
+      replyToMessage: true,
+      viewMessages: true,
     },
     customized: {
       createShipment: true,
@@ -247,6 +251,8 @@ export default function TeamPage() {
       viewPayments: true,
       viewPaymentStats: true,
       processRefund: true,
+      replyToMessage: true,
+      viewMessages: true,
     },
   };
 
@@ -822,6 +828,25 @@ export default function TeamPage() {
                     description="Allow staff to reply to customer reviews"
                     enabled={restrictions.replyToReview ?? true}
                     onChange={() => toggleRestriction('replyToReview')}
+                  />
+                </div>
+              </div>
+
+              {/* Messaging Actions */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900">Messaging</h3>
+                <div className="space-y-3 pl-4 border-l-2 border-gray-200">
+                  <RestrictionToggle
+                    label="View Messages"
+                    description="Allow staff to view chat messages from customers"
+                    enabled={restrictions.viewMessages ?? true}
+                    onChange={() => toggleRestriction('viewMessages')}
+                  />
+                  <RestrictionToggle
+                    label="Reply to Messages"
+                    description="Allow staff to reply to customer messages"
+                    enabled={restrictions.replyToMessage ?? true}
+                    onChange={() => toggleRestriction('replyToMessage')}
                   />
                 </div>
               </div>

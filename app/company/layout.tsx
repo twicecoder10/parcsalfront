@@ -7,7 +7,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 
@@ -35,6 +35,9 @@ function getNavItems(permissions: ReturnType<typeof usePermissions>) {
 
   // Reviews - typically always visible for company users
   items.push({ title: 'Reviews', href: '/company/reviews', icon: Star });
+
+  // Messages - always visible for company users
+  items.push({ title: 'Messages', href: '/company/chat', icon: MessageSquare });
 
   // Only show Analytics if user can view analytics
   if (canPerformAction(permissions, 'viewAnalytics')) {

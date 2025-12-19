@@ -460,5 +460,30 @@ export const publicApi = {
     // Direct format
     return response.data;
   },
+
+  // List/search companies (public endpoint)
+  listCompanies: async (params?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    country?: string;
+    city?: string;
+    verified?: boolean;
+  }): Promise<any> => {
+    const response = await publicApiInstance.get('/companies/browse', { params });
+    
+    // Handle both wrapped and direct response formats
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to fetch companies');
+    }
+    
+    // Check if response is wrapped
+    if (response.data.status === 'success' && response.data.data) {
+      return response.data;
+    }
+    
+    // Direct format
+    return response.data;
+  },
 };
 

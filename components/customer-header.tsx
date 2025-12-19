@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getStoredUser, removeStoredUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Settings, Package, ShoppingCart } from 'lucide-react';
+import { User, LogOut, Settings, Package, ShoppingCart, MessageSquare } from 'lucide-react';
 import { NotificationDropdown } from '@/components/notification-dropdown';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +30,7 @@ export function CustomerHeader() {
   const navItems = [
     { title: 'Live Slots', href: '/customer/shipments/browse', icon: Package },
     { title: 'My Bookings', href: '/customer/bookings', icon: ShoppingCart },
+    { title: 'Messages', href: '/customer/chat', icon: MessageSquare },
   ];
 
   return (

@@ -19,7 +19,9 @@ export type PermissionAction =
   | 'viewShipments'
   | 'viewPayments'
   | 'viewPaymentStats'
-  | 'processRefund';
+  | 'processRefund'
+  | 'replyToMessage'
+  | 'viewMessages';
 
 export interface UserPermissions {
   restrictions: Record<PermissionAction, boolean>;
@@ -73,6 +75,8 @@ export function usePermissions(): UserPermissions {
         viewPayments: true,
         viewPaymentStats: true,
         processRefund: true,
+        replyToMessage: true,
+        viewMessages: true,
       };
       setPermissions({
         restrictions: allActionsEnabled,
@@ -112,6 +116,8 @@ export function usePermissions(): UserPermissions {
             viewPayments: true,
             viewPaymentStats: true,
             processRefund: true,
+            replyToMessage: true,
+            viewMessages: true,
           },
           isAdmin: false,
         });
@@ -142,6 +148,8 @@ export function usePermissions(): UserPermissions {
     viewPayments: true,
     viewPaymentStats: true,
     processRefund: true,
+    replyToMessage: true,
+    viewMessages: true,
   };
 
   return {

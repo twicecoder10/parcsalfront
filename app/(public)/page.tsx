@@ -12,7 +12,7 @@ import { Footer } from '@/components/footer';
 import { ShipmentCard } from '@/components/shipment-card';
 import { shipmentApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
+import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight, Navigation, Building2 } from 'lucide-react';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -199,6 +199,12 @@ export default function LandingPage() {
                     <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
                       Find a Slot
                       <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/companies/browse">
+                    <Button size="lg" variant="outline" className="border-2">
+                      <Building2 className="mr-2 h-5 w-5" />
+                      Browse Companies
                     </Button>
                   </Link>
                   <Link href="/track">
@@ -462,10 +468,12 @@ export default function LandingPage() {
                   <div className="text-3xl md:text-4xl font-bold mb-2">1000+</div>
                   <div className="text-orange-100 text-sm">Active Users</div>
                 </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold mb-2">500+</div>
-                  <div className="text-orange-100 text-sm">Verified Companies</div>
-                </div>
+                <Link href="/companies/browse" className="hover:opacity-90 transition-opacity">
+                  <div>
+                    <div className="text-3xl md:text-4xl font-bold mb-2">500+</div>
+                    <div className="text-orange-100 text-sm">Verified Companies</div>
+                  </div>
+                </Link>
                 <div>
                   <div className="text-3xl md:text-4xl font-bold mb-2">10K+</div>
                   <div className="text-orange-100 text-sm">Shipments Booked</div>
