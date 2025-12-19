@@ -33,7 +33,8 @@ import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
-  PAID: 'bg-green-100 text-green-800',
+  SUCCEEDED: 'bg-green-100 text-green-800',
+  PAID: 'bg-green-100 text-green-800', // Keep for backward compatibility
   PENDING: 'bg-yellow-100 text-yellow-800',
   FAILED: 'bg-red-100 text-red-800',
   REFUNDED: 'bg-gray-100 text-gray-800',
@@ -92,7 +93,7 @@ export default function PaymentsPage() {
       const response = await companyApi.getPayments({
         limit: pagination.limit,
         offset: currentPage * pagination.limit,
-        status: statusFilter !== 'all' ? statusFilter as 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' : undefined,
+        status: statusFilter !== 'all' ? (statusFilter as 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED') : undefined,
         search: searchQuery || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
@@ -159,8 +160,8 @@ export default function PaymentsPage() {
       toast.error('You do not have permission to process refunds.');
       return;
     }
-    if (payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
-      toast.error('Only paid or partially refunded payments can be refunded.');
+    if (payment.status !== 'SUCCEEDED' && payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
+      toast.error('Only succeeded or partially refunded payments can be refunded.');
       return;
     }
     setPaymentToRefund(payment);
@@ -265,6 +266,7 @@ export default function PaymentsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="SUCCEEDED">Succeeded</SelectItem>
                 <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="FAILED">Failed</SelectItem>
@@ -407,12 +409,12 @@ export default function PaymentsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Link href={`/company/bookings/${payment.bookingId}`}>
+                        <Link href={`/company/payments/${payment.id}`}>
                           <Button variant="ghost" size="sm">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        {(payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
+                        {(payment.status === 'SUCCEEDED' || payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
                          canPerformAction(permissions, 'processRefund') && (
                           <Button
                             variant="ghost"

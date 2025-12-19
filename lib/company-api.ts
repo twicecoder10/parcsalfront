@@ -270,7 +270,7 @@ export interface Payment {
   };
   amount: number;
   currency: string;
-  status: 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  status: 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   paymentMethod?: string;
   stripePaymentIntentId?: string;
   stripeChargeId?: string;
@@ -775,7 +775,7 @@ export const companyApi = {
   getPayments: async (params?: {
     limit?: number;
     offset?: number;
-    status?: 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+    status?: 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
     dateFrom?: string;
     dateTo?: string;
     bookingId?: string;
