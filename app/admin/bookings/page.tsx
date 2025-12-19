@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, ShoppingCart, Search, DollarSign, Loader2 } from 'lucide-react';
+import { Eye, ShoppingCart, Search, PoundSterling, Loader2 } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { AdminBooking, BookingStats } from '@/lib/admin-api';
 
@@ -136,7 +136,7 @@ export default function AdminBookingsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(stats?.revenue?.total || 0).toLocaleString()}</div>

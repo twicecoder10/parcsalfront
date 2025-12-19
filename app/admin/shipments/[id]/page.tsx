@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Package, MapPin, Calendar, DollarSign, Truck, Building2, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Truck, Building2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { adminApi } from '@/lib/admin-api';
 import type { AdminShipmentDetail } from '@/lib/admin-api';

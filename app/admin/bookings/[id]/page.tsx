@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Package, MapPin, Calendar, DollarSign, Building2, Mail, Phone, Loader2, Truck } from 'lucide-react';
+import { ArrowLeft, User, Package, MapPin, Calendar, PoundSterling, Building2, Mail, Phone, Loader2, Truck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { adminApi } from '@/lib/admin-api';
@@ -271,7 +271,7 @@ export default function BookingDetailPage() {
             )}
             {booking.value && (
               <div className="flex items-center gap-3">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <PoundSterling className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="font-medium">Parcel Value</p>
                   <p className="text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>

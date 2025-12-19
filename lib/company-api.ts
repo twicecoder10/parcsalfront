@@ -121,6 +121,11 @@ export interface Booking {
   requestedWeightKg?: number;
   requestedItemsCount?: number | null;
   calculatedPrice: number;
+  // Payment fee breakdown (in minor units - pence)
+  baseAmount?: number | null;
+  adminFeeAmount?: number | null;
+  processingFeeAmount?: number | null;
+  totalAmount?: number | null;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
   paymentStatus?: string;
   notes?: string | null;
@@ -966,6 +971,62 @@ export const companyApi = {
   // Update restrictions for a specific staff member (admin only)
   updateStaffRestrictions: async (memberId: string, restrictions: Record<string, boolean>): Promise<StaffRestrictions> => {
     const response = await api.put<ApiResponse<StaffRestrictions>>(`/companies/team/${memberId}/restrictions`, { restrictions });
+    return extractData(response);
+  },
+
+  // ============================================
+  // Stripe Connect / Payouts
+  // ============================================
+
+  createOnboardingLink: async (returnUrl: string): Promise<{ url: string }> => {
+    const response = await api.post<ApiResponse<{ url: string }>>('/connect/onboarding-link', { returnUrl });
+    return extractData(response);
+  },
+
+  getConnectStatus: async (): Promise<{
+    stripeAccountId: string | null;
+    stripeOnboardingStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETE';
+    chargesEnabled: boolean;
+    payoutsEnabled: boolean;
+  }> => {
+    const response = await api.get<ApiResponse<{
+      stripeAccountId: string | null;
+      stripeOnboardingStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETE';
+      chargesEnabled: boolean;
+      payoutsEnabled: boolean;
+    }>>('/connect/status');
+    return extractData(response);
+  },
+
+  getConnectBalance: async (): Promise<{
+    available: number; // in pence
+    pending: number;   // in pence
+    currency: string;
+  }> => {
+    const response = await api.get<ApiResponse<{
+      available: number;
+      pending: number;
+      currency: string;
+    }>>('/connect/balance');
+    return extractData(response);
+  },
+
+  requestPayout: async (amount: number): Promise<{
+    id: string;
+    amount: number; // in pence
+    currency: string;
+    status: string;
+    stripePayoutId: string;
+    createdAt: string;
+  }> => {
+    const response = await api.post<ApiResponse<{
+      id: string;
+      amount: number;
+      currency: string;
+      status: string;
+      stripePayoutId: string;
+      createdAt: string;
+    }>>('/connect/request-payout', { amount });
     return extractData(response);
   },
 };

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, DollarSign, Loader2, Warehouse } from 'lucide-react';
+import { Building2, Mail, MapPin, CheckCircle2, XCircle, ArrowLeft, Package, ShoppingCart, PoundSterling, Loader2, Warehouse } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { CompanyDetail, AdminWarehouseAddress } from '@/lib/admin-api';
 import { toast } from '@/lib/toast';
@@ -200,7 +200,7 @@ export default function CompanyDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <PoundSterling className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(stats?.revenue || 0).toLocaleString()}</div>

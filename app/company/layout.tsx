@@ -7,7 +7,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 
@@ -47,6 +47,10 @@ function getNavItems(permissions: ReturnType<typeof usePermissions>) {
   // Payments - only if user can view payments
   if (canPerformAction(permissions, 'viewPayments')) {
     items.push({ title: 'Payments', href: '/company/payments', icon: Wallet });
+    // Payouts - for company admins to manage their earnings
+    if (!isCompanyStaff) {
+      items.push({ title: 'Payouts', href: '/company/payouts', icon: Banknote });
+    }
   }
 
   // Subscription - only visible for company admins, not staff

@@ -65,8 +65,19 @@ export const customerApi = {
   },
 
   getBookingById: async (bookingId: string): Promise<any> => {
-    const response = await api.get<ApiResponse<any>>(`/customer/bookings/${bookingId}`);
-    return extractData(response);
+    // Try general /bookings/:id endpoint first (for pending bookings with pricing breakdown)
+    // Fall back to /customer/bookings/:id if the general endpoint fails
+    try {
+      const response = await api.get<ApiResponse<any>>(`/bookings/${bookingId}`);
+      return extractData(response);
+    } catch (error: any) {
+      // If general endpoint fails (404 or other error), try customer-specific endpoint
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        const response = await api.get<ApiResponse<any>>(`/customer/bookings/${bookingId}`);
+        return extractData(response);
+      }
+      throw error;
+    }
   },
 
   getBookingTrack: async (bookingId: string): Promise<any> => {

@@ -22,11 +22,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Eye, Search, Loader2, DollarSign, TrendingUp, AlertCircle, RefreshCw, Calendar } from 'lucide-react';
+import { Eye, Search, Loader2, TrendingUp, AlertCircle, RefreshCw, PoundSterling } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { Payment, PaymentStats } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
@@ -198,7 +197,7 @@ export default function PaymentsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <PoundSterling className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">£{stats.totalAmount.toFixed(2)}</div>

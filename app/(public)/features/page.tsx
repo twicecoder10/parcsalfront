@@ -3,7 +3,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, Shield, Clock, DollarSign, BarChart3, Users, Bell, MapPin, Package } from 'lucide-react';
+import { Search, Shield, Clock, PoundSterling, BarChart3, Users, Bell, MapPin, Package } from 'lucide-react';
 
 export default function FeaturesPage() {
   const customerFeatures = [
@@ -18,7 +18,7 @@ export default function FeaturesPage() {
       description: 'Track your shipments in real-time with live updates on location and delivery status.',
     },
     {
-      icon: DollarSign,
+      icon: PoundSterling,
       title: 'Transparent Pricing',
       description: 'See all costs upfront with no hidden fees. Compare prices across different providers.',
     },
@@ -51,7 +51,7 @@ export default function FeaturesPage() {
       description: 'Manage all your shipment slots, bookings, and team members from one central dashboard.',
     },
     {
-      icon: DollarSign,
+      icon: PoundSterling,
       title: 'Revenue Optimization',
       description: 'Maximize your capacity utilization and revenue with dynamic pricing and demand insights.',
     },

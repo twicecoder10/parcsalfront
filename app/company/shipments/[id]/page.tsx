@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { MapPin, Clock, Package, DollarSign, Edit, X, ArrowLeft, Loader2, Truck, PackageCheck, Send, Trash2 } from 'lucide-react';
+import { MapPin, Clock, Package, Edit, X, ArrowLeft, Loader2, Truck, PackageCheck, Send, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

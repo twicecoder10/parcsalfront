@@ -265,7 +265,7 @@ function BookingDetailContent() {
                 {booking?.payment && (
                   <div className="mt-3 pt-3 border-t border-green-200">
                     <p className="text-xs text-green-600">
-                      Transaction ID: {booking.payment.stripePaymentIntentId || booking.payment.id}
+                      Transaction ID: {booking.payment.id}
                     </p>
                     {booking.payment.createdAt && (
                       <p className="text-xs text-green-600 mt-1">
@@ -562,7 +562,22 @@ function BookingDetailContent() {
               <div>
                 <p className="font-medium">Total Amount</p>
                 <p className="text-2xl font-bold text-orange-600 mt-1">
-                  £{parseFloat(booking.calculatedPrice || booking.totalPrice || '0').toFixed(2)}
+                  £{(() => {
+                    // Use payment amount if payment exists and is paid
+                    if (booking.payment?.amount && booking.paymentStatus === 'PAID') {
+                      return parseFloat(String(booking.payment.amount)).toFixed(2);
+                    }
+                    // Use totalAmount (in cents) if available
+                    if (booking.totalAmount) {
+                      return (booking.totalAmount / 100).toFixed(2);
+                    }
+                    // Fallback to calculatedPrice
+                    if (booking.calculatedPrice) {
+                      return parseFloat(String(booking.calculatedPrice)).toFixed(2);
+                    }
+                    // Last resort fallback
+                    return '0.00';
+                  })()}
                 </p>
               </div>
               {needsPayment && (
@@ -578,8 +593,8 @@ function BookingDetailContent() {
               <div className="pt-4 border-t space-y-2">
                 <p className="text-sm font-medium text-gray-700">Payment Details</p>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {booking.payment.stripePaymentIntentId && (
-                    <p>Transaction ID: <span className="font-mono">{booking.payment.stripePaymentIntentId}</span></p>
+                  {booking.payment.id && (
+                    <p>Transaction ID: <span className="font-mono">{booking.payment.id}</span></p>
                   )}
                   {booking.payment.amount && (
                     <p>Amount: £{parseFloat(String(booking.payment.amount)).toFixed(2)}</p>

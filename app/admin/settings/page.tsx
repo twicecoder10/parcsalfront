@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Settings, DollarSign, Mail, Shield, Bell, Save, Loader2 } from 'lucide-react';
+import { Settings, PoundSterling, Shield, Bell, Save, Loader2 } from 'lucide-react';
 import { adminApi } from '@/lib/admin-api';
 import type { PlatformSettings } from '@/lib/admin-api';
 import { toast } from '@/lib/toast';
@@ -115,7 +114,7 @@ export default function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
+            <PoundSterling className="h-5 w-5" />
             <CardTitle>Commission Settings</CardTitle>
           </div>
           <CardDescription>Configure platform commission rates</CardDescription>

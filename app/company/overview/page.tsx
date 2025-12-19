@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Clock, ShoppingCart, DollarSign, Plus, AlertCircle, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import { Package, Clock, ShoppingCart, Plus, AlertCircle, TrendingUp, TrendingDown, Loader2, PoundSterling } from 'lucide-react';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { authApi, getErrorMessage } from '@/lib/api';
 import { companyApi } from '@/lib/company-api';
@@ -170,7 +170,7 @@ export default function CompanyOverviewPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <PoundSterling className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">

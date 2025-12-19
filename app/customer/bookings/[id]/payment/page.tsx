@@ -105,18 +105,57 @@ function PaymentContent() {
           <CardTitle>Booking Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex justify-between">
               <span className="text-gray-600">Route</span>
               <span className="font-medium">
                 {booking.shipmentSlot?.originCity || booking.originCity} → {booking.shipmentSlot?.destinationCity || booking.destinationCity}
               </span>
             </div>
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-lg font-medium">Total Amount</span>
+            
+            {/* Fee Breakdown */}
+            <div className="pt-4 border-t space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Payment Breakdown</h3>
+              
+              {/* Base Amount (Shipment Price) */}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Shipment price</span>
+                <span className="font-medium">
+                  £{booking.baseAmount 
+                    ? (booking.baseAmount / 100).toFixed(2)
+                    : (booking.calculatedPrice || booking.totalPrice || '0.00')}
+                </span>
+              </div>
+              
+              {/* Admin Fee */}
+              {booking.adminFeeAmount !== null && booking.adminFeeAmount !== undefined && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Parcsal admin fee (10%)</span>
+                  <span className="font-medium">
+                    £{(booking.adminFeeAmount / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              
+              {/* Processing Fee */}
+              {booking.processingFeeAmount !== null && booking.processingFeeAmount !== undefined && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payment processing fee</span>
+                  <span className="font-medium">
+                    £{(booking.processingFeeAmount / 100).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              
+              {/* Total */}
+              <div className="flex justify-between items-center pt-3 border-t">
+                <span className="text-lg font-semibold">Total</span>
               <span className="text-2xl font-bold text-orange-600">
-                £{booking.calculatedPrice || booking.totalPrice || '0.00'}
+                  £{booking.totalAmount 
+                    ? (booking.totalAmount / 100).toFixed(2)
+                    : booking.calculatedPrice || booking.totalPrice || '0.00'}
               </span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -161,7 +200,9 @@ function PaymentContent() {
             ) : (
               <>
                 <CreditCard className="mr-2 h-4 w-4" />
-                Pay £{booking?.calculatedPrice || booking?.totalPrice || '0.00'}
+                Pay £{booking?.totalAmount 
+                  ? (booking.totalAmount / 100).toFixed(2)
+                  : booking?.calculatedPrice || booking?.totalPrice || '0.00'}
               </>
             )}
           </Button>

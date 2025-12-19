@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Package, DollarSign, User, Mail, Phone, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw } from 'lucide-react';
+import { MapPin, Clock, Package, PoundSterling, User, Mail, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -441,14 +441,16 @@ export default function BookingDetailPage() {
               </div>
                       <div>
                         <p className="font-medium">{booking.customer.fullName}</p>
-                        <div className="flex items-center gap-4 mt-1">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="h-4 w-4" />
-                            <a href={`mailto:${booking.customer.email}`} className="hover:text-orange-600">
-                              {booking.customer.email}
-                            </a>
+                        {booking.customer.email && (
+                          <div className="flex items-center gap-4 mt-1">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Mail className="h-4 w-4" />
+                              <a href={`mailto:${booking.customer.email}`} className="hover:text-orange-600">
+                                {booking.customer.email}
+                              </a>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
             </div>
           </div>
@@ -511,7 +513,7 @@ export default function BookingDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <DollarSign className="h-5 w-5 text-green-600" />
+            <PoundSterling className="h-5 w-5 text-green-600" />
             <div>
               <p className="font-medium">Price</p>
               <p className="text-sm text-gray-600">£{booking.calculatedPrice}</p>
@@ -547,7 +549,7 @@ export default function BookingDetailPage() {
             )}
             {booking.value && (
               <div className="flex items-center gap-3">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <PoundSterling className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="font-medium">Parcel Value</p>
                   <p className="text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>
@@ -649,7 +651,22 @@ export default function BookingDetailPage() {
               <div>
                 <p className="font-medium">Total Amount</p>
                 <p className="text-2xl font-bold text-orange-600 mt-1">
-                  £{parseFloat(String(booking.calculatedPrice || 0)).toFixed(2)}
+                  £{(() => {
+                    // Use payment amount if payment exists and is paid
+                    if (booking.payment?.amount && booking.paymentStatus === 'PAID') {
+                      return parseFloat(String(booking.payment.amount)).toFixed(2);
+                    }
+                    // Use totalAmount (in cents) if available
+                    if (booking.totalAmount) {
+                      return (booking.totalAmount / 100).toFixed(2);
+                    }
+                    // Fallback to calculatedPrice
+                    if (booking.calculatedPrice) {
+                      return parseFloat(String(booking.calculatedPrice)).toFixed(2);
+                    }
+                    // Last resort fallback
+                    return '0.00';
+                  })()}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -662,14 +679,14 @@ export default function BookingDetailPage() {
               <div className="pt-4 border-t space-y-2">
                 <p className="text-sm font-medium text-gray-700">Payment Details</p>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {booking.payment.stripePaymentIntentId && (
+                  {booking.payment.id && (
                     <p>
-                      Transaction ID: <span className="font-mono text-xs">{booking.payment.stripePaymentIntentId}</span>
+                      Transaction ID: <span className="font-mono text-xs">{booking.payment.id}</span>
                     </p>
                   )}
-                  {booking.payment.id && !booking.payment.stripePaymentIntentId && (
+                  {booking.payment.stripePaymentIntentId && (
                     <p>
-                      Payment ID: <span className="font-mono text-xs">{booking.payment.id}</span>
+                      Stripe Payment Intent: <span className="font-mono text-xs">{booking.payment.stripePaymentIntentId}</span>
                     </p>
                   )}
                   {booking.payment.amount && (
