@@ -48,6 +48,7 @@ export default function CompanySettingsPage() {
   
   // Get user email from stored user
   const storedUser = getStoredUserHelper();
+  const isCompanyStaff = storedUser?.role === 'COMPANY_STAFF';
   
   // Logo upload state
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -231,7 +232,11 @@ export default function CompanySettingsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Company Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your company profile and information</p>
+        <p className="text-gray-600 mt-2">
+          {isCompanyStaff 
+            ? 'View company information and manage your notification preferences'
+            : 'Manage your company profile and information'}
+        </p>
       </div>
 
       {/* Success Message */}
@@ -262,7 +267,9 @@ export default function CompanySettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Company Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="delete">Delete Account</TabsTrigger>
+          {!isCompanyStaff && (
+            <TabsTrigger value="delete">Delete Account</TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile Tab */}
@@ -270,10 +277,114 @@ export default function CompanySettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Company Profile</CardTitle>
-          <CardDescription>Update your company information</CardDescription>
+          <CardDescription>
+            {isCompanyStaff ? 'View company information' : 'Update your company information'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-              <form onSubmit={handleSubmitProfile} className="space-y-4">
+              {isCompanyStaff ? (
+                // Read-only view for staff
+                <div className="space-y-6">
+                  {profile?.logoUrl && (
+                    <div className="space-y-2">
+                      <Label>Company Logo</Label>
+                      <div className="relative w-24 h-24 rounded-lg border overflow-hidden">
+                        <Image
+                          src={profile.logoUrl}
+                          alt="Company logo"
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Company Name</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">{profile?.name || 'N/A'}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Website</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">
+                        {profile?.website ? (
+                          <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            {profile.website}
+                          </a>
+                        ) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <div className="p-2 border rounded-md bg-gray-50 min-h-[100px]">
+                      {profile?.description || 'N/A'}
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Contact Email</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">
+                        {profile?.contactEmail ? (
+                          <a href={`mailto:${profile.contactEmail}`} className="text-blue-600 hover:underline">
+                            {profile.contactEmail}
+                          </a>
+                        ) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Contact Phone</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">
+                        {profile?.contactPhone ? (
+                          <a href={`tel:${profile.contactPhone}`} className="text-blue-600 hover:underline">
+                            {profile.contactPhone}
+                          </a>
+                        ) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {profile?.address && (
+                    <div className="space-y-2">
+                      <Label>Address</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">{profile.address}</div>
+                    </div>
+                  )}
+
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {profile?.country && (
+                      <div className="space-y-2">
+                        <Label>Country</Label>
+                        <div className="p-2 border rounded-md bg-gray-50">{profile.country}</div>
+                      </div>
+                    )}
+                    {profile?.city && (
+                      <div className="space-y-2">
+                        <Label>City</Label>
+                        <div className="p-2 border rounded-md bg-gray-50">{profile.city}</div>
+                      </div>
+                    )}
+                    {profile?.state && (
+                      <div className="space-y-2">
+                        <Label>State/Province</Label>
+                        <div className="p-2 border rounded-md bg-gray-50">{profile.state}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {profile?.postalCode && (
+                    <div className="space-y-2">
+                      <Label>Postal Code</Label>
+                      <div className="p-2 border rounded-md bg-gray-50">{profile.postalCode}</div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Editable form for admin
+                <form onSubmit={handleSubmitProfile} className="space-y-4">
                 {/* Logo Upload Section */}
                 <div className="space-y-2">
                   <Label>Company Logo</Label>
@@ -518,6 +629,7 @@ export default function CompanySettingsPage() {
                   </Button>
                 </div>
               </form>
+              )}
             </CardContent>
           </Card>
 
@@ -557,7 +669,11 @@ export default function CompanySettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Manage how you receive notifications</CardDescription>
+              <CardDescription>
+                {isCompanyStaff 
+                  ? 'Manage your personal notification preferences'
+                  : 'Manage how you receive notifications'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitSettings} className="space-y-6">
@@ -666,41 +782,43 @@ export default function CompanySettingsPage() {
       </Card>
         </TabsContent>
 
-        <TabsContent value="delete">
-          <Card className="border-red-200">
-            <CardHeader>
-              <CardTitle className="text-red-600 flex items-center gap-2">
-                <Trash2 className="h-5 w-5" />
-                Delete Account
-              </CardTitle>
-              <CardDescription>
-                Permanently delete your account and all associated data
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
-                  <li>Your account will be permanently deleted</li>
-                  <li>All personal information will be anonymized</li>
-                  <li><strong>Your company will be permanently deleted</strong></li>
-                  <li><strong>All staff members will have their accounts anonymized</strong></li>
-                  <li>All company data (shipments, bookings, warehouses, subscriptions) will be deleted</li>
-                  <li>You will be logged out immediately</li>
-                </ul>
-              </div>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="w-full sm:w-auto"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete My Account
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {!isCompanyStaff && (
+          <TabsContent value="delete">
+            <Card className="border-red-200">
+              <CardHeader>
+                <CardTitle className="text-red-600 flex items-center gap-2">
+                  <Trash2 className="h-5 w-5" />
+                  Delete Account
+                </CardTitle>
+                <CardDescription>
+                  Permanently delete your account and all associated data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                    <li>Your account will be permanently deleted</li>
+                    <li>All personal information will be anonymized</li>
+                    <li><strong>Your company will be permanently deleted</strong></li>
+                    <li><strong>All staff members will have their accounts anonymized</strong></li>
+                    <li>All company data (shipments, bookings, warehouses, subscriptions) will be deleted</li>
+                    <li>You will be logged out immediately</li>
+                  </ul>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete My Account
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
       </Tabs>
 
