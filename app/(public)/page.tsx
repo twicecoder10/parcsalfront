@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Navbar } from '@/components/navbar';
@@ -12,7 +13,7 @@ import { Footer } from '@/components/footer';
 import { ShipmentCard } from '@/components/shipment-card';
 import { shipmentApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight, Navigation, Building2 } from 'lucide-react';
+import { Search, Package, Truck, Users, Star, ArrowRight, Shield, Zap, TrendingUp, Loader2, AlertCircle, ChevronLeft, ChevronRight, Navigation, Building2, ChevronDown, ChevronUp, MapPin, Calendar, Filter } from 'lucide-react';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
@@ -33,6 +34,7 @@ export default function LandingPage() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -82,6 +84,15 @@ export default function LandingPage() {
 
     router.push(`/shipments/browse?${params.toString()}`);
   };
+
+  // Count active filters (excluding route which is always visible)
+  const activeFiltersCount = [
+    departureDateFrom,
+    departureDateTo,
+    arrivalDateFrom,
+    arrivalDateTo,
+    mode !== 'all' ? mode : null,
+  ].filter(Boolean).length;
 
   // Filter out shipments where cutoff time or departure time has passed
   const shipments = (shipmentsData?.data || []).filter((shipment: any) =>
@@ -224,135 +235,215 @@ export default function LandingPage() {
           </section>
 
           {/* Search Bar */}
-          <section className="py-4 bg-white border-b">
+          <section className="py-6 bg-gradient-to-b from-gray-50 to-white border-b">
             <div className="container mx-auto px-4">
               <div className="max-w-6xl mx-auto">
-                <form onSubmit={handleSearch} className="p-3 bg-white border rounded-lg shadow-sm">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 items-end">
-                    <div className="space-y-1">
-                      <CountrySelect
-                        value={searchOriginCountry}
-                        onChange={(value) => {
-                          setSearchOriginCountry(value);
-                          setSearchOrigin('');
-                        }}
-                        label="Origin Country"
-                        placeholder="Select origin country"
-                      />
+                <form onSubmit={handleSearch} className="bg-white border rounded-lg shadow-sm overflow-hidden">
+                  {/* Route Section - Always Visible */}
+                  <div className="p-4 border-b">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-4 w-4 text-orange-600" />
+                      <h3 className="font-semibold text-gray-900 text-sm">Route</h3>
                     </div>
-                    <div className="space-y-1">
-                      <CitySelect
-                        value={searchOrigin}
-                        onChange={(value) => setSearchOrigin(value)}
-                        country={searchOriginCountry}
-                        label="Origin City"
-                        placeholder="Select origin city"
-                        disabled={!searchOriginCountry}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <CountrySelect
-                        value={searchDestinationCountry}
-                        onChange={(value) => {
-                          setSearchDestinationCountry(value);
-                          setSearchDestination('');
-                        }}
-                        label="Destination Country"
-                        placeholder="Select destination country"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <CitySelect
-                        value={searchDestination}
-                        onChange={(value) => setSearchDestination(value)}
-                        country={searchDestinationCountry}
-                        label="Destination City"
-                        placeholder="Select destination city"
-                        disabled={!searchDestinationCountry}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium block">Transport Mode</label>
-                      <Select value={mode} onValueChange={setMode}>
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="All Modes" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Modes</SelectItem>
-                          <SelectItem value="TRUCK">Truck</SelectItem>
-                          <SelectItem value="VAN">Van</SelectItem>
-                          <SelectItem value="AIR">Air</SelectItem>
-                          <SelectItem value="TRAIN">Train</SelectItem>
-                          <SelectItem value="SHIP">Ship</SelectItem>
-                          <SelectItem value="RIDER">Rider</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Departure Date Range */}
-                    <div className="border rounded-lg p-3 bg-gray-50/50">
-                      <label className="text-sm font-medium block mb-2 text-gray-700">
-                        Departure Range
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-xs text-gray-600 block">From</label>
-                          <Input
-                            type="date"
-                            value={departureDateFrom}
-                            onChange={(e) => setDepartureDateFrom(e.target.value)}
-                            className="h-9 text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs text-gray-600 block">To</label>
-                          <Input
-                            type="date"
-                            value={departureDateTo}
-                            onChange={(e) => setDepartureDateTo(e.target.value)}
-                            className="h-9 text-sm"
-                            min={departureDateFrom || undefined}
-                          />
-                        </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <div>
+                        <label className="text-xs font-medium text-gray-700 block mb-1">From Country</label>
+                        <CountrySelect
+                          value={searchOriginCountry}
+                          onChange={(value) => {
+                            setSearchOriginCountry(value);
+                            setSearchOrigin('');
+                          }}
+                          label=""
+                          placeholder="Country"
+                          className="[&_button]:h-8 [&_button]:text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-700 block mb-1">From City</label>
+                        <CitySelect
+                          value={searchOrigin}
+                          onChange={(value) => setSearchOrigin(value)}
+                          country={searchOriginCountry}
+                          label=""
+                          placeholder="City"
+                          disabled={!searchOriginCountry}
+                          className="[&_button]:h-8 [&_button]:text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-700 block mb-1">To Country</label>
+                        <CountrySelect
+                          value={searchDestinationCountry}
+                          onChange={(value) => {
+                            setSearchDestinationCountry(value);
+                            setSearchDestination('');
+                          }}
+                          label=""
+                          placeholder="Country"
+                          className="[&_button]:h-8 [&_button]:text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-700 block mb-1">To City</label>
+                        <CitySelect
+                          value={searchDestination}
+                          onChange={(value) => setSearchDestination(value)}
+                          country={searchDestinationCountry}
+                          label=""
+                          placeholder="City"
+                          disabled={!searchDestinationCountry}
+                          className="[&_button]:h-8 [&_button]:text-xs"
+                        />
                       </div>
                     </div>
+                  </div>
 
-                    {/* Arrival Date Range */}
-                    <div className="border rounded-lg p-3 bg-gray-50/50">
-                      <label className="text-sm font-medium block mb-2 text-gray-700">
-                        Arrival Range
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-xs text-gray-600 block">From</label>
-                          <Input
-                            type="date"
-                            value={arrivalDateFrom}
-                            onChange={(e) => setArrivalDateFrom(e.target.value)}
-                            className="h-9 text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs text-gray-600 block">To</label>
-                          <Input
-                            type="date"
-                            value={arrivalDateTo}
-                            onChange={(e) => setArrivalDateTo(e.target.value)}
-                            className="h-9 text-sm"
-                            min={arrivalDateFrom || undefined}
-                          />
-                        </div>
+                  {/* Additional Filters Button and Search */}
+                  <div className="px-4 py-3 border-t flex items-center justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsFiltersModalOpen(true)}
+                      className="flex-1 justify-between h-9 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-orange-600" />
+                        <span className="font-medium">Filters</span>
+                        {activeFiltersCount > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold">
+                            {activeFiltersCount}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex justify-end">
-                    <Button type="submit" className="h-9">
+                    </Button>
+                    <Button type="submit" className="bg-orange-600 hover:bg-orange-700 h-9 px-6 text-sm">
                       <Search className="mr-2 h-4 w-4" />
                       Search
                     </Button>
                   </div>
                 </form>
+
+                {/* Additional Filters Modal */}
+                <Dialog open={isFiltersModalOpen} onOpenChange={setIsFiltersModalOpen}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Filter className="h-5 w-5 text-orange-600" />
+                        Additional Filters
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                      {/* Dates Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-orange-600" />
+                          <h4 className="font-semibold text-gray-900">Dates</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Departure Date</label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <label className="text-xs text-gray-500">From</label>
+                                <Input
+                                  type="date"
+                                  value={departureDateFrom}
+                                  onChange={(e) => setDepartureDateFrom(e.target.value)}
+                                  className="h-10"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs text-gray-500">To</label>
+                                <Input
+                                  type="date"
+                                  value={departureDateTo}
+                                  onChange={(e) => setDepartureDateTo(e.target.value)}
+                                  className="h-10"
+                                  min={departureDateFrom || undefined}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Arrival Date</label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <label className="text-xs text-gray-500">From</label>
+                                <Input
+                                  type="date"
+                                  value={arrivalDateFrom}
+                                  onChange={(e) => setArrivalDateFrom(e.target.value)}
+                                  className="h-10"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs text-gray-500">To</label>
+                                <Input
+                                  type="date"
+                                  value={arrivalDateTo}
+                                  onChange={(e) => setArrivalDateTo(e.target.value)}
+                                  className="h-10"
+                                  min={arrivalDateFrom || undefined}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t"></div>
+
+                      {/* Transport Mode Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-5 w-5 text-orange-600" />
+                          <h4 className="font-semibold text-gray-900">Transport Mode</h4>
+                        </div>
+                        <div>
+                          <Select value={mode} onValueChange={setMode}>
+                            <SelectTrigger className="h-10">
+                              <SelectValue placeholder="All transport modes" />
+                            </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Modes</SelectItem>
+                                <SelectItem value="AIR">✈️ Air</SelectItem>
+                                <SelectItem value="BUS">🚌 Bus</SelectItem>
+                                <SelectItem value="VAN">🚐 Van</SelectItem>
+                                <SelectItem value="TRAIN">🚂 Train</SelectItem>
+                                <SelectItem value="SHIP">🚢 Ship</SelectItem>
+                                <SelectItem value="RIDER">🏍️ Rider</SelectItem>
+                              </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setDepartureDateFrom('');
+                          setDepartureDateTo('');
+                          setArrivalDateFrom('');
+                          setArrivalDateTo('');
+                          setMode('all');
+                        }}
+                        className="text-gray-600"
+                      >
+                        Clear filters
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setIsFiltersModalOpen(false)}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        Apply Filters
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </section>

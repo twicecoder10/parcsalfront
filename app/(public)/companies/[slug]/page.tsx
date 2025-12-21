@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { publicApi } from '@/lib/api';
@@ -21,12 +22,15 @@ import {
   Loader2, 
   AlertCircle,
   MessageSquare,
-  ArrowLeft
+  ArrowLeft,
+  Package
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { getStoredUser, hasRoleAccess } from '@/lib/auth';
 import { StartChatButton } from '@/components/chat/start-chat-button';
+import { ShipmentCard, ShipmentCardData } from '@/components/shipment-card';
+import { isShipmentAvailable } from '@/lib/utils';
 
 interface CompanyProfile {
   id: string;
@@ -73,11 +77,19 @@ export default function CompanyProfilePage() {
   
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [shipmentsLoading, setShipmentsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCompanyOwner, setIsCompanyOwner] = useState(false);
   const [pagination, setPagination] = useState({
+    limit: 10,
+    offset: 0,
+    total: 0,
+    hasMore: false,
+  });
+  const [shipmentsPagination, setShipmentsPagination] = useState({
     limit: 10,
     offset: 0,
     total: 0,
@@ -97,6 +109,7 @@ export default function CompanyProfilePage() {
 
     fetchCompanyProfile();
     fetchReviews();
+    fetchShipments();
   }, [companySlug]);
 
   const fetchCompanyProfile = async () => {
@@ -136,6 +149,59 @@ export default function CompanyProfilePage() {
 
   const loadMoreReviews = () => {
     fetchReviews(false);
+  };
+
+  const fetchShipments = async (resetOffset = true) => {
+    setShipmentsLoading(true);
+    try {
+      const params = {
+        limit: shipmentsPagination.limit,
+        offset: resetOffset ? 0 : shipmentsPagination.offset,
+      };
+      const response = await publicApi.getCompanyShipments(companySlug, params);
+      
+      // Handle different response formats
+      let shipmentsData: ShipmentCardData[] = [];
+      let paginationData = shipmentsPagination;
+      
+      if (response.data && Array.isArray(response.data)) {
+        shipmentsData = response.data;
+        paginationData = response.pagination || paginationData;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        shipmentsData = response.data.data;
+        paginationData = response.data.pagination || response.pagination || paginationData;
+      } else if (Array.isArray(response)) {
+        shipmentsData = response;
+      }
+      
+      // Filter only available shipments
+      const availableShipments = shipmentsData.filter((shipment: any) =>
+        isShipmentAvailable({
+          cutoffTimeForReceivingItems: shipment.cutoffTimeForReceivingItems || shipment.departureTime,
+          departureTime: shipment.departureTime,
+        })
+      );
+      
+      if (resetOffset) {
+        setShipments(availableShipments);
+      } else {
+        setShipments([...shipments, ...availableShipments]);
+      }
+      
+      // Update pagination - adjust hasMore based on filtered results
+      setShipmentsPagination({
+        ...paginationData,
+        hasMore: availableShipments.length >= shipmentsPagination.limit && (paginationData.hasMore || shipmentsData.length >= shipmentsPagination.limit),
+      });
+    } catch (err) {
+      console.error('Failed to fetch shipments:', err);
+    } finally {
+      setShipmentsLoading(false);
+    }
+  };
+
+  const loadMoreShipments = () => {
+    fetchShipments(false);
   };
 
   const openReplyDialog = (review: Review) => {
@@ -336,111 +402,170 @@ export default function CompanyProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Reviews Section */}
+          {/* Tabs Section */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
-                    Reviews
-                    <span className="text-sm font-normal text-gray-500">
-                      ({company.reviewCount})
-                    </span>
-                  </CardTitle>
-                  {company.rating !== null && company.rating !== undefined && (
-                    <CardDescription className="mt-2">
-                      Average rating: {company.rating.toFixed(1)} out of 5
-                    </CardDescription>
-                  )}
-                </div>
-              </div>
+              <CardTitle>Company Information</CardTitle>
             </CardHeader>
             <CardContent>
-              {reviewsLoading && reviews.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No reviews yet</p>
-                  <p className="text-sm mt-1">Be the first to review this company!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium">{review.customer.fullName}</p>
-                            <span className="text-sm text-gray-500">
-                              {format(new Date(review.createdAt), 'MMM dd, yyyy')}
-                            </span>
-                          </div>
-                          {renderStars(review.rating)}
+              <Tabs defaultValue="reviews" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="reviews" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Reviews
+                    {company.reviewCount > 0 && (
+                      <span className="text-xs text-gray-500">({company.reviewCount})</span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="slots" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Live Slots
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Reviews Tab */}
+                <TabsContent value="reviews" className="mt-6">
+                  <div className="space-y-4">
+                    {company.rating !== null && company.rating !== undefined && (
+                      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Average Rating</p>
+                        <div className="flex items-center gap-2">
+                          {renderStars(Math.round(company.rating))}
+                          <span className="text-lg font-semibold">{company.rating.toFixed(1)}</span>
+                          <span className="text-sm text-gray-500">out of 5</span>
                         </div>
                       </div>
-                      {review.comment && (
-                        <p className="text-gray-600 mt-2 text-sm">{review.comment}</p>
-                      )}
-                      {review.booking?.shipmentSlot && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Route: {review.booking.shipmentSlot.originCity} → {review.booking.shipmentSlot.destinationCity}
-                        </p>
-                      )}
-                      
-                      {/* Company Reply Section */}
-                      {review.companyReply && (
-                        <div className="mt-3 pl-4 border-l-2 border-orange-200 bg-orange-50 rounded p-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-sm text-orange-900">Company Response</p>
-                            <span className="text-xs text-orange-600">
-                              {format(new Date(review.updatedAt), 'MMM dd, yyyy')}
-                            </span>
+                    )}
+                    
+                    {reviewsLoading && reviews.length === 0 ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                      </div>
+                    ) : reviews.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No reviews yet</p>
+                        <p className="text-sm mt-1">Be the first to review this company!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium">{review.customer.fullName}</p>
+                                  <span className="text-sm text-gray-500">
+                                    {format(new Date(review.createdAt), 'MMM dd, yyyy')}
+                                  </span>
+                                </div>
+                                {renderStars(review.rating)}
+                              </div>
+                            </div>
+                            {review.comment && (
+                              <p className="text-gray-600 mt-2 text-sm">{review.comment}</p>
+                            )}
+                            {review.booking?.shipmentSlot && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                Route: {review.booking.shipmentSlot.originCity} → {review.booking.shipmentSlot.destinationCity}
+                              </p>
+                            )}
+                            
+                            {/* Company Reply Section */}
+                            {review.companyReply && (
+                              <div className="mt-3 pl-4 border-l-2 border-orange-200 bg-orange-50 rounded p-3">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-medium text-sm text-orange-900">Company Response</p>
+                                  <span className="text-xs text-orange-600">
+                                    {format(new Date(review.updatedAt), 'MMM dd, yyyy')}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-orange-800">{review.companyReply}</p>
+                              </div>
+                            )}
+                            
+                            {/* Reply Button (for company owners) */}
+                            {isCompanyOwner && (
+                              <div className="mt-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openReplyDialog(review)}
+                                  className="text-xs"
+                                >
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  {review.companyReply ? 'Edit Reply' : 'Reply'}
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-sm text-orange-800">{review.companyReply}</p>
-                        </div>
-                      )}
+                        ))}
+                        
+                        {pagination.hasMore && (
+                          <div className="mt-6 text-center">
+                            <Button
+                              variant="outline"
+                              onClick={loadMoreReviews}
+                              disabled={reviewsLoading}
+                            >
+                              {reviewsLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Loading...
+                                </>
+                              ) : (
+                                'Load More Reviews'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                {/* Live Slots Tab */}
+                <TabsContent value="slots" className="mt-6">
+                  {shipmentsLoading && shipments.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                    </div>
+                  ) : shipments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No live slots available</p>
+                      <p className="text-sm mt-1">Check back later for available shipment slots.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {shipments.map((shipment) => (
+                          <ShipmentCard key={shipment.id} shipment={shipment} />
+                        ))}
+                      </div>
                       
-                      {/* Reply Button (for company owners) */}
-                      {isCompanyOwner && (
-                        <div className="mt-3">
+                      {shipmentsPagination.hasMore && (
+                        <div className="mt-6 text-center">
                           <Button
                             variant="outline"
-                            size="sm"
-                            onClick={() => openReplyDialog(review)}
-                            className="text-xs"
+                            onClick={loadMoreShipments}
+                            disabled={shipmentsLoading}
                           >
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            {review.companyReply ? 'Edit Reply' : 'Reply'}
+                            {shipmentsLoading ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Loading...
+                              </>
+                            ) : (
+                              'Load More Slots'
+                            )}
                           </Button>
                         </div>
                       )}
                     </div>
-                  ))}
-                  
-                  {pagination.hasMore && (
-                    <div className="mt-6 text-center">
-                      <Button
-                        variant="outline"
-                        onClick={loadMoreReviews}
-                        disabled={reviewsLoading}
-                      >
-                        {reviewsLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          'Load More Reviews'
-                        )}
-                      </Button>
-                    </div>
                   )}
-                </div>
-              )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

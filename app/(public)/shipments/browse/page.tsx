@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { ShipmentCard, ShipmentCardData } from '@/components/shipment-card';
-import { Search, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Loader2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Filter, Truck, DollarSign } from 'lucide-react';
 import { shipmentApi } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
@@ -27,7 +29,10 @@ export default function BrowseShipmentsPage() {
   const [arrivalDateFrom, setArrivalDateFrom] = useState('');
   const [arrivalDateTo, setArrivalDateTo] = useState('');
   const [mode, setMode] = useState<string>('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
   const [allShipments, setAllShipments] = useState<ShipmentCardData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,32 +71,69 @@ export default function BrowseShipmentsPage() {
 
   useEffect(() => {
     // Get URL params and populate search form
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('originCountry')) setOriginCountry(params.get('originCountry') || '');
-    if (params.get('originCity')) setOriginCity(params.get('originCity') || '');
-    if (params.get('destinationCountry')) setDestinationCountry(params.get('destinationCountry') || '');
-    if (params.get('destinationCity')) setDestinationCity(params.get('destinationCity') || '');
-    if (params.get('mode')) setMode(params.get('mode') || 'all');
-
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Extract values from URL
+    const urlOriginCountry = urlParams.get('originCountry') || '';
+    const urlOriginCity = urlParams.get('originCity') || '';
+    const urlDestinationCountry = urlParams.get('destinationCountry') || '';
+    const urlDestinationCity = urlParams.get('destinationCity') || '';
+    const urlMode = urlParams.get('mode') || 'all';
+    
     // Parse dateFrom and dateTo from ISO strings
-    if (params.get('dateFrom')) {
-      setDepartureDateFrom(isoToDateInput(params.get('dateFrom') || ''));
-    }
-    if (params.get('dateTo')) {
-      setDepartureDateTo(isoToDateInput(params.get('dateTo') || ''));
-    }
-    if (params.get('arrivalFrom')) {
-      setArrivalDateFrom(isoToDateInput(params.get('arrivalFrom') || ''));
-    }
-    if (params.get('arrivalTo')) {
-      setArrivalDateTo(isoToDateInput(params.get('arrivalTo') || ''));
-    }
+    const urlDepartureDateFrom = urlParams.get('dateFrom') ? isoToDateInput(urlParams.get('dateFrom') || '') : '';
+    const urlDepartureDateTo = urlParams.get('dateTo') ? isoToDateInput(urlParams.get('dateTo') || '') : '';
+    const urlArrivalDateFrom = urlParams.get('arrivalFrom') ? isoToDateInput(urlParams.get('arrivalFrom') || '') : '';
+    const urlArrivalDateTo = urlParams.get('arrivalTo') ? isoToDateInput(urlParams.get('arrivalTo') || '') : '';
+    const urlMinPrice = urlParams.get('minPrice') || '';
+    const urlMaxPrice = urlParams.get('maxPrice') || '';
 
-    fetchShipments(true);
+    // Set state from URL params
+    if (urlOriginCountry) setOriginCountry(urlOriginCountry);
+    if (urlOriginCity) setOriginCity(urlOriginCity);
+    if (urlDestinationCountry) setDestinationCountry(urlDestinationCountry);
+    if (urlDestinationCity) setDestinationCity(urlDestinationCity);
+    if (urlMode) setMode(urlMode);
+    if (urlDepartureDateFrom) setDepartureDateFrom(urlDepartureDateFrom);
+    if (urlDepartureDateTo) setDepartureDateTo(urlDepartureDateTo);
+    if (urlArrivalDateFrom) setArrivalDateFrom(urlArrivalDateFrom);
+    if (urlArrivalDateTo) setArrivalDateTo(urlArrivalDateTo);
+    if (urlMinPrice) setMinPrice(urlMinPrice);
+    if (urlMaxPrice) setMaxPrice(urlMaxPrice);
+
+    // Fetch shipments with URL params directly (don't wait for state updates)
+    fetchShipmentsWithParams({
+      originCountry: urlOriginCountry,
+      originCity: urlOriginCity,
+      destinationCountry: urlDestinationCountry,
+      destinationCity: urlDestinationCity,
+      departureDateFrom: urlDepartureDateFrom,
+      departureDateTo: urlDepartureDateTo,
+      arrivalDateFrom: urlArrivalDateFrom,
+      arrivalDateTo: urlArrivalDateTo,
+      mode: urlMode,
+      minPrice: urlMinPrice,
+      maxPrice: urlMaxPrice,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchShipments = async (resetOffset = true) => {
+  const fetchShipmentsWithParams = async (
+    overrideFilters?: {
+      originCountry?: string;
+      originCity?: string;
+      destinationCountry?: string;
+      destinationCity?: string;
+      departureDateFrom?: string;
+      departureDateTo?: string;
+      arrivalDateFrom?: string;
+      arrivalDateTo?: string;
+      mode?: string;
+      minPrice?: string;
+      maxPrice?: string;
+    },
+    resetOffset = true
+  ) => {
     setLoading(true);
     try {
       const params: any = {
@@ -99,20 +141,39 @@ export default function BrowseShipmentsPage() {
         offset: resetOffset ? 0 : pagination.offset,
       };
 
-      if (originCountry) params.originCountry = originCountry;
-      if (originCity) params.originCity = originCity;
-      if (destinationCountry) params.destinationCountry = destinationCountry;
-      if (destinationCity) params.destinationCity = destinationCity;
+      // Use override filters if provided, otherwise use state values
+      const filters = overrideFilters || {
+        originCountry,
+        originCity,
+        destinationCountry,
+        destinationCity,
+        departureDateFrom,
+        departureDateTo,
+        arrivalDateFrom,
+        arrivalDateTo,
+        mode,
+        minPrice,
+        maxPrice,
+      };
+
+      if (filters.originCountry) params.originCountry = filters.originCountry;
+      if (filters.originCity) params.originCity = filters.originCity;
+      if (filters.destinationCountry) params.destinationCountry = filters.destinationCountry;
+      if (filters.destinationCity) params.destinationCity = filters.destinationCity;
 
       // Departure date filters (convert to ISO 8601)
-      if (departureDateFrom) params.dateFrom = dateToISO(departureDateFrom);
-      if (departureDateTo) params.dateTo = dateToISO(departureDateTo, true);
+      if (filters.departureDateFrom) params.dateFrom = dateToISO(filters.departureDateFrom);
+      if (filters.departureDateTo) params.dateTo = dateToISO(filters.departureDateTo, true);
 
       // Arrival date filters (convert to ISO 8601)
-      if (arrivalDateFrom) params.arrivalFrom = dateToISO(arrivalDateFrom);
-      if (arrivalDateTo) params.arrivalTo = dateToISO(arrivalDateTo, true);
+      if (filters.arrivalDateFrom) params.arrivalFrom = dateToISO(filters.arrivalDateFrom);
+      if (filters.arrivalDateTo) params.arrivalTo = dateToISO(filters.arrivalDateTo, true);
 
-      if (mode && mode !== 'all') params.mode = mode;
+      if (filters.mode && filters.mode !== 'all') params.mode = filters.mode;
+
+      // Price filters
+      if (filters.minPrice) params.minPrice = filters.minPrice;
+      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
 
       const response = await shipmentApi.search(params);
 
@@ -144,6 +205,10 @@ export default function BrowseShipmentsPage() {
     }
   };
 
+  const fetchShipments = async (resetOffset = true) => {
+    return fetchShipmentsWithParams(undefined, resetOffset);
+  };
+
   // Calculate pagination
   const totalPages = Math.ceil(allShipments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -171,12 +236,25 @@ export default function BrowseShipmentsPage() {
     setArrivalDateFrom('');
     setArrivalDateTo('');
     setMode('all');
+    setMinPrice('');
+    setMaxPrice('');
     setCurrentPage(1);
     setTimeout(() => fetchShipments(true), 0);
   };
 
   const hasActiveFilters = originCountry || originCity || destinationCountry || destinationCity ||
     departureDateFrom || departureDateTo || arrivalDateFrom || arrivalDateTo || (mode && mode !== 'all');
+
+  // Count active filters (excluding route which is always visible)
+  const activeFiltersCount = [
+    departureDateFrom,
+    departureDateTo,
+    arrivalDateFrom,
+    arrivalDateTo,
+    mode !== 'all' ? mode : null,
+    minPrice,
+    maxPrice,
+  ].filter(Boolean).length;
 
   return (
     <GoogleMapsLoader>
@@ -190,158 +268,270 @@ export default function BrowseShipmentsPage() {
             </div>
 
             {/* Search Filters */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Search Filters</CardTitle>
-                  {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                      <X className="h-4 w-4 mr-1" />
-                      Clear
-                    </Button>
-                  )}
+            <Card className="overflow-hidden">
+              {/* Route Section - Always Visible */}
+              <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4 text-orange-600" />
+                  <CardTitle className="text-sm">Route</CardTitle>
                 </div>
-              </CardHeader>
-              <CardContent className="pt-0 pb-3">
-                <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 block mb-1">From Country</Label>
                     <CountrySelect
                       value={originCountry}
                       onChange={(value) => {
                         setOriginCountry(value);
                         setOriginCity('');
                       }}
-                      label="Origin Country"
-                      placeholder="Select origin country"
+                      label=""
+                      placeholder="Country"
+                      className="[&_button]:h-8 [&_button]:text-xs"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 block mb-1">From City</Label>
                     <CitySelect
                       value={originCity}
                       onChange={(value) => setOriginCity(value)}
                       country={originCountry}
-                      label="Origin City"
-                      placeholder="Select origin city"
+                      label=""
+                      placeholder="City"
                       disabled={!originCountry}
+                      className="[&_button]:h-8 [&_button]:text-xs"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 block mb-1">To Country</Label>
                     <CountrySelect
                       value={destinationCountry}
                       onChange={(value) => {
                         setDestinationCountry(value);
                         setDestinationCity('');
                       }}
-                      label="Destination Country"
-                      placeholder="Select destination country"
+                      label=""
+                      placeholder="Country"
+                      className="[&_button]:h-8 [&_button]:text-xs"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div>
+                    <Label className="text-xs font-medium text-gray-700 block mb-1">To City</Label>
                     <CitySelect
                       value={destinationCity}
                       onChange={(value) => setDestinationCity(value)}
                       country={destinationCountry}
-                      label="Destination City"
-                      placeholder="Select destination city"
+                      label=""
+                      placeholder="City"
                       disabled={!destinationCountry}
+                      className="[&_button]:h-8 [&_button]:text-xs"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Mode</Label>
-                    <Select value={mode} onValueChange={setMode}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Mode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Modes</SelectItem>
-                        <SelectItem value="TRUCK">Truck</SelectItem>
-                        <SelectItem value="VAN">Van</SelectItem>
-                        <SelectItem value="AIR">Air</SelectItem>
-                        <SelectItem value="TRAIN">Train</SelectItem>
-                        <SelectItem value="SHIP">Ship</SelectItem>
-                        <SelectItem value="RIDER">Rider</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Departure Date Range */}
-                  <div className="border rounded-lg p-3 bg-gray-50/50">
-                    <Label className="text-sm font-medium block mb-2 text-gray-700">
-                      Departure Range
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="departureDateFrom" className="text-xs text-gray-600">From</Label>
-                        <Input
-                          id="departureDateFrom"
-                          type="date"
-                          value={departureDateFrom}
-                          onChange={(e) => setDepartureDateFrom(e.target.value)}
-                          className="h-9 text-sm"
-                        />
+              </CardHeader>
+
+              {/* Additional Filters Button and Search */}
+              <div className="px-4 py-3 border-t flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsFiltersModalOpen(true)}
+                  className="flex-1 justify-between h-9 text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-orange-600" />
+                    <span className="font-medium">Filters</span>
+                    {activeFiltersCount > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </div>
+                </Button>
+                <Button onClick={handleSearch} className="bg-orange-600 hover:bg-orange-700 h-9 px-6 text-sm" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Searching...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" />
+                      Search
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+
+            {/* Additional Filters Modal */}
+            <Dialog open={isFiltersModalOpen} onOpenChange={setIsFiltersModalOpen}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-orange-600" />
+                    Additional Filters
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  {/* Dates Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-orange-600" />
+                      <h4 className="font-semibold text-gray-900">Dates</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Departure Date</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="departureDateFrom" className="text-xs text-gray-500">From</Label>
+                            <Input
+                              id="departureDateFrom"
+                              type="date"
+                              value={departureDateFrom}
+                              onChange={(e) => setDepartureDateFrom(e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="departureDateTo" className="text-xs text-gray-500">To</Label>
+                            <Input
+                              id="departureDateTo"
+                              type="date"
+                              value={departureDateTo}
+                              onChange={(e) => setDepartureDateTo(e.target.value)}
+                              min={departureDateFrom || undefined}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="departureDateTo" className="text-xs text-gray-600">To</Label>
-                        <Input
-                          id="departureDateTo"
-                          type="date"
-                          value={departureDateTo}
-                          onChange={(e) => setDepartureDateTo(e.target.value)}
-                          className="h-9 text-sm"
-                          min={departureDateFrom || undefined}
-                        />
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Arrival Date</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="arrivalDateFrom" className="text-xs text-gray-500">From</Label>
+                            <Input
+                              id="arrivalDateFrom"
+                              type="date"
+                              value={arrivalDateFrom}
+                              onChange={(e) => setArrivalDateFrom(e.target.value)}
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="arrivalDateTo" className="text-xs text-gray-500">To</Label>
+                            <Input
+                              id="arrivalDateTo"
+                              type="date"
+                              value={arrivalDateTo}
+                              onChange={(e) => setArrivalDateTo(e.target.value)}
+                              min={arrivalDateFrom || undefined}
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Arrival Date Range */}
-                  <div className="border rounded-lg p-3 bg-gray-50/50">
-                    <Label className="text-sm font-medium block mb-2 text-gray-700">
-                      Arrival Range
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="arrivalDateFrom" className="text-xs text-gray-600">From</Label>
+                  {/* Divider */}
+                  <div className="border-t"></div>
+
+                  {/* Transport Mode Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-orange-600" />
+                      <h4 className="font-semibold text-gray-900">Transport Mode</h4>
+                    </div>
+                    <div>
+                      <Select value={mode} onValueChange={setMode}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="All transport modes" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Modes</SelectItem>
+                          <SelectItem value="AIR">✈️ Air</SelectItem>
+                          <SelectItem value="BUS">🚌 Bus</SelectItem>
+                          <SelectItem value="VAN">🚐 Van</SelectItem>
+                          <SelectItem value="TRAIN">🚂 Train</SelectItem>
+                          <SelectItem value="SHIP">🚢 Ship</SelectItem>
+                          <SelectItem value="RIDER">🏍️ Rider</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t"></div>
+
+                  {/* Price Range Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-orange-600" />
+                      <h4 className="font-semibold text-gray-900">Price Range</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="minPrice" className="text-sm font-medium text-gray-700">Min Price</Label>
                         <Input
-                          id="arrivalDateFrom"
-                          type="date"
-                          value={arrivalDateFrom}
-                          onChange={(e) => setArrivalDateFrom(e.target.value)}
-                          className="h-9 text-sm"
+                          id="minPrice"
+                          type="number"
+                          placeholder="0.00"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                          className="h-10"
+                          min="0"
+                          step="0.01"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="arrivalDateTo" className="text-xs text-gray-600">To</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="maxPrice" className="text-sm font-medium text-gray-700">Max Price</Label>
                         <Input
-                          id="arrivalDateTo"
-                          type="date"
-                          value={arrivalDateTo}
-                          onChange={(e) => setArrivalDateTo(e.target.value)}
-                          className="h-9 text-sm"
-                          min={arrivalDateFrom || undefined}
+                          id="maxPrice"
+                          type="number"
+                          placeholder="No limit"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          className="h-10"
+                          min={minPrice || "0"}
+                          step="0.01"
                         />
                       </div>
                     </div>
+                    <p className="text-xs text-gray-500">
+                      Price comparison depends on pricing model (FLAT, PER_KG, or PER_ITEM)
+                    </p>
                   </div>
                 </div>
-                <div className="mt-2 flex justify-end">
-                  <Button onClick={handleSearch} className="h-9" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        Search
-                      </>
-                    )}
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setDepartureDateFrom('');
+                      setDepartureDateTo('');
+                      setArrivalDateFrom('');
+                      setArrivalDateTo('');
+                      setMode('all');
+                      setMinPrice('');
+                      setMaxPrice('');
+                    }}
+                    className="text-gray-600"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Clear filters
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <Button
+                    type="button"
+                    onClick={() => setIsFiltersModalOpen(false)}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    Apply Filters
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Results */}
             <div>
