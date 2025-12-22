@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +17,10 @@ import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { isShipmentAvailable } from '@/lib/utils';
+import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
 
 export default function BrowseShipmentsPage() {
+  const router = useRouter();
   const [originCountry, setOriginCountry] = useState('');
   const [originCity, setOriginCity] = useState('');
   const [destinationCountry, setDestinationCountry] = useState('');
@@ -53,8 +56,26 @@ export default function BrowseShipmentsPage() {
     return date.toISOString();
   };
 
+  // Early auth check to prevent API calls for unauthorized users
   useEffect(() => {
-    fetchShipments();
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      // Wrong role or not authenticated - redirect to appropriate page
+      if (!user) {
+        router.push('/auth/login');
+      } else {
+        router.push(getDashboardPath(user.role));
+      }
+      return;
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const user = getStoredUser();
+    // Only fetch if user is authorized
+    if (user && hasRoleAccess(user.role, ['CUSTOMER'])) {
+      fetchShipments();
+    }
   }, []);
 
   const fetchShipments = async (resetOffset = true, overrideFilters?: {
@@ -70,6 +91,12 @@ export default function BrowseShipmentsPage() {
     minPrice?: string;
     maxPrice?: string;
   }) => {
+    // Double-check auth before making API call
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      return;
+    }
+
     setLoading(true);
     try {
       const params: any = {

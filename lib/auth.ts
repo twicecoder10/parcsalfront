@@ -1,6 +1,9 @@
 import { User, UserRole, AuthResponse } from './api';
 import { getNextOnboardingStepPath, getOnboardingPath } from './onboarding';
 
+// Re-export UserRole for use in other modules
+export type { UserRole };
+
 export const getStoredUser = (): User | null => {
   if (typeof window === 'undefined') return null;
   const userStr = localStorage.getItem('user');

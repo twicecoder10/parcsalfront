@@ -12,8 +12,8 @@ interface SocketContextType {
   unreadCounts: Map<string, number>;
   joinChatRoom: (chatRoomId: string) => void;
   leaveChatRoom: (chatRoomId: string) => void;
-  sendMessage: (chatRoomId: string | undefined, content: string, companyId?: string, bookingId?: string | null) => void;
-  onChatRoomCreated: (callback: (data: { chatRoomId: string; companyId: string; bookingId?: string | null }) => void) => void;
+  sendMessage: (chatRoomId: string | undefined, content: string, companyId?: string, bookingId?: string | null, customerId?: string) => void;
+  onChatRoomCreated: (callback: (data: { chatRoomId: string; companyId?: string; customerId?: string; bookingId?: string | null }) => void) => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -176,12 +176,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const chatRoomCreatedCallbacksRef = useRef<Array<(data: { chatRoomId: string; companyId: string; bookingId?: string | null }) => void>>([]);
+  const chatRoomCreatedCallbacksRef = useRef<Array<(data: { chatRoomId: string; companyId?: string; customerId?: string; bookingId?: string | null }) => void>>([]);
 
   // Listen for chat room created event
   useEffect(() => {
     if (socket) {
-      const handleChatRoomCreated = (data: { chatRoomId: string; companyId: string; bookingId?: string | null }) => {
+      const handleChatRoomCreated = (data: { chatRoomId: string; companyId?: string; customerId?: string; bookingId?: string | null }) => {
         console.log('Chat room created:', data);
         chatRoomCreatedCallbacksRef.current.forEach((callback) => callback(data));
       };
@@ -194,21 +194,27 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   }, [socket]);
 
-  const sendMessage = (chatRoomId: string | undefined, content: string, companyId?: string, bookingId?: string | null) => {
+  const sendMessage = (chatRoomId: string | undefined, content: string, companyId?: string, bookingId?: string | null, customerId?: string) => {
     if (socket && isConnected) {
       if (chatRoomId) {
         // Existing chat room
         socket.emit('message:send', { chatRoomId, content });
       } else if (companyId) {
-        // New conversation - create chat room on first message
+        // New conversation - create chat room on first message (customer to company)
         socket.emit('message:send', { companyId, bookingId: bookingId || null, content });
+      } else if (customerId) {
+        // New conversation - create chat room on first message (company to customer with customerId)
+        socket.emit('message:send', { customerId, bookingId: bookingId || null, content });
+      } else if (bookingId) {
+        // New conversation - create chat room on first message (company to customer, backend infers customerId from bookingId)
+        socket.emit('message:send', { bookingId, content });
       } else {
-        console.error('Either chatRoomId or companyId must be provided');
+        console.error('Either chatRoomId, companyId, customerId, or bookingId must be provided');
       }
     }
   };
 
-  const onChatRoomCreated = (callback: (data: { chatRoomId: string; companyId: string; bookingId?: string | null }) => void) => {
+  const onChatRoomCreated = (callback: (data: { chatRoomId: string; companyId?: string; customerId?: string; bookingId?: string | null }) => void) => {
     chatRoomCreatedCallbacksRef.current.push(callback);
     return () => {
       chatRoomCreatedCallbacksRef.current = chatRoomCreatedCallbacksRef.current.filter((cb) => cb !== callback);

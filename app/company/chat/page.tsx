@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import { chatApi, ChatRoom, Message } from '@/lib/chat-api';
 import { useSocket } from '@/lib/use-socket';
 import { getStoredUser } from '@/lib/auth';
@@ -12,20 +13,85 @@ import { MessageInput } from '@/components/chat/message-input';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Menu, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function CompanyChatPage() {
+  const searchParams = useSearchParams();
   const [selectedChatRoomId, setSelectedChatRoomId] = useState<string | null>(null);
+  const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
+  const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(null);
   const [showChatList, setShowChatList] = useState(true);
   const user = getStoredUser();
   const permissions = usePermissions();
-  const { socket, isConnected, messages, joinChatRoom, leaveChatRoom, sendMessage: socketSendMessage } = useSocket();
+  const { socket, isConnected, messages, joinChatRoom, leaveChatRoom, sendMessage: socketSendMessage, onChatRoomCreated } = useSocket();
   const queryClient = useQueryClient();
   const previousChatRoomIdRef = useRef<string | null>(null);
   
   // Check permissions
   const canViewMessages = canPerformAction(permissions, 'viewMessages');
   const canReplyToMessage = canPerformAction(permissions, 'replyToMessage');
+
+  // Check for bookingId, customerId, or roomId in URL params
+  useEffect(() => {
+    const bookingId = searchParams.get('bookingId');
+    const customerId = searchParams.get('customerId');
+    const roomId = searchParams.get('roomId');
+    
+    if (roomId) {
+      // Direct room ID - select it immediately
+      setSelectedChatRoomId(roomId);
+      setPendingBookingId(null);
+      setPendingCustomerId(null);
+      // Clean URL
+      window.history.replaceState({}, '', '/company/chat');
+    } else if (bookingId) {
+      // Find chat room for this booking
+      chatApi.getChatRooms({ limit: 100 }).then((result) => {
+        const existingRoom = result.data.find((room) => room.bookingId === bookingId);
+        
+        if (existingRoom) {
+          setSelectedChatRoomId(existingRoom.id);
+          setPendingBookingId(null);
+          setPendingCustomerId(null);
+        } else {
+          // No room exists - set up pending state to create one on first message
+          setPendingBookingId(bookingId);
+          setPendingCustomerId(customerId);
+        }
+        // Clean URL
+        window.history.replaceState({}, '', '/company/chat');
+      }).catch(() => {
+        // Ignore errors, set up pending state anyway
+        setPendingBookingId(bookingId);
+        setPendingCustomerId(customerId);
+        window.history.replaceState({}, '', '/company/chat');
+      });
+    }
+  }, [searchParams]);
+
+  // Listen for chat room creation
+  useEffect(() => {
+    if (!onChatRoomCreated) return;
+    
+    const unsubscribe = onChatRoomCreated((data) => {
+      // Match by customerId and bookingId (as per guide)
+      const matchesCustomer = !pendingCustomerId || data.customerId === pendingCustomerId;
+      const matchesBooking = data.bookingId === pendingBookingId;
+      
+      if (matchesCustomer && matchesBooking && pendingBookingId) {
+        setSelectedChatRoomId(data.chatRoomId);
+        setPendingBookingId(null);
+        setPendingCustomerId(null);
+        // Invalidate chat rooms to refresh list
+        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+        // Fetch messages for the new chat room
+        queryClient.invalidateQueries({ queryKey: ['chatMessages', data.chatRoomId] });
+      }
+    });
+
+    return unsubscribe;
+  }, [onChatRoomCreated, pendingBookingId, pendingCustomerId, queryClient]);
 
   // Fetch chat rooms (only if user can view messages)
   const { data: chatRoomsData, isLoading: isLoadingRooms } = useQuery({
@@ -129,15 +195,24 @@ export default function CompanyChatPage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string): Promise<Message> => {
-      if (!selectedChatRoomId) throw new Error('No chat room selected');
-      // Use socket if connected, otherwise fallback to REST API
+      // Use socket if connected
       if (isConnected && socket) {
-        socketSendMessage(selectedChatRoomId, content);
+        if (selectedChatRoomId) {
+          // Existing chat room
+          socketSendMessage(selectedChatRoomId, content);
+        } else if (pendingBookingId) {
+          // New conversation - create chat room on first message
+          // Pass customerId if available, otherwise backend will infer from bookingId
+          socketSendMessage(undefined, content, undefined, pendingBookingId, pendingCustomerId || undefined);
+        } else {
+          throw new Error('No chat room or booking selected');
+        }
+        
         // Return a placeholder - the real message will come via socket
         if (!user) throw new Error('User not found');
         return {
           id: '',
-          chatRoomId: selectedChatRoomId,
+          chatRoomId: selectedChatRoomId || '',
           senderId: user.id,
           content,
           isRead: false,
@@ -147,6 +222,23 @@ export default function CompanyChatPage() {
       } else {
         // Fallback to REST API (requires existing chat room)
         if (!selectedChatRoomId) {
+          // Try to create room via REST API if we have pending booking
+          if (pendingBookingId && user?.companyId) {
+            try {
+              const newRoom = await chatApi.createChatRoom({
+                companyId: user.companyId,
+                bookingId: pendingBookingId,
+              });
+              setSelectedChatRoomId(newRoom.id);
+              setPendingBookingId(null);
+              setPendingCustomerId(null);
+              return await chatApi.sendMessage({ chatRoomId: newRoom.id, content });
+            } catch (error: any) {
+              console.error('Failed to create chat room or send message:', error);
+              const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create chat room or send message';
+              throw new Error(errorMessage);
+            }
+          }
           throw new Error('Socket not connected and no existing chat room');
         }
         return chatApi.sendMessage({ chatRoomId: selectedChatRoomId, content });
@@ -154,10 +246,16 @@ export default function CompanyChatPage() {
     },
     onSuccess: () => {
       // Invalidate messages query to refetch
-      queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedChatRoomId] });
+      if (selectedChatRoomId) {
+        queryClient.invalidateQueries({ queryKey: ['chatMessages', selectedChatRoomId] });
+      }
+      // Invalidate chat rooms to refresh list (in case we created a new room)
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to send message');
+      console.error('Send message error:', error);
+      const errorMessage = error?.message || error?.response?.data?.message || 'Failed to send message';
+      toast.error(errorMessage);
     },
   });
 
@@ -254,13 +352,14 @@ export default function CompanyChatPage() {
                   setShowChatList(false);
                 }
               }}
+              perspective="company"
             />
           )}
         </div>
 
         {/* Chat Window */}
         <div className="flex-1 flex flex-col min-w-0">
-          {selectedChatRoom ? (
+          {selectedChatRoom || pendingCustomerId ? (
             <>
               {/* Chat Header */}
               <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 md:gap-3">
@@ -273,38 +372,60 @@ export default function CompanyChatPage() {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                {selectedChatRoom.customer && (
+                {selectedChatRoom?.customer && (
                   <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold flex-shrink-0 text-sm">
                     {selectedChatRoom.customer.fullName.charAt(0).toUpperCase()}
                   </div>
                 )}
+                {pendingCustomerId && !selectedChatRoom && (
+                  <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold flex-shrink-0 text-sm">
+                    C
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <h2 className="font-semibold text-sm md:text-base truncate">
-                    {selectedChatRoom.customer?.fullName || 'Customer'}
+                    {selectedChatRoom?.customer?.fullName || 'Customer'}
                   </h2>
-                  {selectedChatRoom.booking && (
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">
-                      Booking #{selectedChatRoom.booking.id.slice(0, 8)}
-                    </p>
+                  {selectedChatRoom?.booking && (
+                    <Link 
+                      href={`/company/bookings/${selectedChatRoom.bookingId || selectedChatRoom.booking.id}`}
+                      className="text-xs md:text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 truncate transition-colors"
+                    >
+                      Booking #{(selectedChatRoom.bookingId || selectedChatRoom.booking.id).slice(0, 8)}
+                    </Link>
+                  )}
+                  {pendingBookingId && !selectedChatRoom && (
+                    <Link 
+                      href={`/company/bookings/${pendingBookingId}`}
+                      className="text-xs md:text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 truncate transition-colors"
+                    >
+                      Booking #{pendingBookingId.slice(0, 8)}
+                    </Link>
                   )}
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 min-h-0 overflow-hidden">
-                <MessageList
-                  messages={allMessages}
-                  currentUser={user}
-                  chatRoomId={selectedChatRoomId!}
-                />
+                {selectedChatRoomId ? (
+                  <MessageList
+                    messages={allMessages}
+                    currentUser={user}
+                    chatRoomId={selectedChatRoomId}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 p-4">
+                    <p className="text-center">Start the conversation by sending a message</p>
+                  </div>
+                )}
               </div>
 
               {/* Message Input */}
               <div className="border-t border-gray-200 dark:border-gray-800">
                 <MessageInput
                   onSendMessage={handleSendMessage}
-                  disabled={!isConnected || sendMessageMutation.isPending || !canReplyToMessage}
-                  placeholder={!canReplyToMessage ? 'You do not have permission to reply to messages' : 'Type a message...'}
+                  disabled={(!isConnected && !pendingBookingId) || sendMessageMutation.isPending || !canReplyToMessage}
+                  placeholder={!canReplyToMessage ? 'You do not have permission to reply to messages' : pendingBookingId ? 'Send your first message...' : 'Type a message...'}
                 />
               </div>
             </>

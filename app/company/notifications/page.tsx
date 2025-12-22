@@ -32,6 +32,10 @@ const notificationTypeLabels: Record<NotificationType, string> = {
   SUBSCRIPTION_ACTIVE: 'Subscription Active',
   SUBSCRIPTION_CANCELLED: 'Subscription Cancelled',
   SUBSCRIPTION_PAST_DUE: 'Subscription Past Due',
+  EXTRA_CHARGE_REQUESTED: 'Extra Charge Requested',
+  EXTRA_CHARGE_PAID: 'Extra Charge Paid',
+  EXTRA_CHARGE_DECLINED: 'Extra Charge Declined',
+  EXTRA_CHARGE_CANCELLED: 'Extra Charge Cancelled',
 };
 
 export default function CompanyNotificationsPage() {
@@ -61,7 +65,10 @@ export default function CompanyNotificationsPage() {
         type: typeFilter !== 'all' ? typeFilter : undefined,
       });
       setNotifications(response.data);
-      setTotalPages(response.pagination.totalPages);
+      // Use totalPages if available, otherwise calculate from total and limit
+      const calculatedTotalPages = response.pagination.totalPages ?? 
+        Math.ceil((response.pagination.total || 0) / (response.pagination.limit || 20));
+      setTotalPages(calculatedTotalPages || 1);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       setNotifications([]);

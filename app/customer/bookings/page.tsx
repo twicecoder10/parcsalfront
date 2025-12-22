@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ import {
 import { Eye, Search, Loader2, Filter } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
+import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -28,12 +30,33 @@ const statusColors: Record<string, string> = {
 };
 
 export default function BookingsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Early auth check to prevent API calls for unauthorized users
+  useEffect(() => {
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      // Wrong role or not authenticated - redirect to appropriate page
+      if (!user) {
+        router.push('/auth/login');
+      } else {
+        router.push(getDashboardPath(user.role));
+      }
+      return;
+    }
+  }, [router]);
+
   const fetchBookings = useCallback(async () => {
+    // Double-check auth before making API call
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await customerApi.getBookings({ 
@@ -51,7 +74,11 @@ export default function BookingsPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    fetchBookings();
+    const user = getStoredUser();
+    // Only fetch if user is authorized
+    if (user && hasRoleAccess(user.role, ['CUSTOMER'])) {
+      fetchBookings();
+    }
   }, [fetchBookings]);
 
   const filteredBookings = bookings.filter((booking) => {

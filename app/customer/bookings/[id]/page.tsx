@@ -15,10 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { MapPin, Clock, Package, CheckCircle2, XCircle, Truck, AlertCircle, Loader2, ArrowLeft, CreditCard, Navigation } from 'lucide-react';
+import { MapPin, Clock, Package, CheckCircle2, XCircle, Truck, AlertCircle, Loader2, ArrowLeft, CreditCard, Navigation, MessageSquare } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { ExtraChargesList } from '@/components/extra-charges/ExtraChargesList';
+import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
+import { chatApi } from '@/lib/chat-api';
 
 function BookingDetailContent() {
   const params = useParams();
@@ -34,7 +37,27 @@ function BookingDetailContent() {
   const [paymentVerificationAttempts, setPaymentVerificationAttempts] = useState(0);
   const maxVerificationAttempts = 5;
 
+  // Early auth check to prevent API calls for unauthorized users
+  useEffect(() => {
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      // Wrong role or not authenticated - redirect to appropriate page
+      if (!user) {
+        router.push('/auth/login');
+      } else {
+        router.push(getDashboardPath(user.role));
+      }
+      return;
+    }
+  }, [router]);
+
   const fetchBookingData = useCallback(async () => {
+    // Double-check auth before making API call
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await customerApi.getBookingById(bookingId);
@@ -47,7 +70,11 @@ function BookingDetailContent() {
   }, [bookingId]);
 
   useEffect(() => {
-    fetchBookingData();
+    const user = getStoredUser();
+    // Only fetch if user is authorized
+    if (user && hasRoleAccess(user.role, ['CUSTOMER'])) {
+      fetchBookingData();
+    }
   }, [fetchBookingData]);
 
   const pollPaymentStatus = async (attempt = 0): Promise<void> => {
@@ -121,6 +148,7 @@ function BookingDetailContent() {
   useEffect(() => {
     const payment = searchParams.get('payment');
     const sessionId = searchParams.get('session_id');
+    const extraCharge = searchParams.get('extraCharge');
     
     if (payment === 'success') {
       setPaymentStatus('verifying');
@@ -130,6 +158,16 @@ function BookingDetailContent() {
     } else if (payment === 'cancelled') {
       setPaymentStatus('cancelled');
       // Clean URL
+      window.history.replaceState({}, '', `/customer/bookings/${bookingId}`);
+    }
+
+    // Handle extra charge payment redirect
+    if (extraCharge === 'paid') {
+      // Payment was successful, refresh booking data
+      fetchBookingData();
+      window.history.replaceState({}, '', `/customer/bookings/${bookingId}`);
+    } else if (extraCharge === 'cancelled') {
+      // Payment was cancelled
       window.history.replaceState({}, '', `/customer/bookings/${bookingId}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,6 +190,32 @@ function BookingDetailContent() {
 
   const handlePayNow = () => {
     router.push(`/customer/bookings/${bookingId}/payment`);
+  };
+
+  // Handle message company
+  const handleMessageCompany = async () => {
+    if (!booking?.shipmentSlot?.company?.id) return;
+    
+    try {
+      // Try to find existing chat room for this booking
+      const roomsResponse = await chatApi.getChatRooms({ limit: 100 });
+      const existingRoom = roomsResponse.data.find((room) => 
+        room.companyId === booking.shipmentSlot?.company?.id && 
+        room.bookingId === booking.id
+      );
+      
+      if (existingRoom) {
+        // Navigate to existing chat room
+        router.push(`/customer/chat?roomId=${existingRoom.id}`);
+      } else {
+        // Navigate to chat page with company and booking ID - it will create a room when first message is sent
+        router.push(`/customer/chat?companyId=${booking.shipmentSlot.company.id}&bookingId=${booking.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to get chat room:', error);
+      // Navigate anyway - chat page will handle creation
+      router.push(`/customer/chat?companyId=${booking.shipmentSlot?.company?.id}&bookingId=${booking.id}`);
+    }
   };
 
   const statusColors: Record<string, string> = {
@@ -418,7 +482,7 @@ function BookingDetailContent() {
                     />
                   </div>
                 )}
-                <div>
+                <div className="flex-1">
                   <p className="font-medium">Company</p>
                   <Link 
                     href={`/companies/${booking.shipmentSlot.company.slug || booking.shipmentSlot.company.id}`}
@@ -427,6 +491,14 @@ function BookingDetailContent() {
                     {booking.shipmentSlot.company.name}
                   </Link>
                 </div>
+                <Button
+                  onClick={handleMessageCompany}
+                  variant="outline"
+                  size="sm"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Message
+                </Button>
               </div>
             </div>
           )}
@@ -545,6 +617,9 @@ function BookingDetailContent() {
           </CardContent>
         </Card>
       )}
+
+      {/* Extra Charges */}
+      <ExtraChargesList bookingId={bookingId} onRefresh={fetchBookingData} />
 
       {/* Payment Info */}
       <Card>

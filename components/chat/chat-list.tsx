@@ -9,9 +9,10 @@ interface ChatListProps {
   chatRooms: ChatRoom[];
   selectedChatRoomId?: string;
   onSelectChatRoom: (chatRoomId: string) => void;
+  perspective?: 'company' | 'customer'; // 'company' shows customer info, 'customer' shows company info
 }
 
-export function ChatList({ chatRooms, selectedChatRoomId, onSelectChatRoom }: ChatListProps) {
+export function ChatList({ chatRooms, selectedChatRoomId, onSelectChatRoom, perspective = 'customer' }: ChatListProps) {
   const { unreadCounts } = useSocket();
 
   const getLastMessage = (chatRoom: ChatRoom) => {
@@ -42,6 +43,19 @@ export function ChatList({ chatRooms, selectedChatRoomId, onSelectChatRoom }: Ch
               const unreadCount = getUnreadCount(chatRoom.id);
               const isSelected = selectedChatRoomId === chatRoom.id;
 
+              // Determine what to display based on perspective
+              const displayInfo = perspective === 'company' 
+                ? {
+                    name: chatRoom.customer?.fullName || 'Customer',
+                    avatar: null, // Customers don't have logoUrl, use initial
+                    initial: chatRoom.customer?.fullName?.charAt(0).toUpperCase() || 'C',
+                  }
+                : {
+                    name: chatRoom.company.name,
+                    avatar: chatRoom.company.logoUrl,
+                    initial: chatRoom.company.name.charAt(0).toUpperCase(),
+                  };
+
               return (
                 <button
                   key={chatRoom.id}
@@ -52,18 +66,18 @@ export function ChatList({ chatRooms, selectedChatRoomId, onSelectChatRoom }: Ch
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative flex-shrink-0">
-                      {chatRoom.company.logoUrl ? (
+                      {displayInfo.avatar ? (
                         <Image
-                          src={chatRoom.company.logoUrl}
-                          alt={chatRoom.company.name}
+                          src={displayInfo.avatar}
+                          alt={displayInfo.name}
                           width={48}
                           height={48}
                           className="rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-                          <span className="text-gray-600 dark:text-gray-300 font-semibold">
-                            {chatRoom.company.name.charAt(0).toUpperCase()}
+                        <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                          <span className="font-semibold">
+                            {displayInfo.initial}
                           </span>
                         </div>
                       )}
@@ -76,7 +90,7 @@ export function ChatList({ chatRooms, selectedChatRoomId, onSelectChatRoom }: Ch
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-sm truncate">
-                          {chatRoom.company.name}
+                          {displayInfo.name}
                         </h3>
                         {lastMessage && (
                           <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">

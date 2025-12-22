@@ -206,21 +206,41 @@ export const customerApi = {
   getNotifications: async (params?: {
     page?: number;
     limit?: number;
+    offset?: number;
     unreadOnly?: boolean;
     type?: string;
   }): Promise<{ data: Notification[]; pagination: NotificationPagination }> => {
-    const response = await api.get<NotificationListResponse>('/customer/notifications', {
+    const limit = params?.limit ?? 20;
+    const offset = params?.offset ?? (params?.page ? (params.page - 1) * limit : 0);
+    
+    const response = await api.get<any>('/customer/notifications', {
       params: {
-        page: params?.page ?? 1,
-        limit: params?.limit ?? 10,
+        limit,
+        offset,
         ...(params?.unreadOnly !== undefined && { unreadOnly: params.unreadOnly.toString() }),
         ...(params?.type && { type: params.type }),
       },
     });
     
+    // Handle API response structure: { status: "success", data: [...], pagination: {...} }
+    const responseData = response.data;
+    const paginationData = responseData.pagination || {};
+    const notifications = responseData.status === 'success' ? (responseData.data || []) : (responseData.data || responseData || []);
+    
+    // Calculate page and totalPages for backward compatibility
+    const currentPage = Math.floor(offset / limit) + 1;
+    const totalPages = Math.ceil((paginationData.total || 0) / limit);
+    
     return {
-      data: response.data.data || [],
-      pagination: response.data.pagination,
+      data: Array.isArray(notifications) ? notifications : [],
+      pagination: {
+        limit: paginationData.limit || limit,
+        offset: paginationData.offset || offset,
+        total: paginationData.total || 0,
+        hasMore: paginationData.hasMore ?? false,
+        page: currentPage,
+        totalPages,
+      },
     };
   },
 
@@ -358,6 +378,26 @@ export const customerApi = {
       // If extraction fails, return the response data as-is
       return response.data;
     }
+  },
+
+  // Extra Charges
+  getExtraCharges: async (bookingId: string): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/bookings/${bookingId}/extra-charges`);
+    return extractData(response);
+  },
+
+  payExtraCharge: async (bookingId: string, extraChargeId: string): Promise<{ sessionId: string; url: string }> => {
+    const response = await api.post<ApiResponse<{ sessionId: string; url: string }>>(
+      `/bookings/${bookingId}/extra-charges/${extraChargeId}/pay`
+    );
+    return extractData(response);
+  },
+
+  declineExtraCharge: async (bookingId: string, extraChargeId: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(
+      `/bookings/${bookingId}/extra-charges/${extraChargeId}/decline`
+    );
+    return extractData(response);
   },
 };
 

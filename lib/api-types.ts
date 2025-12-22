@@ -77,7 +77,11 @@ export type NotificationType =
   | 'TEAM_MEMBER_REMOVED'
   | 'SUBSCRIPTION_ACTIVE'
   | 'SUBSCRIPTION_CANCELLED'
-  | 'SUBSCRIPTION_PAST_DUE';
+  | 'SUBSCRIPTION_PAST_DUE'
+  | 'EXTRA_CHARGE_REQUESTED'
+  | 'EXTRA_CHARGE_PAID'
+  | 'EXTRA_CHARGE_DECLINED'
+  | 'EXTRA_CHARGE_CANCELLED';
 
 export interface NotificationMetadata {
   // Booking notifications
@@ -113,10 +117,13 @@ export interface Notification {
 }
 
 export interface NotificationPagination {
-  page: number;
   limit: number;
+  offset: number;
   total: number;
-  totalPages: number;
+  hasMore: boolean;
+  // Computed fields for backward compatibility
+  page?: number;
+  totalPages?: number;
 }
 
 export interface NotificationListResponse {
@@ -144,6 +151,52 @@ export type ParcelType =
 export type PickupMethod = 'PICKUP_FROM_SENDER' | 'DROP_OFF_AT_COMPANY';
 
 export type DeliveryMethod = 'RECEIVER_PICKS_UP' | 'DELIVERED_TO_RECEIVER';
+
+// Extra Charge Types
+export type ExtraChargeReason =
+  | 'EXCESS_WEIGHT'
+  | 'EXTRA_ITEMS'
+  | 'OVERSIZE'
+  | 'REPACKING'
+  | 'LATE_DROP_OFF'
+  | 'OTHER';
+
+export type ExtraChargeStatus =
+  | 'PENDING'
+  | 'PAID'
+  | 'DECLINED'
+  | 'EXPIRED'
+  | 'CANCELLED';
+
+export interface ExtraCharge {
+  id: string;
+  bookingId: string;
+  companyId: string;
+  reason: ExtraChargeReason;
+  description?: string | null;
+  evidenceUrls: string[];
+  baseAmount: number; // minor units (pence)
+  adminFeeAmount: number; // minor units (pence)
+  processingFeeAmount: number; // minor units (pence)
+  totalAmount: number; // minor units (pence)
+  status: ExtraChargeStatus;
+  stripeSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
+  expiresAt: string; // ISO date string
+  paidAt?: string | null; // ISO date string
+  declinedAt?: string | null; // ISO date string
+  cancelledAt?: string | null; // ISO date string
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
+  company?: {
+    id: string;
+    name: string;
+  };
+  createdBy?: {
+    id: string;
+    fullName: string;
+  };
+}
 
 // Warehouse Address
 export interface WarehouseAddress {

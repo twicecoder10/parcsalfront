@@ -21,7 +21,9 @@ export type PermissionAction =
   | 'viewPaymentStats'
   | 'processRefund'
   | 'replyToMessage'
-  | 'viewMessages';
+  | 'viewMessages'
+  | 'createExtraCharge'
+  | 'cancelExtraCharge';
 
 export interface UserPermissions {
   restrictions: Record<PermissionAction, boolean>;
@@ -77,6 +79,8 @@ export function usePermissions(): UserPermissions {
         processRefund: true,
         replyToMessage: true,
         viewMessages: true,
+        createExtraCharge: true,
+        cancelExtraCharge: true,
       };
       setPermissions({
         restrictions: allActionsEnabled,
@@ -118,6 +122,8 @@ export function usePermissions(): UserPermissions {
             processRefund: true,
             replyToMessage: true,
             viewMessages: true,
+            createExtraCharge: true,
+            cancelExtraCharge: true,
           },
           isAdmin: false,
         });
@@ -150,6 +156,8 @@ export function usePermissions(): UserPermissions {
     processRefund: true,
     replyToMessage: true,
     viewMessages: true,
+    createExtraCharge: true,
+    cancelExtraCharge: true,
   };
 
   return {

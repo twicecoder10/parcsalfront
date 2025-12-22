@@ -829,21 +829,41 @@ export const companyApi = {
   getNotifications: async (params?: {
     page?: number;
     limit?: number;
+    offset?: number;
     unreadOnly?: boolean;
     type?: string;
   }): Promise<{ data: Notification[]; pagination: NotificationPagination }> => {
-    const response = await api.get<NotificationListResponse>('/companies/notifications', {
+    const limit = params?.limit ?? 20;
+    const offset = params?.offset ?? (params?.page ? (params.page - 1) * limit : 0);
+    
+    const response = await api.get<any>('/companies/notifications', {
       params: {
-        page: params?.page ?? 1,
-        limit: params?.limit ?? 10,
+        limit,
+        offset,
         ...(params?.unreadOnly !== undefined && { unreadOnly: params.unreadOnly.toString() }),
         ...(params?.type && { type: params.type }),
       },
     });
     
+    // Handle API response structure: { status: "success", data: [...], pagination: {...} }
+    const responseData = response.data;
+    const paginationData = responseData.pagination || {};
+    const notifications = responseData.status === 'success' ? (responseData.data || []) : (responseData.data || responseData || []);
+    
+    // Calculate page and totalPages for backward compatibility
+    const currentPage = Math.floor(offset / limit) + 1;
+    const totalPages = Math.ceil((paginationData.total || 0) / limit);
+    
     return {
-      data: response.data.data || [],
-      pagination: response.data.pagination,
+      data: Array.isArray(notifications) ? notifications : [],
+      pagination: {
+        limit: paginationData.limit || limit,
+        offset: paginationData.offset || offset,
+        total: paginationData.total || 0,
+        hasMore: paginationData.hasMore ?? false,
+        page: currentPage,
+        totalPages,
+      },
     };
   },
 
@@ -1027,6 +1047,36 @@ export const companyApi = {
       stripePayoutId: string;
       createdAt: string;
     }>>('/connect/request-payout', { amount });
+    return extractData(response);
+  },
+
+  // ============================================
+  // Extra Charges
+  // ============================================
+
+  getExtraCharges: async (bookingId: string): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/bookings/${bookingId}/extra-charges`);
+    return extractData(response);
+  },
+
+  createExtraCharge: async (bookingId: string, data: {
+    reason: 'EXCESS_WEIGHT' | 'EXTRA_ITEMS' | 'OVERSIZE' | 'REPACKING' | 'LATE_DROP_OFF' | 'OTHER';
+    description?: string | null;
+    evidenceUrls?: string[];
+    baseAmountMinor: number;
+    expiresInHours?: number;
+  }): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(
+      `/bookings/${bookingId}/extra-charges`,
+      data
+    );
+    return extractData(response);
+  },
+
+  cancelExtraCharge: async (bookingId: string, extraChargeId: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>(
+      `/bookings/${bookingId}/extra-charges/${extraChargeId}/cancel`
+    );
     return extractData(response);
   },
 };

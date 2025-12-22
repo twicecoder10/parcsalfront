@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Package, PoundSterling, User, Mail, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw } from 'lucide-react';
+import { MapPin, Clock, Package, PoundSterling, User, Mail, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -26,6 +26,8 @@ import { uploadProofImages, createImagePreview, MAX_PROOF_IMAGES, MAX_FILE_SIZE,
 import { X, Upload } from 'lucide-react';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { toast } from '@/lib/toast';
+import { CompanyExtraChargesList } from '@/components/extra-charges/CompanyExtraChargesList';
+import { chatApi } from '@/lib/chat-api';
 
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -213,6 +215,31 @@ export default function BookingDetailPage() {
   const canMarkDelivered = booking.status === 'IN_TRANSIT' && canPerformAction(permissions, 'updateBookingStatus');
   const canAddProofImages = canPerformAction(permissions, 'addProofImages');
   const canRegenerateLabel = canPerformAction(permissions, 'regenerateLabel');
+  const canCreateExtraCharge = canPerformAction(permissions, 'createExtraCharge');
+  const canCancelExtraCharge = canPerformAction(permissions, 'cancelExtraCharge');
+
+  // Handle message customer
+  const handleMessageCustomer = async () => {
+    if (!booking) return;
+    
+    try {
+      // Try to find existing chat room for this booking
+      const roomsResponse = await chatApi.getChatRooms({ limit: 100 });
+      const existingRoom = roomsResponse.data.find((room) => room.bookingId === booking.id);
+      
+      if (existingRoom) {
+        // Navigate to existing chat room
+        router.push(`/company/chat?roomId=${existingRoom.id}`);
+      } else {
+        // Navigate to chat page with booking ID and customer ID - it will create a room when first message is sent
+        router.push(`/company/chat?bookingId=${booking.id}&customerId=${booking.customer.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to get chat room:', error);
+      // Navigate anyway - chat page will handle creation
+      router.push(`/company/chat?bookingId=${booking.id}&customerId=${booking.customer.id}`);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -439,7 +466,7 @@ export default function BookingDetailPage() {
               <div className="rounded-full bg-orange-100 p-2">
                 <User className="h-5 w-5 text-orange-600" />
               </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium">{booking.customer.fullName}</p>
                         {booking.customer.email && (
                           <div className="flex items-center gap-4 mt-1">
@@ -451,6 +478,16 @@ export default function BookingDetailPage() {
                             </div>
                           </div>
                         )}
+                        <div className="mt-3">
+                          <Button
+                            onClick={handleMessageCustomer}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Message Customer
+                          </Button>
+                        </div>
                       </div>
             </div>
           </div>
@@ -634,6 +671,14 @@ export default function BookingDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Extra Charges */}
+      <CompanyExtraChargesList
+        bookingId={bookingId}
+        onRefresh={fetchBooking}
+        canCreate={canCreateExtraCharge}
+        canCancel={canCancelExtraCharge}
+      />
 
       {/* Payment Information */}
       <Card>

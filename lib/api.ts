@@ -32,30 +32,41 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
+        // Check if this is a permission error (not an authentication error)
+        const errorMessage = error.response?.data?.message || '';
+        const isPermissionError = errorMessage.toLowerCase().includes('insufficient permissions') ||
+                                 errorMessage.toLowerCase().includes('permission denied') ||
+                                 errorMessage.toLowerCase().includes('not authorized') ||
+                                 errorMessage.toLowerCase().includes('forbidden');
+        
         // Don't redirect if we're already on the login page or during auth requests
         // Also exclude delete account endpoint - errors should be handled by the caller
+        // Don't redirect for permission errors - let the caller handle them
         const isAuthRequest = error.config?.url?.includes('/auth/login') || 
                             error.config?.url?.includes('/auth/register');
         const isDeleteAccountRequest = error.config?.url === '/auth/account' && 
                                       error.config?.method?.toLowerCase() === 'delete';
         const isOnLoginPage = window.location.pathname === '/auth/login';
         
-        // Only redirect if not already on login page and not during auth request or delete account
-        if (!isOnLoginPage && !isAuthRequest && !isDeleteAccountRequest) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('token'); // legacy
-          localStorage.removeItem('user');
-          // Include current path as redirect parameter to return user after login
-          window.location.href = getLoginUrlWithRedirect();
-        } else if (!isDeleteAccountRequest) {
-          // Still clear tokens on auth failure (but not for delete account - let caller handle it)
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('token'); // legacy
-          localStorage.removeItem('user');
+        // Only redirect/logout for authentication errors, not permission errors
+        if (!isPermissionError) {
+          // Only redirect if not already on login page and not during auth request or delete account
+          if (!isOnLoginPage && !isAuthRequest && !isDeleteAccountRequest) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('token'); // legacy
+            localStorage.removeItem('user');
+            // Include current path as redirect parameter to return user after login
+            window.location.href = getLoginUrlWithRedirect();
+          } else if (!isDeleteAccountRequest) {
+            // Still clear tokens on auth failure (but not for delete account - let caller handle it)
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('token'); // legacy
+            localStorage.removeItem('user');
+          }
         }
-        // For delete account requests, don't clear tokens - let the error be caught and handled by the component
+        // For permission errors and delete account requests, don't clear tokens - let the error be caught and handled by the component
       }
     }
     

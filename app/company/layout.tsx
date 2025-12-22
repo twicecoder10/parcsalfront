@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { getStoredUser, hasRoleAccess, setStoredUser, getLoginUrlWithRedirect } from '@/lib/auth';
+import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
 import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
+import { RouteGuard } from '@/lib/route-guards';
 
 // Helper function to get navigation items based on permissions
 function getNavItems(permissions: ReturnType<typeof usePermissions>) {
@@ -79,34 +80,21 @@ export default function CompanyLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const permissions = usePermissions();
   
   // Get navigation items based on permissions
   const navItems = getNavItems(permissions);
 
+  // Additional onboarding check for company users (more complex than customer)
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkOnboarding = async () => {
       const user = getStoredUser();
-      if (!user || !hasRoleAccess(user.role, ['COMPANY_ADMIN', 'COMPANY_STAFF'])) {
-        router.push(getLoginUrlWithRedirect(pathname));
+      if (!user) {
+        setIsCheckingOnboarding(false);
         return;
       }
-      
-      // ⚠️ EMAIL VERIFICATION MUST BE COMPLETED FIRST
-      // Block access to all routes until email is verified
-      // Allow access to verify-email page itself
-      if (pathname !== '/auth/verify-email') {
-        const isEmailVerified = await checkEmailVerification();
-        // Also check isEmailVerified from stored user (from login/registration response)
-        if (!isEmailVerified && user.isEmailVerified !== true) {
-          router.push('/auth/verify-email');
-          return;
-        }
-      }
-      
-      // Check actual onboarding status from API (not just stored user)
-      // For company admins, need to check both user and company onboarding
+
       try {
         // Refresh user data to get latest onboardingCompleted status
         const updatedUser = await authApi.getCurrentUser();
@@ -114,7 +102,7 @@ export default function CompanyLayout({
         
         // If user.onboardingCompleted is true, allow access
         if (updatedUser.onboardingCompleted === true) {
-          setIsChecking(false);
+          setIsCheckingOnboarding(false);
           return;
         }
         
@@ -127,7 +115,7 @@ export default function CompanyLayout({
         // If both are complete, but user.onboardingCompleted is still false,
         // it might be a timing issue - allow access anyway
         if (userOnboarding?.completed && companyOnboarding?.completed) {
-          setIsChecking(false);
+          setIsCheckingOnboarding(false);
           return;
         }
         
@@ -147,14 +135,14 @@ export default function CompanyLayout({
         }
       }
       
-      setIsChecking(false);
+      setIsCheckingOnboarding(false);
     };
     
-    checkAuth();
+    checkOnboarding();
   }, [router, pathname]);
 
-  // Show loading while checking
-  if (isChecking) {
+  // Show loading while checking onboarding
+  if (isCheckingOnboarding) {
     return (
       <div className="flex h-screen overflow-hidden items-center justify-center">
         <div className="text-center">
@@ -166,16 +154,25 @@ export default function CompanyLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <DashboardSidebar navItems={navItems} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <DashboardHeader />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          {children}
-        </main>
-        <AppFooter />
+    <RouteGuard
+      options={{
+        allowedRoles: ['COMPANY_ADMIN', 'COMPANY_STAFF'],
+        requireAuth: true,
+        requireEmailVerification: true,
+        requireOnboarding: false, // We handle onboarding check separately above
+      }}
+    >
+      <div className="flex h-screen overflow-hidden">
+        <DashboardSidebar navItems={navItems} />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <DashboardHeader />
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+            {children}
+          </main>
+          <AppFooter />
+        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }
 

@@ -24,6 +24,7 @@ import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import countries from 'i18n-iso-countries';
 import enLocale from 'i18n-iso-countries/langs/en.json';
+import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
 
 // Register the locale
 countries.registerLocale(enLocale);
@@ -32,6 +33,20 @@ export default function ShipmentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const shipmentId = params.id as string;
+  
+  // Early auth check to prevent API calls for unauthorized users
+  useEffect(() => {
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      // Wrong role or not authenticated - redirect to appropriate page
+      if (!user) {
+        router.push('/auth/login');
+      } else {
+        router.push(getDashboardPath(user.role));
+      }
+      return;
+    }
+  }, [router]);
   
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,6 +98,12 @@ export default function ShipmentDetailPage() {
   const [deliveryWarehouseId, setDeliveryWarehouseId] = useState('');
 
   const fetchShipment = useCallback(async () => {
+    // Double-check auth before making API call
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await shipmentApi.getById(shipmentId);
@@ -95,7 +116,11 @@ export default function ShipmentDetailPage() {
   }, [shipmentId]);
 
   useEffect(() => {
-    fetchShipment();
+    const user = getStoredUser();
+    // Only fetch if user is authorized
+    if (user && hasRoleAccess(user.role, ['CUSTOMER'])) {
+      fetchShipment();
+    }
   }, [fetchShipment]);
 
   // Filter warehouses for pickup (origin area)

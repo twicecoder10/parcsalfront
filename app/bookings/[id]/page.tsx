@@ -10,15 +10,32 @@ export default function BookingRedirectPage() {
   const router = useRouter();
   const bookingId = params.id as string;
   const payment = searchParams.get('payment');
+  const extraCharge = searchParams.get('extraCharge');
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    // Redirect to customer bookings page with payment parameter
-    const redirectUrl = payment 
-      ? `/customer/bookings/${bookingId}?payment=${payment}`
+    // Build redirect URL with all relevant parameters
+    const params = new URLSearchParams();
+    
+    if (payment) {
+      params.set('payment', payment);
+    }
+    
+    if (extraCharge) {
+      params.set('extraCharge', extraCharge);
+    }
+    
+    if (sessionId) {
+      params.set('session_id', sessionId);
+    }
+    
+    const queryString = params.toString();
+    const redirectUrl = queryString
+      ? `/customer/bookings/${bookingId}?${queryString}`
       : `/customer/bookings/${bookingId}`;
     
     router.replace(redirectUrl);
-  }, [bookingId, payment, router]);
+  }, [bookingId, payment, extraCharge, sessionId, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

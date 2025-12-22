@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, ShoppingCart, Clock, Truck, ArrowRight, Loader2 } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
+import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
 
 export default function CustomerDashboardPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeBookings: 0,
@@ -18,11 +21,27 @@ export default function CustomerDashboardPage() {
   });
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
 
+  // Early auth check to prevent API calls for unauthorized users
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      // Wrong role or not authenticated - redirect to appropriate page
+      if (!user) {
+        router.push('/auth/login');
+      } else {
+        router.push(getDashboardPath(user.role));
+      }
+      return;
+    }
+  }, [router]);
 
   const fetchDashboardData = async () => {
+    // Double-check auth before making API call
+    const user = getStoredUser();
+    if (!user || !hasRoleAccess(user.role, ['CUSTOMER'])) {
+      return;
+    }
+
     setLoading(true);
     try {
       const [dashboardData, recent] = await Promise.all([
@@ -46,6 +65,14 @@ export default function CustomerDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const user = getStoredUser();
+    // Only fetch if user is authorized
+    if (user && hasRoleAccess(user.role, ['CUSTOMER'])) {
+      fetchDashboardData();
+    }
+  }, []);
 
   const statusColors: Record<string, string> = {
     PENDING: 'text-yellow-600',

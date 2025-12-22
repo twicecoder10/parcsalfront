@@ -13,6 +13,23 @@ import { Notification, NotificationType } from '@/lib/api-types';
 import { formatDistanceToNow } from 'date-fns';
 import { useConfirm } from '@/lib/use-confirm';
 
+// Customer-specific notification types (excludes company-only types)
+const customerNotificationTypes: NotificationType[] = [
+  'BOOKING_CREATED',
+  'BOOKING_ACCEPTED',
+  'BOOKING_REJECTED',
+  'BOOKING_CANCELLED',
+  'BOOKING_IN_TRANSIT',
+  'BOOKING_DELIVERED',
+  'PAYMENT_SUCCESS',
+  'PAYMENT_FAILED',
+  'PAYMENT_REFUNDED',
+  'EXTRA_CHARGE_REQUESTED',
+  'EXTRA_CHARGE_PAID',
+  'EXTRA_CHARGE_DECLINED',
+  'EXTRA_CHARGE_CANCELLED',
+];
+
 const notificationTypeLabels: Record<NotificationType, string> = {
   BOOKING_CREATED: 'Booking Created',
   BOOKING_ACCEPTED: 'Booking Accepted',
@@ -32,6 +49,10 @@ const notificationTypeLabels: Record<NotificationType, string> = {
   SUBSCRIPTION_ACTIVE: 'Subscription Active',
   SUBSCRIPTION_CANCELLED: 'Subscription Cancelled',
   SUBSCRIPTION_PAST_DUE: 'Subscription Past Due',
+  EXTRA_CHARGE_REQUESTED: 'Extra Charge Requested',
+  EXTRA_CHARGE_PAID: 'Extra Charge Paid',
+  EXTRA_CHARGE_DECLINED: 'Extra Charge Declined',
+  EXTRA_CHARGE_CANCELLED: 'Extra Charge Cancelled',
 };
 
 export default function CustomerNotificationsPage() {
@@ -61,7 +82,10 @@ export default function CustomerNotificationsPage() {
         type: typeFilter !== 'all' ? typeFilter : undefined,
       });
       setNotifications(response.data);
-      setTotalPages(response.pagination.totalPages);
+      // Use totalPages if available, otherwise calculate from total and limit
+      const calculatedTotalPages = response.pagination.totalPages ?? 
+        Math.ceil((response.pagination.total || 0) / (response.pagination.limit || 20));
+      setTotalPages(calculatedTotalPages || 1);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       setNotifications([]);
@@ -235,9 +259,9 @@ export default function CustomerNotificationsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(notificationTypeLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
+                {customerNotificationTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {notificationTypeLabels[type]}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft, Menu, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import Link from 'next/link';
 
 function CustomerChatContent() {
   const searchParams = useSearchParams();
@@ -26,12 +27,20 @@ function CustomerChatContent() {
   const queryClient = useQueryClient();
   const previousChatRoomIdRef = useRef<string | null>(null);
 
-  // Check for companyId/bookingId in URL params (for new conversations)
+  // Check for companyId/bookingId/roomId in URL params (for new conversations)
   useEffect(() => {
     const companyId = searchParams.get('companyId');
     const bookingId = searchParams.get('bookingId');
+    const roomId = searchParams.get('roomId');
     
-    if (companyId) {
+    if (roomId) {
+      // Direct room ID - select it immediately
+      setSelectedChatRoomId(roomId);
+      setPendingCompanyId(null);
+      setPendingBookingId(null);
+      // Clean URL
+      window.history.replaceState({}, '', '/customer/chat');
+    } else if (companyId) {
       setPendingCompanyId(companyId);
       setPendingBookingId(bookingId);
       // Check if chat room already exists for this company/booking
@@ -48,8 +57,11 @@ function CustomerChatContent() {
           setPendingCompanyId(null);
           setPendingBookingId(null);
         }
+        // Clean URL
+        window.history.replaceState({}, '', '/customer/chat');
       }).catch(() => {
         // Ignore errors, will create room on first message
+        window.history.replaceState({}, '', '/customer/chat');
       });
     }
   }, [searchParams]);
@@ -343,9 +355,12 @@ function CustomerChatContent() {
                     {selectedChatRoom?.company.name || companyInfo?.name}
                   </h2>
                   {(selectedChatRoom?.booking || pendingBookingId) && (
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">
-                      Booking #{(selectedChatRoom?.booking?.id || pendingBookingId || '').slice(0, 8)}
-                    </p>
+                    <Link 
+                      href={`/customer/bookings/${selectedChatRoom?.bookingId || selectedChatRoom?.booking?.id || pendingBookingId}`}
+                      className="text-xs md:text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 truncate transition-colors"
+                    >
+                      Booking #{(selectedChatRoom?.bookingId || selectedChatRoom?.booking?.id || pendingBookingId || '').slice(0, 8)}
+                    </Link>
                   )}
                 </div>
               </div>
