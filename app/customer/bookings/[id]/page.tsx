@@ -194,13 +194,14 @@ function BookingDetailContent() {
 
   // Handle message company
   const handleMessageCompany = async () => {
-    if (!booking?.shipmentSlot?.company?.id) return;
+    const companyId = booking?.company?.id || booking?.shipmentSlot?.company?.id || booking?.companyId;
+    if (!companyId) return;
     
     try {
       // Try to find existing chat room for this booking
       const roomsResponse = await chatApi.getChatRooms({ limit: 100 });
       const existingRoom = roomsResponse.data.find((room) => 
-        room.companyId === booking.shipmentSlot?.company?.id && 
+        room.companyId === companyId && 
         room.bookingId === booking.id
       );
       
@@ -209,12 +210,12 @@ function BookingDetailContent() {
         router.push(`/customer/chat?roomId=${existingRoom.id}`);
       } else {
         // Navigate to chat page with company and booking ID - it will create a room when first message is sent
-        router.push(`/customer/chat?companyId=${booking.shipmentSlot.company.id}&bookingId=${booking.id}`);
+        router.push(`/customer/chat?companyId=${companyId}&bookingId=${booking.id}`);
       }
     } catch (error) {
       console.error('Failed to get chat room:', error);
       // Navigate anyway - chat page will handle creation
-      router.push(`/customer/chat?companyId=${booking.shipmentSlot?.company?.id}&bookingId=${booking.id}`);
+      router.push(`/customer/chat?companyId=${companyId}&bookingId=${booking.id}`);
     }
   };
 
@@ -224,6 +225,7 @@ function BookingDetailContent() {
     IN_TRANSIT: 'bg-orange-100 text-orange-800',
     DELIVERED: 'bg-green-100 text-green-800',
     CANCELLED: 'bg-red-100 text-red-800',
+    REJECTED: 'bg-red-100 text-red-800',
   };
 
   const getStatusTimeline = (status: string) => {
@@ -265,7 +267,7 @@ function BookingDetailContent() {
 
   const timeline = getStatusTimeline(booking.status);
   const canCancel = booking.status === 'PENDING' || booking.status === 'ACCEPTED';
-  const needsPayment = booking.paymentStatus === 'PENDING' || booking.paymentStatus === 'UNPAID';
+  const needsPayment = booking.paymentStatus === 'PENDING' || booking.paymentStatus === 'UNPAID' || !booking.payment;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -423,6 +425,29 @@ function BookingDetailContent() {
         </CardContent>
       </Card>
 
+      {/* Customer Information */}
+      {booking.customer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {booking.customer.fullName && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">Name</p>
+                <p className="text-sm text-gray-900">{booking.customer.fullName}</p>
+              </div>
+            )}
+            {booking.customer.email && (
+              <div>
+                <p className="text-sm font-medium text-gray-700">Email</p>
+                <p className="text-sm text-gray-900">{booking.customer.email}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Shipment Info */}
       <Card>
         <CardHeader>
@@ -467,15 +492,15 @@ function BookingDetailContent() {
               </div>
             </div>
           )}
-          {booking.shipmentSlot?.company?.name && (
+          {(booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName) && (
             <div className="flex items-center gap-3">
               <Truck className="h-5 w-5 text-green-600" />
               <div className="flex items-center gap-2 flex-1">
-                {booking.shipmentSlot.company.logoUrl && (
+                {(booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl) && (
                   <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
                     <Image
-                      src={booking.shipmentSlot.company.logoUrl}
-                      alt={`${booking.shipmentSlot.company.name} logo`}
+                      src={booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl || ''}
+                      alt={`${booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName} logo`}
                       fill
                       className="object-cover"
                       sizes="32px"
@@ -485,10 +510,10 @@ function BookingDetailContent() {
                 <div className="flex-1">
                   <p className="font-medium">Company</p>
                   <Link 
-                    href={`/companies/${booking.shipmentSlot.company.slug || booking.shipmentSlot.company.id}`}
+                    href={`/companies/${booking.company?.slug || booking.shipmentSlot?.company?.slug || booking.company?.id || booking.shipmentSlot?.company?.id}`}
                     className="text-sm text-gray-600 hover:text-orange-600 transition-colors"
                   >
-                    {booking.shipmentSlot.company.name}
+                    {booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName}
                   </Link>
                 </div>
                 <Button
@@ -505,8 +530,119 @@ function BookingDetailContent() {
         </CardContent>
       </Card>
 
+      {/* Pickup & Delivery Information */}
+      {(booking.pickupWarehouse || booking.deliveryWarehouse || booking.pickupMethod || booking.deliveryMethod || booking.pickupAddress || booking.deliveryAddress) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pickup & Delivery</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {booking.pickupMethod && (
+              <div className="flex items-center gap-3">
+                <Truck className="h-5 w-5 text-blue-600" />
+                <div className="flex-1">
+                  <p className="font-medium">Pickup Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupMethod === 'PICKUP_FROM_SENDER'
+                      ? 'Company picks up from sender'
+                      : 'Sender drops off at company'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.pickupWarehouse && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium">Pickup Location</p>
+                  <p className="text-sm font-semibold text-gray-900">{booking.pickupWarehouse.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupWarehouse.address}
+                    {booking.pickupWarehouse.city && `, ${booking.pickupWarehouse.city}`}
+                    {booking.pickupWarehouse.state && `, ${booking.pickupWarehouse.state}`}
+                    {booking.pickupWarehouse.postalCode && ` ${booking.pickupWarehouse.postalCode}`}
+                    {booking.pickupWarehouse.country && `, ${booking.pickupWarehouse.country}`}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.pickupAddress && !booking.pickupWarehouse && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium">Pickup Address</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupAddress}
+                    {booking.pickupCity && `, ${booking.pickupCity}`}
+                    {booking.pickupState && `, ${booking.pickupState}`}
+                    {booking.pickupPostalCode && ` ${booking.pickupPostalCode}`}
+                    {booking.pickupCountry && `, ${booking.pickupCountry}`}
+                  </p>
+                  {booking.pickupContactName && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Contact: {booking.pickupContactName}
+                      {booking.pickupContactPhone && ` (${booking.pickupContactPhone})`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {booking.deliveryMethod && (
+              <div className="flex items-center gap-3 pt-2 border-t">
+                <Truck className="h-5 w-5 text-green-600" />
+                <div className="flex-1">
+                  <p className="font-medium">Delivery Method</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryMethod === 'RECEIVER_PICKS_UP'
+                      ? 'Receiver picks up from company'
+                      : 'Company delivers to receiver'}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.deliveryWarehouse && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium">Delivery Location</p>
+                  <p className="text-sm font-semibold text-gray-900">{booking.deliveryWarehouse.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryWarehouse.address}
+                    {booking.deliveryWarehouse.city && `, ${booking.deliveryWarehouse.city}`}
+                    {booking.deliveryWarehouse.state && `, ${booking.deliveryWarehouse.state}`}
+                    {booking.deliveryWarehouse.postalCode && ` ${booking.deliveryWarehouse.postalCode}`}
+                    {booking.deliveryWarehouse.country && `, ${booking.deliveryWarehouse.country}`}
+                  </p>
+                </div>
+              </div>
+            )}
+            {booking.deliveryAddress && !booking.deliveryWarehouse && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium">Delivery Address</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryAddress}
+                    {booking.deliveryCity && `, ${booking.deliveryCity}`}
+                    {booking.deliveryState && `, ${booking.deliveryState}`}
+                    {booking.deliveryPostalCode && ` ${booking.deliveryPostalCode}`}
+                    {booking.deliveryCountry && `, ${booking.deliveryCountry}`}
+                  </p>
+                  {booking.deliveryContactName && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Contact: {booking.deliveryContactName}
+                      {booking.deliveryContactPhone && ` (${booking.deliveryContactPhone})`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Parcel Information */}
-      {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || booking.pickupMethod || booking.deliveryMethod || (booking.images && booking.images.length > 0)) && (
+      {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || (booking.images && booking.images.length > 0)) && (
         <Card>
           <CardHeader>
             <CardTitle>Parcel Information</CardTitle>
@@ -567,32 +703,6 @@ function BookingDetailContent() {
                 </div>
               </div>
             )}
-            {booking.pickupMethod && (
-              <div className="flex items-center gap-3">
-                <Truck className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium">Pickup Method</p>
-                  <p className="text-sm text-gray-600">
-                    {booking.pickupMethod === 'PICKUP_FROM_SENDER'
-                      ? 'Company picks up from sender'
-                      : 'Sender drops off at company'}
-                  </p>
-                </div>
-              </div>
-            )}
-            {booking.deliveryMethod && (
-              <div className="flex items-center gap-3">
-                <Truck className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">Delivery Method</p>
-                  <p className="text-sm text-gray-600">
-                    {booking.deliveryMethod === 'RECEIVER_PICKS_UP'
-                      ? 'Receiver picks up from company'
-                      : 'Company delivers to receiver'}
-                  </p>
-                </div>
-              </div>
-            )}
             {booking.images && booking.images.length > 0 && (
               <div className="flex items-start gap-3">
                 <Package className="h-5 w-5 text-purple-600 mt-0.5" />
@@ -638,13 +748,17 @@ function BookingDetailContent() {
                 <p className="font-medium">Total Amount</p>
                 <p className="text-2xl font-bold text-orange-600 mt-1">
                   £{(() => {
-                    // Use payment amount if payment exists and is paid
-                    if (booking.payment?.amount && booking.paymentStatus === 'PAID') {
-                      return parseFloat(String(booking.payment.amount)).toFixed(2);
+                    // Use payment.totalAmount (in cents) if available
+                    if (booking.payment?.totalAmount) {
+                      return (booking.payment.totalAmount / 100).toFixed(2);
                     }
-                    // Use totalAmount (in cents) if available
+                    // Use booking.totalAmount (in cents) if available
                     if (booking.totalAmount) {
                       return (booking.totalAmount / 100).toFixed(2);
+                    }
+                    // Use payment amount (string) if available
+                    if (booking.payment?.amount) {
+                      return parseFloat(String(booking.payment.amount)).toFixed(2);
                     }
                     // Fallback to calculatedPrice or price
                     if (booking.calculatedPrice || booking.price) {
@@ -663,25 +777,79 @@ function BookingDetailContent() {
               )}
             </div>
             
+            {/* Payment Breakdown */}
+            {(booking.payment?.baseAmount !== undefined || booking.baseAmount !== undefined) && (
+              <div className="pt-4 border-t space-y-2">
+                <p className="text-sm font-medium text-gray-700 mb-3">Payment Breakdown</p>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Base Amount:</span>
+                    <span className="font-medium">
+                      £{((booking.payment?.baseAmount || booking.baseAmount || 0) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                  {(booking.payment?.adminFeeAmount !== undefined || booking.adminFeeAmount !== undefined) && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Admin Fee:</span>
+                      <span className="font-medium">
+                        £{((booking.payment?.adminFeeAmount || booking.adminFeeAmount || 0) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {(booking.payment?.processingFeeAmount !== undefined || booking.processingFeeAmount !== undefined) && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Processing Fee:</span>
+                      <span className="font-medium">
+                        £{((booking.payment?.processingFeeAmount || booking.processingFeeAmount || 0) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-2 border-t font-semibold">
+                    <span>Total:</span>
+                    <span className="text-orange-600">
+                      £{(() => {
+                        if (booking.payment?.totalAmount) {
+                          return (booking.payment.totalAmount / 100).toFixed(2);
+                        }
+                        if (booking.totalAmount) {
+                          return (booking.totalAmount / 100).toFixed(2);
+                        }
+                        return '0.00';
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Payment Details */}
-            {booking.payment && booking.paymentStatus === 'PAID' && (
+            {booking.payment && (
               <div className="pt-4 border-t space-y-2">
                 <p className="text-sm font-medium text-gray-700">Payment Details</p>
                 <div className="text-sm text-gray-600 space-y-1">
                   {booking.payment.id && (
                     <p>Transaction ID: <span className="font-mono">{booking.payment.id}</span></p>
                   )}
-                  {booking.payment.amount && (
-                    <p>Amount: £{parseFloat(String(booking.payment.amount)).toFixed(2)}</p>
-                  )}
                   {booking.payment.currency && (
                     <p>Currency: {booking.payment.currency.toUpperCase()}</p>
                   )}
                   {booking.payment.status && (
-                    <p>Status: <span className="capitalize">{booking.payment.status.toLowerCase()}</span></p>
+                    <p>Status: <span className="capitalize">{booking.payment.status.toLowerCase().replace('_', ' ')}</span></p>
+                  )}
+                  {booking.payment.refundedAmount && parseFloat(booking.payment.refundedAmount) > 0 && (
+                    <p className="text-orange-600">
+                      Refunded: £{parseFloat(booking.payment.refundedAmount).toFixed(2)}
+                      {booking.payment.refundReason && ` - ${booking.payment.refundReason}`}
+                    </p>
                   )}
                   {booking.payment.createdAt && (
-                    <p>Paid on: {format(new Date(booking.payment.createdAt), 'MMM dd, yyyy HH:mm')}</p>
+                    <p>Created: {format(new Date(booking.payment.createdAt), 'MMM dd, yyyy HH:mm')}</p>
+                  )}
+                  {booking.payment.paidAt && (
+                    <p>Paid on: {format(new Date(booking.payment.paidAt), 'MMM dd, yyyy HH:mm')}</p>
+                  )}
+                  {booking.payment.refundedAt && (
+                    <p>Refunded on: {format(new Date(booking.payment.refundedAt), 'MMM dd, yyyy HH:mm')}</p>
                   )}
                 </div>
               </div>

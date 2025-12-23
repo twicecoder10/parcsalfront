@@ -44,6 +44,7 @@ export const customerApi = {
   // Bookings
   getBookings: async (params?: {
     status?: string;
+    search?: string;
     limit?: number;
     offset?: number;
   }): Promise<{ data: any[]; pagination: any }> => {
@@ -382,6 +383,7 @@ export const customerApi = {
 
   // Extra Charges
   getExtraCharges: async (bookingId: string): Promise<any[]> => {
+    // Use the new endpoint /bookings/{id}/extra-charges
     const response = await api.get<ApiResponse<any[]>>(`/bookings/${bookingId}/extra-charges`);
     return extractData(response);
   },

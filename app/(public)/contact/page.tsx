@@ -74,7 +74,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <p className="font-semibold">Phone</p>
-                        <p className="text-sm text-gray-600">+1 (555) 123-4567</p>
+                        <p className="text-sm text-gray-600">+442034321794</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
@@ -83,7 +83,11 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <p className="font-semibold">Address</p>
-                        <p className="text-sm text-gray-600">123 Shipping Street, Logistics City, LC 12345</p>
+                        <p className="text-sm text-gray-600">
+                          Unit 3, 1 Mapple Path,<br />
+                          Hackney,<br />
+                          London E5 8FB
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -97,14 +101,10 @@ export default function ContactPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Monday - Friday</span>
-                        <span className="font-medium">9:00 AM - 6:00 PM</span>
+                        <span className="font-medium">9:00 AM - 5:00 PM</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Saturday</span>
-                        <span className="font-medium">10:00 AM - 4:00 PM</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Sunday</span>
+                        <span className="text-gray-600">Weekends</span>
                         <span className="font-medium">Closed</span>
                       </div>
                     </div>

@@ -30,6 +30,9 @@ export default function LandingPage() {
   const [arrivalDateFrom, setArrivalDateFrom] = useState('');
   const [arrivalDateTo, setArrivalDateTo] = useState('');
   const [mode, setMode] = useState<string>('all');
+
+  // Get today's date in YYYY-MM-DD format for min date constraints
+  const today = new Date().toISOString().split('T')[0];
   const sliderRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -349,7 +352,26 @@ export default function LandingPage() {
                                 <Input
                                   type="date"
                                   value={departureDateFrom}
-                                  onChange={(e) => setDepartureDateFrom(e.target.value)}
+                                  onChange={(e) => {
+                                    setDepartureDateFrom(e.target.value);
+                                    // If the new "From" date is after "To" date, clear "To" date
+                                    if (e.target.value && departureDateTo && e.target.value > departureDateTo) {
+                                      setDepartureDateTo('');
+                                    }
+                                    // If the new "From" date is after or equal to arrival "From", clear arrival dates
+                                    if (e.target.value && arrivalDateFrom && e.target.value >= arrivalDateFrom) {
+                                      setArrivalDateFrom('');
+                                      setArrivalDateTo('');
+                                    }
+                                  }}
+                                  min={today}
+                                  max={
+                                    departureDateTo 
+                                      ? departureDateTo 
+                                      : arrivalDateFrom 
+                                        ? arrivalDateFrom 
+                                        : undefined
+                                  }
                                   className="h-10"
                                 />
                               </div>
@@ -358,9 +380,17 @@ export default function LandingPage() {
                                 <Input
                                   type="date"
                                   value={departureDateTo}
-                                  onChange={(e) => setDepartureDateTo(e.target.value)}
+                                  onChange={(e) => {
+                                    setDepartureDateTo(e.target.value);
+                                    // If the new "To" date is after or equal to arrival "From", clear arrival dates
+                                    if (e.target.value && arrivalDateFrom && e.target.value >= arrivalDateFrom) {
+                                      setArrivalDateFrom('');
+                                      setArrivalDateTo('');
+                                    }
+                                  }}
+                                  min={departureDateFrom || today}
+                                  max={arrivalDateFrom ? arrivalDateFrom : undefined}
                                   className="h-10"
-                                  min={departureDateFrom || undefined}
                                 />
                               </div>
                             </div>
@@ -373,7 +403,30 @@ export default function LandingPage() {
                                 <Input
                                   type="date"
                                   value={arrivalDateFrom}
-                                  onChange={(e) => setArrivalDateFrom(e.target.value)}
+                                  onChange={(e) => {
+                                    setArrivalDateFrom(e.target.value);
+                                    // If the new "From" date is after "To" date, clear "To" date
+                                    if (e.target.value && arrivalDateTo && e.target.value > arrivalDateTo) {
+                                      setArrivalDateTo('');
+                                    }
+                                    // If the new "From" date is before or equal to departure "To", clear departure "To"
+                                    if (e.target.value && departureDateTo && e.target.value <= departureDateTo) {
+                                      setDepartureDateTo('');
+                                    }
+                                    // If the new "From" date is before or equal to departure "From", clear departure dates
+                                    if (e.target.value && departureDateFrom && e.target.value <= departureDateFrom) {
+                                      setDepartureDateFrom('');
+                                      setDepartureDateTo('');
+                                    }
+                                  }}
+                                  min={
+                                    departureDateTo 
+                                      ? departureDateTo 
+                                      : departureDateFrom 
+                                        ? departureDateFrom 
+                                        : undefined
+                                  }
+                                  max={arrivalDateTo || undefined}
                                   className="h-10"
                                 />
                               </div>
@@ -382,9 +435,23 @@ export default function LandingPage() {
                                 <Input
                                   type="date"
                                   value={arrivalDateTo}
-                                  onChange={(e) => setArrivalDateTo(e.target.value)}
+                                  onChange={(e) => {
+                                    setArrivalDateTo(e.target.value);
+                                    // If the new "To" date is before or equal to departure "To", clear departure "To"
+                                    if (e.target.value && departureDateTo && e.target.value <= departureDateTo) {
+                                      setDepartureDateTo('');
+                                    }
+                                  }}
+                                  min={
+                                    arrivalDateFrom 
+                                      ? arrivalDateFrom 
+                                      : departureDateTo 
+                                        ? departureDateTo 
+                                        : departureDateFrom 
+                                          ? departureDateFrom 
+                                          : undefined
+                                  }
                                   className="h-10"
-                                  min={arrivalDateFrom || undefined}
                                 />
                               </div>
                             </div>

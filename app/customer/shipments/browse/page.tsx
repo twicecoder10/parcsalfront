@@ -34,6 +34,9 @@ export default function BrowseShipmentsPage() {
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
+
+  // Get today's date in YYYY-MM-DD format for min date constraints
+  const today = new Date().toISOString().split('T')[0];
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
   const [pagination, setPagination] = useState({
     limit: 10,
@@ -99,9 +102,10 @@ export default function BrowseShipmentsPage() {
 
     setLoading(true);
     try {
+      const currentOffset = resetOffset ? 0 : pagination.offset + pagination.limit;
       const params: any = {
         limit: pagination.limit,
-        offset: resetOffset ? 0 : pagination.offset,
+        offset: currentOffset,
       };
 
       // Use override filters if provided, otherwise use state values
@@ -140,8 +144,12 @@ export default function BrowseShipmentsPage() {
 
       const response = await shipmentApi.search(params);
 
+      // API returns: { data: [...], pagination: {...} }
+      const shipmentsData = response.data || [];
+      const paginationData = response.pagination || {};
+
       // Filter out shipments where cutoff time or departure time has passed
-      const availableShipments = response.data.filter((shipment: any) =>
+      const availableShipments = shipmentsData.filter((shipment: any) =>
         isShipmentAvailable({
           cutoffTimeForReceivingItems: shipment.cutoffTimeForReceivingItems,
           departureTime: shipment.departureTime,
@@ -150,16 +158,32 @@ export default function BrowseShipmentsPage() {
 
       if (resetOffset) {
         setShipments(availableShipments);
+        // Reset pagination when starting fresh - use API's pagination data
+        setPagination({
+          limit: paginationData.limit || pagination.limit,
+          offset: 0,
+          total: paginationData.total || availableShipments.length,
+          hasMore: paginationData.hasMore !== undefined 
+            ? paginationData.hasMore 
+            : (availableShipments.length >= (paginationData.limit || pagination.limit)),
+        });
       } else {
-        setShipments([...shipments, ...availableShipments]);
+        // Append new shipments to existing ones
+        const updatedShipments = [...shipments, ...availableShipments];
+        const newOffset = currentOffset;
+        const totalFromAPI = paginationData.total !== undefined ? paginationData.total : pagination.total;
+        
+        setShipments(updatedShipments);
+        // Update pagination with new offset
+        setPagination({
+          limit: paginationData.limit || pagination.limit,
+          offset: newOffset,
+          total: totalFromAPI,
+          hasMore: paginationData.hasMore !== undefined 
+            ? paginationData.hasMore 
+            : (updatedShipments.length < totalFromAPI && availableShipments.length > 0),
+        });
       }
-
-      // Update pagination to reflect filtered results
-      setPagination({
-        ...response.pagination,
-        total: availableShipments.length,
-        hasMore: response.pagination.hasMore && availableShipments.length > 0,
-      });
     } catch (error) {
       console.error('Failed to fetch shipments:', error);
     } finally {
@@ -345,7 +369,26 @@ export default function BrowseShipmentsPage() {
                           id="departureDateFrom"
                           type="date"
                           value={departureDateFrom}
-                          onChange={(e) => setDepartureDateFrom(e.target.value)}
+                          onChange={(e) => {
+                            setDepartureDateFrom(e.target.value);
+                            // If the new "From" date is after "To" date, clear "To" date
+                            if (e.target.value && departureDateTo && e.target.value > departureDateTo) {
+                              setDepartureDateTo('');
+                            }
+                            // If the new "From" date is after or equal to arrival "From", clear arrival dates
+                            if (e.target.value && arrivalDateFrom && e.target.value >= arrivalDateFrom) {
+                              setArrivalDateFrom('');
+                              setArrivalDateTo('');
+                            }
+                          }}
+                          min={today}
+                          max={
+                            departureDateTo 
+                              ? departureDateTo 
+                              : arrivalDateFrom 
+                                ? arrivalDateFrom 
+                                : undefined
+                          }
                           className="h-10"
                         />
                       </div>
@@ -355,8 +398,16 @@ export default function BrowseShipmentsPage() {
                           id="departureDateTo"
                           type="date"
                           value={departureDateTo}
-                          onChange={(e) => setDepartureDateTo(e.target.value)}
-                          min={departureDateFrom || undefined}
+                          onChange={(e) => {
+                            setDepartureDateTo(e.target.value);
+                            // If the new "To" date is after or equal to arrival "From", clear arrival dates
+                            if (e.target.value && arrivalDateFrom && e.target.value >= arrivalDateFrom) {
+                              setArrivalDateFrom('');
+                              setArrivalDateTo('');
+                            }
+                          }}
+                          min={departureDateFrom || today}
+                          max={arrivalDateFrom ? arrivalDateFrom : undefined}
                           className="h-10"
                         />
                       </div>
@@ -371,7 +422,30 @@ export default function BrowseShipmentsPage() {
                           id="arrivalDateFrom"
                           type="date"
                           value={arrivalDateFrom}
-                          onChange={(e) => setArrivalDateFrom(e.target.value)}
+                          onChange={(e) => {
+                            setArrivalDateFrom(e.target.value);
+                            // If the new "From" date is after "To" date, clear "To" date
+                            if (e.target.value && arrivalDateTo && e.target.value > arrivalDateTo) {
+                              setArrivalDateTo('');
+                            }
+                            // If the new "From" date is before or equal to departure "To", clear departure "To"
+                            if (e.target.value && departureDateTo && e.target.value <= departureDateTo) {
+                              setDepartureDateTo('');
+                            }
+                            // If the new "From" date is before or equal to departure "From", clear departure dates
+                            if (e.target.value && departureDateFrom && e.target.value <= departureDateFrom) {
+                              setDepartureDateFrom('');
+                              setDepartureDateTo('');
+                            }
+                          }}
+                          min={
+                            departureDateTo 
+                              ? departureDateTo 
+                              : departureDateFrom 
+                                ? departureDateFrom 
+                                : undefined
+                          }
+                          max={arrivalDateTo || undefined}
                           className="h-10"
                         />
                       </div>
@@ -381,8 +455,22 @@ export default function BrowseShipmentsPage() {
                           id="arrivalDateTo"
                           type="date"
                           value={arrivalDateTo}
-                          onChange={(e) => setArrivalDateTo(e.target.value)}
-                          min={arrivalDateFrom || undefined}
+                          onChange={(e) => {
+                            setArrivalDateTo(e.target.value);
+                            // If the new "To" date is before or equal to departure "To", clear departure "To"
+                            if (e.target.value && departureDateTo && e.target.value <= departureDateTo) {
+                              setDepartureDateTo('');
+                            }
+                          }}
+                          min={
+                            arrivalDateFrom 
+                              ? arrivalDateFrom 
+                              : departureDateTo 
+                                ? departureDateTo 
+                                : departureDateFrom 
+                                  ? departureDateFrom 
+                                  : undefined
+                          }
                           className="h-10"
                         />
                       </div>
@@ -480,7 +568,11 @@ export default function BrowseShipmentsPage() {
               </Button>
               <Button
                 type="button"
-                onClick={() => setIsFiltersModalOpen(false)}
+                onClick={() => {
+                  setIsFiltersModalOpen(false);
+                  // Reset pagination and fetch with new filters
+                  fetchShipments(true);
+                }}
                 className="bg-orange-600 hover:bg-orange-700"
               >
                 Apply Filters
@@ -506,8 +598,21 @@ export default function BrowseShipmentsPage() {
             </Card>
           ) : (
             <>
-              <div className="mb-4 text-sm text-gray-600">
-                Found {pagination.total} {pagination.total === 1 ? 'shipment' : 'shipments'}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-gray-600">
+                  {pagination.total > 0 ? (
+                    <>
+                      Showing <span className="font-semibold text-gray-900">{shipments.length}</span> of <span className="font-semibold text-gray-900">{pagination.total}</span> {pagination.total === 1 ? 'shipment' : 'shipments'}
+                    </>
+                  ) : (
+                    <>Found <span className="font-semibold text-gray-900">{shipments.length}</span> {shipments.length === 1 ? 'shipment' : 'shipments'}</>
+                  )}
+                </div>
+                {pagination.total > pagination.limit && (
+                  <div className="text-xs text-gray-500">
+                    Page <span className="font-medium text-gray-700">{Math.floor((pagination.offset || 0) / pagination.limit) + 1}</span> of <span className="font-medium text-gray-700">{Math.ceil(pagination.total / pagination.limit)}</span>
+                  </div>
+                )}
               </div>
               <div className="grid gap-4">
                 {shipments.map((shipment) => (
@@ -520,6 +625,7 @@ export default function BrowseShipmentsPage() {
                     variant="outline"
                     onClick={() => fetchShipments(false)}
                     disabled={loading}
+                    className="min-w-[140px] h-10"
                   >
                     {loading ? (
                       <>
@@ -527,9 +633,24 @@ export default function BrowseShipmentsPage() {
                         Loading...
                       </>
                     ) : (
-                      'Load More'
+                      <>
+                        Load More
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </>
                     )}
                   </Button>
+                  {pagination.total > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {pagination.total - shipments.length} more {pagination.total - shipments.length === 1 ? 'shipment' : 'shipments'} available
+                    </p>
+                  )}
+                </div>
+              )}
+              {!pagination.hasMore && shipments.length > 0 && pagination.total > pagination.limit && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-500">
+                    You&apos;ve reached the end of the results
+                  </p>
                 </div>
               )}
             </>
