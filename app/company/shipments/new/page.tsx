@@ -98,6 +98,57 @@ export default function NewShipmentPage() {
   const validateShipmentForm = (): string | null => {
     const errors: Record<string, string> = {};
 
+    // Validate dates and times
+    const now = new Date();
+    const departureDateTime = formData.departureDate && formData.departureTime
+      ? new Date(`${formData.departureDate}T${formData.departureTime}`)
+      : null;
+    
+    const arrivalDateTime = formData.arrivalDate && formData.arrivalTime
+      ? new Date(`${formData.arrivalDate}T${formData.arrivalTime}`)
+      : null;
+
+    const cutoffDateTime = formData.cutoffTime
+      ? new Date(formData.cutoffTime)
+      : null;
+
+    // Validate departure is in the future
+    if (departureDateTime && departureDateTime <= now) {
+      errors.departureDate = 'Departure time must be in the future';
+    }
+
+    // Validate arrival is after departure
+    if (departureDateTime && arrivalDateTime && arrivalDateTime <= departureDateTime) {
+      errors.arrivalDate = 'Arrival time must be after departure time';
+    }
+
+    // Validate cutoff time is in the future (at least 1 hour from now for realistic processing)
+    if (cutoffDateTime) {
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+      if (cutoffDateTime < oneHourFromNow) {
+        errors.cutoffTime = 'Cutoff time must be at least 1 hour in the future';
+      }
+    }
+
+    // Validate cutoff time is before departure (with buffer for processing)
+    if (cutoffDateTime && departureDateTime) {
+      // Check if cutoff is after or equal to departure
+      if (cutoffDateTime >= departureDateTime) {
+        const isSameDay = cutoffDateTime.toDateString() === departureDateTime.toDateString();
+        if (isSameDay) {
+          errors.cutoffTime = 'Cutoff time must be before departure time on the same day';
+        } else {
+          errors.cutoffTime = 'Cutoff time must be before departure time';
+        }
+      }
+      // Recommended: at least 2 hours buffer for processing
+      const twoHoursBeforeDeparture = new Date(departureDateTime.getTime() - 2 * 60 * 60 * 1000);
+      if (cutoffDateTime > twoHoursBeforeDeparture && cutoffDateTime < departureDateTime) {
+        // This is just a warning, not an error, but we can show it in the UI
+        // For now, we'll just allow it but the UI hint will suggest 12-24 hours
+      }
+    }
+
     if (formData.pricingModel === 'PER_KG') {
       if (!formData.totalCapacityKg || parseFloat(formData.totalCapacityKg) <= 0) {
         errors.totalCapacityKg = 'Weight capacity is required for per-kg pricing';
@@ -137,6 +188,30 @@ export default function NewShipmentPage() {
       setFieldErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors.capacity;
+        return newErrors;
+      });
+    }
+    // Clear related date/time errors when they change
+    if (field === 'departureDate' || field === 'departureTime') {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.departureDate;
+        delete newErrors.arrivalDate; // Might affect arrival validation
+        delete newErrors.cutoffTime; // Might affect cutoff validation
+        return newErrors;
+      });
+    }
+    if (field === 'arrivalDate' || field === 'arrivalTime') {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.arrivalDate;
+        return newErrors;
+      });
+    }
+    if (field === 'cutoffTime') {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.cutoffTime;
         return newErrors;
       });
     }
@@ -217,8 +292,13 @@ export default function NewShipmentPage() {
                     type="date"
                     value={formData.departureDate}
                     onChange={(e) => handleChange('departureDate', e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
                     required
+                    className={fieldErrors.departureDate ? 'border-red-500' : ''}
                   />
+                  {fieldErrors.departureDate && (
+                    <p className="text-xs text-red-600">{fieldErrors.departureDate}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="departureTime">Departure Time</Label>
@@ -237,8 +317,13 @@ export default function NewShipmentPage() {
                     type="date"
                     value={formData.arrivalDate}
                     onChange={(e) => handleChange('arrivalDate', e.target.value)}
+                    min={formData.departureDate || new Date().toISOString().split('T')[0]}
                     required
+                    className={fieldErrors.arrivalDate ? 'border-red-500' : ''}
                   />
+                  {fieldErrors.arrivalDate && (
+                    <p className="text-xs text-red-600">{fieldErrors.arrivalDate}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="arrivalTime">Arrival Time</Label>
@@ -408,14 +493,54 @@ export default function NewShipmentPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="cutoffTime">Cutoff Time</Label>
+                <Label htmlFor="cutoffTime">Cutoff Time for Receiving Items</Label>
                 <Input
                   id="cutoffTime"
                   type="datetime-local"
                   value={formData.cutoffTime}
                   onChange={(e) => handleChange('cutoffTime', e.target.value)}
+                  min={(() => {
+                    const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
+                    return oneHourFromNow.toISOString().slice(0, 16);
+                  })()}
+                  max={(() => {
+                    if (formData.departureDate && formData.departureTime) {
+                      const departure = new Date(`${formData.departureDate}T${formData.departureTime}`);
+                      // Cutoff must be strictly before departure (1 minute before to be safe)
+                      const maxCutoff = new Date(departure.getTime() - 60 * 1000);
+                      return maxCutoff.toISOString().slice(0, 16);
+                    }
+                    return undefined;
+                  })()}
+                  className={fieldErrors.cutoffTime ? 'border-red-500' : ''}
                 />
-                <p className="text-xs text-gray-500">Last time to receive items for this shipment</p>
+                {fieldErrors.cutoffTime && (
+                  <p className="text-xs text-red-600">{fieldErrors.cutoffTime}</p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Last time to receive items. Must be at least 1 hour in the future and strictly before departure time
+                  {formData.departureDate && formData.departureTime && ' (even on the same day)'}.
+                </p>
+                {formData.departureDate && formData.departureTime && !formData.cutoffTime && (
+                  <p className="text-xs text-blue-600">
+                    💡 Tip: Consider setting cutoff 12-24 hours before departure for processing time
+                  </p>
+                )}
+                {formData.cutoffTime && formData.departureDate && formData.departureTime && (() => {
+                  const cutoff = new Date(formData.cutoffTime);
+                  const departure = new Date(`${formData.departureDate}T${formData.departureTime}`);
+                  const isSameDay = cutoff.toDateString() === departure.toDateString();
+                  const hoursDiff = (departure.getTime() - cutoff.getTime()) / (1000 * 60 * 60);
+                  
+                  if (isSameDay && hoursDiff < 4) {
+                    return (
+                      <p className="text-xs text-amber-600">
+                        ⚠️ Same-day cutoff with less than 4 hours before departure. Ensure you have enough processing time.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </CardContent>
           </Card>
