@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Eye, Loader2, RefreshCw, AlertCircle, CreditCard, Calendar, User, Package } from 'lucide-react';
-import { companyApi } from '@/lib/company-api';
+import { companyApi, getCustomerName, getCustomerEmail } from '@/lib/company-api';
 import type { Payment } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
@@ -89,7 +89,7 @@ export default function PaymentDetailPage() {
       toast.error('You do not have permission to process refunds.');
       return;
     }
-    if (payment && payment.status !== 'SUCCEEDED' && payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
+    if (payment && payment.status !== 'SUCCEEDED' && payment.status !== 'PARTIALLY_REFUNDED') {
       toast.error('Only succeeded or partially refunded payments can be refunded.');
       return;
     }
@@ -137,7 +137,7 @@ export default function PaymentDetailPage() {
             <p className="text-gray-600 mt-2">View and manage payment transaction</p>
           </div>
         </div>
-        {(payment.status === 'SUCCEEDED' || payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
+        {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') && 
          canPerformAction(permissions, 'processRefund') && (
           <Button onClick={openRefundDialog} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -160,15 +160,59 @@ export default function PaymentDetailPage() {
               <Label className="text-sm text-gray-500">Payment ID</Label>
               <p className="font-mono text-sm mt-1">{payment.id}</p>
             </div>
+            {payment.type && (
+              <div>
+                <Label className="text-sm text-gray-500">Type</Label>
+                <div className="mt-1">
+                  <Badge className="bg-gray-50 text-gray-700 border-gray-200">
+                    {payment.type === 'EXTRA_CHARGE' ? 'Extra Charge' : 'Booking Payment'}
+                  </Badge>
+                </div>
+              </div>
+            )}
             <div>
               <Label className="text-sm text-gray-500">Amount</Label>
               <p className="text-2xl font-bold mt-1">£{payment.amount.toFixed(2)}</p>
-              {payment.refundedAmount && payment.refundedAmount > 0 && (
+              {payment.refundedAmount != null && Number(payment.refundedAmount) > 0 && (
                 <p className="text-sm text-red-600 mt-1">
-                  Refunded: £{payment.refundedAmount.toFixed(2)}
+                  Refunded: £{Number(payment.refundedAmount).toFixed(2)}
                 </p>
               )}
             </div>
+            
+            {/* Fee Breakdown */}
+            {(payment.baseAmount != null || payment.adminFeeAmount != null || payment.processingFeeAmount != null || payment.totalAmount != null) && (
+              <div className="pt-2 border-t">
+                <Label className="text-sm text-gray-500 mb-2 block">Fee Breakdown</Label>
+                <div className="space-y-1 text-sm">
+                  {payment.baseAmount != null && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Base Amount:</span>
+                      <span className="font-medium">£{Number(payment.baseAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {payment.adminFeeAmount != null && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Admin Fee:</span>
+                      <span className="font-medium">£{Number(payment.adminFeeAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {payment.processingFeeAmount != null && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Processing Fee:</span>
+                      <span className="font-medium">£{Number(payment.processingFeeAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {payment.totalAmount != null && (
+                    <div className="flex justify-between pt-1 border-t font-semibold">
+                      <span>Total:</span>
+                      <span>£{Number(payment.totalAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div>
               <Label className="text-sm text-gray-500">Status</Label>
               <div className="mt-1">
@@ -190,16 +234,16 @@ export default function PaymentDetailPage() {
             {payment.stripePaymentIntentId && (
               <div>
                 <Label className="text-sm text-gray-500">Stripe Payment Intent</Label>
-                <p className="font-mono text-xs mt-1">{payment.stripePaymentIntentId}</p>
+                <p className="font-mono text-xs mt-1 break-all">{payment.stripePaymentIntentId}</p>
               </div>
             )}
             {payment.stripeChargeId && (
               <div>
                 <Label className="text-sm text-gray-500">Stripe Charge ID</Label>
-                <p className="font-mono text-xs mt-1">{payment.stripeChargeId}</p>
+                <p className="font-mono text-xs mt-1 break-all">{payment.stripeChargeId}</p>
               </div>
             )}
-            {(payment.status === 'SUCCEEDED' || payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
+            {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') && 
              canPerformAction(permissions, 'processRefund') && (
               <div className="pt-4 border-t">
                 <Button onClick={openRefundDialog} className="w-full" variant="outline">
@@ -260,8 +304,10 @@ export default function PaymentDetailPage() {
               <div>
                 <Label className="text-sm text-gray-500">Customer</Label>
                 <div className="mt-1">
-                  <p className="font-medium">{payment.booking.customer.fullName}</p>
-                  <p className="text-sm text-gray-500">{payment.booking.customer.email}</p>
+                  <p className="font-medium">{getCustomerName(payment.booking.customer)}</p>
+                  {getCustomerEmail(payment.booking.customer) && (
+                    <p className="text-sm text-gray-500">{getCustomerEmail(payment.booking.customer)}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -277,8 +323,35 @@ export default function PaymentDetailPage() {
         </Card>
       </div>
 
+      {/* Extra Charge Information */}
+      {payment.type === 'EXTRA_CHARGE' && (payment.extraChargeReason || payment.extraChargeDescription) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Extra Charge Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {payment.extraChargeReason && (
+                <div>
+                  <Label className="text-sm text-gray-500">Reason</Label>
+                  <p className="mt-1 font-medium">
+                    {payment.extraChargeReason.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </p>
+                </div>
+              )}
+              {payment.extraChargeDescription && (
+                <div>
+                  <Label className="text-sm text-gray-500">Description</Label>
+                  <p className="mt-1">{payment.extraChargeDescription}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Refund Information */}
-      {payment.refundedAmount && payment.refundedAmount > 0 && (
+      {payment.refundedAmount != null && Number(payment.refundedAmount) > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Refund Information</CardTitle>
@@ -287,7 +360,7 @@ export default function PaymentDetailPage() {
             <div className="space-y-2">
               <div>
                 <Label className="text-sm text-gray-500">Refunded Amount</Label>
-                <p className="text-lg font-semibold text-red-600 mt-1">£{payment.refundedAmount.toFixed(2)}</p>
+                <p className="text-lg font-semibold text-red-600 mt-1">£{Number(payment.refundedAmount).toFixed(2)}</p>
               </div>
               {payment.refundReason && (
                 <div>

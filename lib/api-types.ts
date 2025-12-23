@@ -41,6 +41,7 @@ export interface Shipment {
   flatPrice: string | number | null; // API returns as string, but can be number for compatibility
   cutoffTimeForReceivingItems: string; // ISO 8601 datetime
   status: 'DRAFT' | 'PUBLISHED' | 'CLOSED';
+  trackingStatus?: 'PENDING' | 'IN_TRANSIT' | 'ARRIVED_AT_DESTINATION' | 'DELAYED' | 'DELIVERED';
   company: Company;
   createdAt: string;
   updatedAt: string;

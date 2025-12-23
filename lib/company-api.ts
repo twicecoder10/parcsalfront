@@ -115,12 +115,14 @@ export interface Booking {
   };
   customer: {
     id: string;
-    email: string;
-    fullName: string;
+    email?: string;
+    fullName?: string;
+    name?: string; // API may return 'name' instead of 'fullName'
   };
   requestedWeightKg?: number;
   requestedItemsCount?: number | null;
-  calculatedPrice: number;
+  calculatedPrice?: number | string; // API may return as string or number
+  price?: number | string; // Alternative field name from API, may be string or number
   // Payment fee breakdown (in minor units - pence)
   baseAmount?: number | null;
   adminFeeAmount?: number | null;
@@ -146,6 +148,24 @@ export interface Booking {
   pickupProofImages?: string[];
   deliveryProofImages?: string[];
   labelUrl?: string;
+}
+
+// Helper functions to handle API response variations
+export function getCustomerName(customer: Booking['customer']): string {
+  return customer.fullName || customer.name || 'N/A';
+}
+
+export function getCustomerEmail(customer: Booking['customer']): string | undefined {
+  return customer.email;
+}
+
+export function getBookingPrice(booking: Booking): number {
+  const price = booking.calculatedPrice || booking.price || 0;
+  // Handle string values from API
+  if (typeof price === 'string') {
+    return parseFloat(price) || 0;
+  }
+  return price;
 }
 
 export interface BookingStats {
@@ -188,11 +208,15 @@ export interface AnalyticsData {
 export interface Subscription {
   id: string;
   companyId: string;
-  companyPlan: Plan;
+  companyPlanId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
   status: string;
   currentPeriodStart: string;
   currentPeriodEnd: string;
   createdAt: string;
+  updatedAt: string;
+  companyPlan: Plan;
 }
 
 export interface TeamMember {
@@ -241,10 +265,37 @@ export interface CompanyProfile {
   state?: string;
   postalCode?: string;
   isVerified: boolean;
+  activePlanId?: string;
+  planExpiresAt?: string;
+  adminId?: string;
+  onboardingSteps?: {
+    payment_setup?: {
+      completed: boolean;
+      completedAt?: string;
+    };
+    company_profile?: {
+      completed: boolean;
+      completedAt?: string;
+    };
+    first_shipment_slot?: {
+      completed: boolean;
+      completedAt?: string;
+    };
+  };
+  onboardingCompleted?: boolean;
+  stripeAccountId?: string;
+  stripeOnboardingStatus?: string;
+  chargesEnabled?: boolean;
+  payoutsEnabled?: boolean;
   activePlan?: {
     id: string;
     name: string;
-    priceMonthly: number;
+    priceMonthly: string | number;
+    maxActiveShipmentSlots?: number | null;
+    maxTeamMembers?: number | null;
+    isDefault?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
   };
   createdAt?: string;
   updatedAt?: string;
@@ -252,13 +303,15 @@ export interface CompanyProfile {
 
 export interface Payment {
   id: string;
+  type?: 'BOOKING_PAYMENT' | 'EXTRA_CHARGE'; // Payment type
   bookingId: string;
   booking?: {
     id: string;
     customer: {
       id: string;
-      fullName: string;
-      email: string;
+      fullName?: string;
+      name?: string; // API may return 'name' instead of 'fullName'
+      email?: string; // Email may not always be present
     };
     shipmentSlot?: {
       id: string;
@@ -269,18 +322,25 @@ export interface Payment {
     };
   };
   amount: number;
+  baseAmount?: number | null; // Base amount before fees
+  adminFeeAmount?: number | null; // Admin fee
+  processingFeeAmount?: number | null; // Processing fee
+  totalAmount?: number | null; // Total amount including fees
   currency: string;
-  status: 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   paymentMethod?: string;
   stripePaymentIntentId?: string;
   stripeChargeId?: string;
   refundedAmount?: number;
   refundReason?: string;
+  // Extra charge specific fields
+  extraChargeReason?: string; // For EXTRA_CHARGE type
+  extraChargeDescription?: string | null; // For EXTRA_CHARGE type
   metadata?: Record<string, any>;
   createdAt: string;
   updatedAt?: string;
-  paidAt?: string;
-  refundedAt?: string;
+  paidAt?: string | null;
+  refundedAt?: string | null;
 }
 
 export interface PaymentStats {
@@ -293,9 +353,25 @@ export interface PaymentStats {
   pendingCount: number;
   refundedCount: number;
   averageAmount: number;
+  breakdown?: {
+    bookingPayments: {
+      count: number;
+      totalAmount: number;
+      paidAmount: number;
+      pendingAmount: number;
+      refundedAmount: number;
+    };
+    extraCharges: {
+      count: number;
+      totalAmount: number;
+      paidAmount?: number;
+      pendingAmount?: number;
+      refundedAmount?: number;
+    };
+  };
   period?: {
-    dateFrom?: string;
-    dateTo?: string;
+    dateFrom?: string | null;
+    dateTo?: string | null;
   };
 }
 
@@ -358,9 +434,9 @@ export interface WarehouseAddress {
   name: string;
   address: string;
   city: string;
-  state?: string;
+  state?: string | null;
   country: string;
-  postalCode?: string;
+  postalCode?: string | null;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -775,7 +851,7 @@ export const companyApi = {
   getPayments: async (params?: {
     limit?: number;
     offset?: number;
-    status?: 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+    status?: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
     dateFrom?: string;
     dateTo?: string;
     bookingId?: string;

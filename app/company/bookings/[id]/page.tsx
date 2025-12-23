@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { companyApi } from '@/lib/company-api';
+import { companyApi, getCustomerName, getCustomerEmail, getBookingPrice } from '@/lib/company-api';
 import type { Booking } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { uploadProofImages, createImagePreview, MAX_PROOF_IMAGES, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, validateImageFile } from '@/lib/upload-api';
@@ -467,13 +467,13 @@ export default function BookingDetailPage() {
                 <User className="h-5 w-5 text-orange-600" />
               </div>
                       <div className="flex-1">
-                        <p className="font-medium">{booking.customer.fullName}</p>
-                        {booking.customer.email && (
+                        <p className="font-medium">{getCustomerName(booking.customer)}</p>
+                        {getCustomerEmail(booking.customer) && (
                           <div className="flex items-center gap-4 mt-1">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <Mail className="h-4 w-4" />
-                              <a href={`mailto:${booking.customer.email}`} className="hover:text-orange-600">
-                                {booking.customer.email}
+                              <a href={`mailto:${getCustomerEmail(booking.customer)}`} className="hover:text-orange-600">
+                                {getCustomerEmail(booking.customer)}
                               </a>
                             </div>
                           </div>
@@ -553,7 +553,7 @@ export default function BookingDetailPage() {
             <PoundSterling className="h-5 w-5 text-green-600" />
             <div>
               <p className="font-medium">Price</p>
-              <p className="text-sm text-gray-600">£{booking.calculatedPrice}</p>
+              <p className="text-sm text-gray-600">£{getBookingPrice(booking)}</p>
             </div>
           </div>
         </CardContent>
@@ -705,9 +705,10 @@ export default function BookingDetailPage() {
                     if (booking.totalAmount) {
                       return (booking.totalAmount / 100).toFixed(2);
                     }
-                    // Fallback to calculatedPrice
-                    if (booking.calculatedPrice) {
-                      return parseFloat(String(booking.calculatedPrice)).toFixed(2);
+                    // Fallback to calculatedPrice or price
+                    const price = getBookingPrice(booking);
+                    if (price) {
+                      return parseFloat(String(price)).toFixed(2);
                     }
                     // Last resort fallback
                     return '0.00';

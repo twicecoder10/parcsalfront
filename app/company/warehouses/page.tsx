@@ -314,9 +314,6 @@ export default function WarehousesPage() {
                           <div className="flex items-center gap-2">
                             <Warehouse className="h-4 w-4 text-orange-600" />
                             {warehouse.name}
-                            {warehouse.isDefault && (
-                              <Badge className="bg-blue-100 text-blue-800 text-xs">Default</Badge>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Truck, Package, AlertCircle, Loader2, Lock } from 'lucide-react';
+import { MapPin, Clock, Truck, Package, AlertCircle, Loader2, Lock, Share2, Check, ArrowLeft, Building2, Plane, Bus, Ship, Train, Bike, DollarSign, Calendar, CheckCircle2 } from 'lucide-react';
 import { shipmentApi } from '@/lib/api';
 import { getStoredUser, hasRoleAccess } from '@/lib/auth';
 import { format } from 'date-fns';
@@ -25,6 +25,7 @@ export default function PublicShipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCustomer, setIsCustomer] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   useEffect(() => {
     // Check authentication status
@@ -65,6 +66,38 @@ export default function PublicShipmentDetailPage() {
     
     // User is authenticated customer, redirect to customer detail page for booking
     router.push(`/customer/shipments/${shipmentId}`);
+  };
+
+  const handleShareShipment = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: `Shipment: ${shipment?.originCity} → ${shipment?.destinationCity}`,
+      text: `Check out this shipment slot from ${shipment?.originCity} to ${shipment?.destinationCity} on Parcsal`,
+      url: url,
+    };
+
+    try {
+      // Try Web Share API first (mobile-friendly)
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(url);
+        setCopiedUrl(true);
+        setTimeout(() => setCopiedUrl(false), 2000);
+      }
+    } catch (err) {
+      // If share is cancelled or fails, fallback to clipboard
+      if (err instanceof Error && err.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopiedUrl(true);
+          setTimeout(() => setCopiedUrl(false), 2000);
+        } catch (clipboardErr) {
+          console.error('Failed to copy URL:', clipboardErr);
+        }
+      }
+    }
   };
 
   if (loading) {
@@ -110,14 +143,42 @@ export default function PublicShipmentDetailPage() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* Back Button */}
+          <Link href="/">
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+
           {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold">
-              {shipment.originCity} → {shipment.destinationCity}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Departure: {format(departureDate, 'MMM dd, yyyy')} at {format(departureDate, 'HH:mm')}
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">
+                {shipment.originCity} → {shipment.destinationCity}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Departure: {format(departureDate, 'MMM dd, yyyy')} at {format(departureDate, 'HH:mm')}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareShipment}
+              className="flex items-center gap-2"
+            >
+              {copiedUrl ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" />
+                  Share
+                </>
+              )}
+            </Button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
@@ -148,7 +209,7 @@ export default function PublicShipmentDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
+                    <Calendar className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="font-medium">Estimated Arrival</p>
                       <p className="text-sm text-gray-600">
@@ -157,7 +218,13 @@ export default function PublicShipmentDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Truck className="h-5 w-5 text-purple-600" />
+                    {shipment.mode === 'AIR' && <Plane className="h-5 w-5 text-purple-600" />}
+                    {shipment.mode === 'BUS' && <Bus className="h-5 w-5 text-purple-600" />}
+                    {shipment.mode === 'VAN' && <Truck className="h-5 w-5 text-purple-600" />}
+                    {shipment.mode === 'TRAIN' && <Train className="h-5 w-5 text-purple-600" />}
+                    {shipment.mode === 'SHIP' && <Ship className="h-5 w-5 text-purple-600" />}
+                    {shipment.mode === 'RIDER' && <Bike className="h-5 w-5 text-purple-600" />}
+                    {!['AIR', 'BUS', 'VAN', 'TRAIN', 'SHIP', 'RIDER'].includes(shipment.mode) && <Truck className="h-5 w-5 text-purple-600" />}
                     <div>
                       <p className="font-medium">Transport Mode</p>
                       <Badge className="mt-1">{shipment.mode}</Badge>
@@ -172,43 +239,100 @@ export default function PublicShipmentDetailPage() {
                   <CardTitle>Company Information</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Link 
-                        href={`/companies/${shipment.company.slug || shipment.company.id}`}
-                        className="font-medium text-lg hover:text-orange-600 transition-colors"
-                      >
-                        {shipment.company.name}
-                      </Link>
-                      {shipment.company.isVerified && (
-                        <Badge variant="outline" className="mt-1">Verified</Badge>
-                      )}
+                  <Link 
+                    href={`/companies/${shipment.company.slug || shipment.company.id}`}
+                    className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+                  >
+                    {shipment.company.logoUrl && (
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0">
+                        <img
+                          src={shipment.company.logoUrl}
+                          alt={`${shipment.company.name} logo`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium text-lg hover:text-orange-600 transition-colors">
+                          {shipment.company.name}
+                        </span>
+                        {shipment.company.isVerified && (
+                          <Badge variant="outline" className="text-xs">Verified</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">View company profile</p>
                     </div>
-                  </div>
+                  </Link>
                 </CardContent>
               </Card>
 
-              {/* Capacity */}
+              {/* Capacity & Status */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Available Capacity</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Capacity & Status
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Remaining capacity (kg)</span>
-                      <span className="font-medium">
-                        {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
-                      </span>
-                    </div>
-                    {shipment.totalCapacityItems !== null && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Remaining items</span>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-600 flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          Remaining capacity (kg)
+                        </span>
                         <span className="font-medium">
-                          {shipment.remainingCapacityItems} / {shipment.totalCapacityItems}
+                          {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
                         </span>
                       </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-orange-600 h-2 rounded-full transition-all"
+                          style={{
+                            width: `${(shipment.remainingCapacityKg / shipment.totalCapacityKg) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {shipment.totalCapacityItems !== null && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-600 flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Remaining items
+                          </span>
+                          <span className="font-medium">
+                            {shipment.remainingCapacityItems ?? 0} / {shipment.totalCapacityItems}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-orange-600 h-2 rounded-full transition-all"
+                            style={{
+                              width: `${((shipment.remainingCapacityItems ?? 0) / shipment.totalCapacityItems) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
                     )}
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 flex items-center gap-2">
+                          {shipment.status === 'PUBLISHED' ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4 text-gray-500" />
+                          )}
+                          Status
+                        </span>
+                        <Badge className={shipment.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {shipment.status}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -216,49 +340,98 @@ export default function PublicShipmentDetailPage() {
               {/* Pricing */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Pricing</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Pricing Information
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      Pricing model: <span className="font-medium">{shipment.pricingModel.replace('_', ' ')}</span>
-                    </p>
-                    {shipment.pricingModel === 'PER_KG' && shipment.pricePerKg && (
-                      <p className="text-2xl font-bold text-orange-600">
-                        £{parseFloat(String(shipment.pricePerKg)).toFixed(2)} per kg
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Pricing Model
                       </p>
-                    )}
-                    {shipment.pricingModel === 'PER_ITEM' && shipment.pricePerItem && (
-                      <p className="text-2xl font-bold text-orange-600">
-                        £{parseFloat(String(shipment.pricePerItem)).toFixed(2)} per item
-                      </p>
-                    )}
-                    {shipment.pricingModel === 'FLAT' && shipment.flatPrice && (
-                      <p className="text-2xl font-bold text-orange-600">
-                        £{parseFloat(String(shipment.flatPrice)).toFixed(2)} flat rate
-                      </p>
-                    )}
+                      <Badge variant="outline" className="text-base px-3 py-1">
+                        {shipment.pricingModel.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="pt-2 border-t">
+                      {shipment.pricingModel === 'PER_KG' && shipment.pricePerKg && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Price per kilogram</p>
+                          <p className="text-3xl font-bold text-orange-600">
+                            £{parseFloat(String(shipment.pricePerKg)).toFixed(2)}
+                            <span className="text-lg text-gray-600 font-normal"> / kg</span>
+                          </p>
+                        </div>
+                      )}
+                      {shipment.pricingModel === 'PER_ITEM' && shipment.pricePerItem && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Price per item</p>
+                          <p className="text-3xl font-bold text-orange-600">
+                            £{parseFloat(String(shipment.pricePerItem)).toFixed(2)}
+                            <span className="text-lg text-gray-600 font-normal"> / item</span>
+                          </p>
+                        </div>
+                      )}
+                      {shipment.pricingModel === 'FLAT' && shipment.flatPrice && (
+                        <div>
+                          <p className="text-sm text-gray-600 mb-1">Flat rate</p>
+                          <p className="text-3xl font-bold text-orange-600">
+                            £{parseFloat(String(shipment.flatPrice)).toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Cutoff Time Warning */}
-              {isPastCutoff && (
-                <Card className="border-orange-500 bg-orange-50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-orange-900">Booking cutoff passed</p>
-                        <p className="text-sm text-orange-700 mt-1">
-                          The cutoff time for this shipment was {format(cutoffDate, 'MMM dd, yyyy HH:mm')}. 
-                          Bookings may no longer be accepted.
-                        </p>
+              {/* Cutoff Time & Important Info */}
+              <Card className={isPastCutoff ? "border-orange-500 bg-orange-50" : "border-blue-200 bg-blue-50"}>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    {isPastCutoff ? (
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-orange-900">Booking cutoff passed</p>
+                          <p className="text-sm text-orange-700 mt-1">
+                            The cutoff time for this shipment was {format(cutoffDate, 'MMM dd, yyyy HH:mm')}. 
+                            Bookings may no longer be accepted.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    ) : (
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-blue-900">Booking Deadline</p>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Items must be received by {format(cutoffDate, 'MMM dd, yyyy')} at {format(cutoffDate, 'HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {shipment.trackingStatus && (
+                      <div className="pt-3 border-t border-orange-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">Tracking Status</span>
+                          <Badge className={
+                            shipment.trackingStatus === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                            shipment.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
+                            shipment.trackingStatus === 'DELAYED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {shipment.trackingStatus.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Action Panel */}

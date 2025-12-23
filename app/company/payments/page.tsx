@@ -25,20 +25,21 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Eye, Search, Loader2, TrendingUp, AlertCircle, RefreshCw, PoundSterling } from 'lucide-react';
-import { companyApi } from '@/lib/company-api';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Eye, Search, Loader2, TrendingUp, AlertCircle, RefreshCw, PoundSterling, Copy, Check } from 'lucide-react';
+import { companyApi, getCustomerName, getCustomerEmail } from '@/lib/company-api';
 import type { Payment, PaymentStats } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { toast } from '@/lib/toast';
 
 const statusColors: Record<string, string> = {
-  SUCCEEDED: 'bg-green-100 text-green-800',
-  PAID: 'bg-green-100 text-green-800', // Keep for backward compatibility
   PENDING: 'bg-yellow-100 text-yellow-800',
+  SUCCEEDED: 'bg-green-100 text-green-800',
   FAILED: 'bg-red-100 text-red-800',
   REFUNDED: 'bg-gray-100 text-gray-800',
   PARTIALLY_REFUNDED: 'bg-orange-100 text-orange-800',
+  PAID: 'bg-green-100 text-green-800', // Keep for backward compatibility (deprecated)
 };
 
 export default function PaymentsPage() {
@@ -63,9 +64,22 @@ export default function PaymentsPage() {
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
+  const [copiedPaymentId, setCopiedPaymentId] = useState<string | null>(null);
 
   const canViewPayments = canPerformAction(permissions, 'viewPayments');
   const canViewPaymentStats = canPerformAction(permissions, 'viewPaymentStats');
+
+  const copyPaymentId = async (paymentId: string) => {
+    try {
+      await navigator.clipboard.writeText(paymentId);
+      setCopiedPaymentId(paymentId);
+      toast.success('Payment ID copied to clipboard');
+      setTimeout(() => setCopiedPaymentId(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast.error('Failed to copy payment ID');
+    }
+  };
 
   useEffect(() => {
     if (permissions.loading) return;
@@ -93,19 +107,36 @@ export default function PaymentsPage() {
       const response = await companyApi.getPayments({
         limit: pagination.limit,
         offset: currentPage * pagination.limit,
-        status: statusFilter !== 'all' ? (statusFilter as 'SUCCEEDED' | 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED') : undefined,
+        status: statusFilter !== 'all' ? (statusFilter as 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED') : undefined,
         search: searchQuery || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
       });
 
-      setPayments(Array.isArray(response.data) ? response.data : []);
-      setPagination(response.pagination || {
-        total: 0,
-        limit: pagination.limit,
-        offset: currentPage * pagination.limit,
-        hasMore: false,
-      });
+      // Ensure we have valid response structure
+      if (response && response.data && Array.isArray(response.data)) {
+        setPayments(response.data);
+      } else {
+        setPayments([]);
+      }
+      
+      // Update pagination from API response
+      if (response && response.pagination) {
+        setPagination({
+          total: response.pagination.total || 0,
+          limit: response.pagination.limit || 20,
+          offset: response.pagination.offset || 0,
+          hasMore: response.pagination.hasMore || false,
+        });
+      } else {
+        // Fallback pagination
+        setPagination({
+          total: response?.data?.length || 0,
+          limit: 20,
+          offset: currentPage * 20,
+          hasMore: false,
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch payments:', error);
       setPayments([]);
@@ -160,7 +191,7 @@ export default function PaymentsPage() {
       toast.error('You do not have permission to process refunds.');
       return;
     }
-    if (payment.status !== 'SUCCEEDED' && payment.status !== 'PAID' && payment.status !== 'PARTIALLY_REFUNDED') {
+    if (payment.status !== 'SUCCEEDED' && payment.status !== 'PARTIALLY_REFUNDED') {
       toast.error('Only succeeded or partially refunded payments can be refunded.');
       return;
     }
@@ -194,7 +225,26 @@ export default function PaymentsPage() {
 
       {/* Stats Cards */}
       {canPerformAction(permissions, 'viewPaymentStats') && !statsLoading && stats && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <>
+          {stats.period && (stats.period.dateFrom || stats.period.dateTo) && (
+            <Card className="mb-4">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>Period:</span>
+                  <span className="font-medium">
+                    {stats.period.dateFrom 
+                      ? new Date(stats.period.dateFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : 'All time'}
+                    {stats.period.dateFrom && stats.period.dateTo && ' - '}
+                    {stats.period.dateTo 
+                      ? new Date(stats.period.dateTo).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : stats.period.dateFrom ? ' onwards' : ''}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -236,6 +286,69 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
         </div>
+        </>
+      )}
+
+      {/* Breakdown */}
+      {canPerformAction(permissions, 'viewPaymentStats') && !statsLoading && stats && stats.breakdown && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Booking Payments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Amount</span>
+                  <span className="text-lg font-semibold">£{stats.breakdown.bookingPayments.totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Paid Amount</span>
+                  <span className="text-sm font-medium text-green-600">£{stats.breakdown.bookingPayments.paidAmount.toFixed(2)}</span>
+                </div>
+                {stats.breakdown.bookingPayments.refundedAmount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Refunded Amount</span>
+                    <span className="text-sm font-medium text-gray-600">£{stats.breakdown.bookingPayments.refundedAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm text-gray-600">Count</span>
+                  <span className="text-sm font-medium">{stats.breakdown.bookingPayments.count} payments</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Extra Charges</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Amount</span>
+                  <span className="text-lg font-semibold">£{stats.breakdown.extraCharges.totalAmount.toFixed(2)}</span>
+                </div>
+                {stats.breakdown.extraCharges.paidAmount !== undefined && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Paid Amount</span>
+                    <span className="text-sm font-medium text-green-600">£{stats.breakdown.extraCharges.paidAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {stats.breakdown.extraCharges.refundedAmount !== undefined && stats.breakdown.extraCharges.refundedAmount > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Refunded Amount</span>
+                    <span className="text-sm font-medium text-gray-600">£{stats.breakdown.extraCharges.refundedAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-sm text-gray-600">Count</span>
+                  <span className="text-sm font-medium">{stats.breakdown.extraCharges.count} charges</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Filters */}
@@ -266,9 +379,8 @@ export default function PaymentsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="SUCCEEDED">Succeeded</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="SUCCEEDED">Succeeded</SelectItem>
                 <SelectItem value="FAILED">Failed</SelectItem>
                 <SelectItem value="REFUNDED">Refunded</SelectItem>
                 <SelectItem value="PARTIALLY_REFUNDED">Partially Refunded</SelectItem>
@@ -280,9 +392,15 @@ export default function PaymentsPage() {
                 placeholder="From"
                 value={dateFrom}
                 onChange={(e) => {
-                  setDateFrom(e.target.value);
+                  const newDateFrom = e.target.value;
+                  setDateFrom(newDateFrom);
+                  // If dateTo is before the new dateFrom, clear dateTo
+                  if (dateTo && newDateFrom && newDateFrom > dateTo) {
+                    setDateTo('');
+                  }
                   setCurrentPage(0);
                 }}
+                max={dateTo || new Date().toISOString().split('T')[0]}
                 className="w-40"
               />
               <span className="text-gray-500">to</span>
@@ -291,9 +409,16 @@ export default function PaymentsPage() {
                 placeholder="To"
                 value={dateTo}
                 onChange={(e) => {
-                  setDateTo(e.target.value);
+                  const newDateTo = e.target.value;
+                  setDateTo(newDateTo);
+                  // If dateFrom is after the new dateTo, clear dateFrom
+                  if (dateFrom && newDateTo && dateFrom > newDateTo) {
+                    setDateFrom('');
+                  }
                   setCurrentPage(0);
                 }}
+                min={dateFrom || undefined}
+                max={new Date().toISOString().split('T')[0]}
                 className="w-40"
               />
               {(dateFrom || dateTo) && (
@@ -324,7 +449,8 @@ export default function PaymentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Payment ID</TableHead>
+                <TableHead className="w-[140px]">Payment ID</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Booking</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Amount</TableHead>
@@ -337,21 +463,51 @@ export default function PaymentsPage() {
             <TableBody>
               {loading && (!payments || payments.length === 0) ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
                   </TableCell>
                 </TableRow>
               ) : !payments || payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                     No payments found
                   </TableCell>
                 </TableRow>
               ) : (
                 payments.map((payment) => (
                   <TableRow key={payment.id}>
-                    <TableCell className="font-mono text-xs">
-                      {payment.id}...
+                    <TableCell className="w-[140px]">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => copyPaymentId(payment.id)}
+                              className="font-mono text-xs text-left hover:text-orange-600 transition-colors flex items-center gap-1.5 group max-w-full truncate"
+                            >
+                              <span className="truncate">{payment.id}...</span>
+                              {copiedPaymentId === payment.id ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Click to copy payment ID</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                    <TableCell>
+                      {payment.type ? (
+                        <Badge className="bg-gray-50 text-gray-700 border-gray-200">
+                          {payment.type === 'EXTRA_CHARGE' ? 'Extra Charge' : 'Booking Payment'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                          Payment
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {payment.booking ? (
@@ -365,8 +521,10 @@ export default function PaymentsPage() {
                     <TableCell>
                       {payment.booking?.customer ? (
                         <div>
-                          <p className="font-medium">{payment.booking.customer.fullName}</p>
-                          <p className="text-xs text-gray-500">{payment.booking.customer.email}</p>
+                          <p className="font-medium">{getCustomerName(payment.booking.customer)}</p>
+                          {getCustomerEmail(payment.booking.customer) && (
+                            <p className="text-xs text-gray-500">{getCustomerEmail(payment.booking.customer)}</p>
+                          )}
                         </div>
                       ) : (
                         <span className="text-gray-400">N/A</span>
@@ -375,9 +533,9 @@ export default function PaymentsPage() {
                     <TableCell>
                       <div>
                         <p className="font-medium">£{payment.amount.toFixed(2)}</p>
-                        {payment.refundedAmount && payment.refundedAmount > 0 && (
+                        {payment.refundedAmount != null && Number(payment.refundedAmount) > 0 && (
                           <p className="text-xs text-red-600">
-                            Refunded: £{payment.refundedAmount.toFixed(2)}
+                            Refunded: £{Number(payment.refundedAmount).toFixed(2)}
                           </p>
                         )}
                       </div>
@@ -408,23 +566,39 @@ export default function PaymentsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/company/payments/${payment.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        {(payment.status === 'SUCCEEDED' || payment.status === 'PAID' || payment.status === 'PARTIALLY_REFUNDED') && 
+                      <TooltipProvider>
+                        <div className="flex justify-end gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Link href={`/company/payments/${payment.id}`}>
+                                <Button variant="ghost" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View Payment Details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') && 
                          canPerformAction(permissions, 'processRefund') && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openRefundDialog(payment)}
-                          >
-                            <RefreshCw className="h-4 w-4 text-orange-600" />
-                          </Button>
-                        )}
-                      </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openRefundDialog(payment)}
+                                >
+                                  <RefreshCw className="h-4 w-4 text-orange-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Process Refund</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 ))

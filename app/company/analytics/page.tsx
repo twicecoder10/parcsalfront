@@ -253,7 +253,36 @@ export default function AnalyticsPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Period</span>
-                    <span className="font-medium capitalize">{period}</span>
+                    <span className="font-medium">
+                      {analytics.revenueByPeriod && analytics.revenueByPeriod.length > 0
+                        ? (() => {
+                            // Get the latest period (last item in array)
+                            const latestPeriod = analytics.revenueByPeriod[analytics.revenueByPeriod.length - 1].period;
+                            
+                            // Handle different period formats
+                            if (latestPeriod.includes('Q')) {
+                              // Quarter format: "2025-Q4" -> "Q4 2025"
+                              const [year, quarter] = latestPeriod.split('-Q');
+                              return `Q${quarter} ${year}`;
+                            } else if (latestPeriod.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                              // Daily format: "2025-12-18" -> "December 18, 2025"
+                              const date = new Date(latestPeriod);
+                              return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            } else if (latestPeriod.match(/^\d{4}-\d{2}$/)) {
+                              // Monthly format: "2025-12" -> "December 2025"
+                              const [year, month] = latestPeriod.split('-');
+                              const date = new Date(parseInt(year), parseInt(month) - 1);
+                              return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                            } else if (latestPeriod.match(/^\d{4}$/)) {
+                              // Yearly format: "2025" -> "2025"
+                              return latestPeriod;
+                            } else {
+                              // Fallback: return as is
+                              return latestPeriod;
+                            }
+                          })()
+                        : period.charAt(0).toUpperCase() + period.slice(1)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Revenue Growth</span>

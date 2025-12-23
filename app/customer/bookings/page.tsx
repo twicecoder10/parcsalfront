@@ -183,7 +183,7 @@ export default function BookingsPage() {
                           {booking.status.replace('_', ' ')}
                         </Badge>
                       </TableCell>
-                      <TableCell>£{parseFloat(booking.calculatedPrice || booking.totalPrice || '0').toFixed(2)}</TableCell>
+                      <TableCell>£{parseFloat((booking.calculatedPrice || booking.price || booking.totalPrice || '0').toString()).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         <Link href={`/customer/bookings/${booking.id}`}>
                           <Button variant="ghost" size="sm">

@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Eye, ShoppingCart, Search, PoundSterling, Loader2 } from 'lucide-react';
-import { adminApi } from '@/lib/admin-api';
+import { adminApi, getAdminCustomerName, getAdminCustomerEmail, getAdminBookingPrice } from '@/lib/admin-api';
 import type { AdminBooking, BookingStats } from '@/lib/admin-api';
 
 const statusColors: Record<string, string> = {
@@ -219,8 +219,10 @@ export default function AdminBookingsPage() {
                 bookings.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell>
-                      <div className="font-medium">{booking.customer.fullName}</div>
-                      <div className="text-sm text-gray-500">{booking.customer.email}</div>
+                      <div className="font-medium">{getAdminCustomerName(booking.customer)}</div>
+                      {getAdminCustomerEmail(booking.customer) && (
+                        <div className="text-sm text-gray-500">{getAdminCustomerEmail(booking.customer)}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Button variant="link" className="p-0 h-auto text-left">
@@ -239,7 +241,7 @@ export default function AdminBookingsPage() {
                       )}
                     </TableCell>
                     <TableCell>-</TableCell>
-                    <TableCell className="font-medium">£{parseFloat(booking.calculatedPrice).toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">£{parseFloat(getAdminBookingPrice(booking)).toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge className={statusColors[booking.status] || ''}>
                         {booking.status}

@@ -646,9 +646,9 @@ function BookingDetailContent() {
                     if (booking.totalAmount) {
                       return (booking.totalAmount / 100).toFixed(2);
                     }
-                    // Fallback to calculatedPrice
-                    if (booking.calculatedPrice) {
-                      return parseFloat(String(booking.calculatedPrice)).toFixed(2);
+                    // Fallback to calculatedPrice or price
+                    if (booking.calculatedPrice || booking.price) {
+                      return parseFloat(String(booking.calculatedPrice || booking.price)).toFixed(2);
                     }
                     // Last resort fallback
                     return '0.00';

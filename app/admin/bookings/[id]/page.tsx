@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, User, Package, MapPin, Calendar, PoundSterling, Building2, Mail, Phone, Loader2, Truck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { adminApi } from '@/lib/admin-api';
+import { adminApi, getAdminCustomerName, getAdminCustomerEmail, getAdminBookingPrice } from '@/lib/admin-api';
 import type { AdminBookingDetail } from '@/lib/admin-api';
 
 const statusColors: Record<string, string> = {
@@ -93,16 +93,18 @@ export default function BookingDetailPage() {
             <User className="h-5 w-5 text-orange-600" />
             <div>
               <p className="font-medium">Name</p>
-              <p className="text-sm text-gray-600">{booking.customer.fullName}</p>
+              <p className="text-sm text-gray-600">{getAdminCustomerName(booking.customer)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="font-medium">Email</p>
-              <p className="text-sm text-gray-600">{booking.customer.email}</p>
+          {getAdminCustomerEmail(booking.customer) && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium">Email</p>
+                <p className="text-sm text-gray-600">{getAdminCustomerEmail(booking.customer)}</p>
+              </div>
             </div>
-          </div>
+          )}
           {booking.customer.phoneNumber && (
             <div className="flex items-center gap-2">
               <Phone className="h-5 w-5 text-green-600" />
@@ -214,7 +216,7 @@ export default function BookingDetailPage() {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold">Total Price</span>
                 <span className="text-2xl font-bold text-orange-600">
-                  £{parseFloat(booking.calculatedPrice).toFixed(2)}
+                  £{parseFloat(getAdminBookingPrice(booking)).toFixed(2)}
                 </span>
               </div>
             </div>

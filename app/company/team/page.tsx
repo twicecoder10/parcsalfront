@@ -595,13 +595,14 @@ export default function TeamPage() {
                       <TableHead>Invited By</TableHead>
                       <TableHead>Invited At</TableHead>
                       <TableHead>Expires At</TableHead>
+                      <TableHead>Accepted By</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {invitations.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                           No invitations found
                         </TableCell>
                       </TableRow>
@@ -655,6 +656,21 @@ export default function TeamPage() {
                                   </Badge>
                                 )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {invitation.acceptedBy ? (
+                              <div className="text-sm">
+                                <div className="font-medium">{invitation.acceptedBy.name}</div>
+                                <div className="text-gray-500 text-xs">{invitation.acceptedBy.email}</div>
+                                {invitation.acceptedAt && (
+                                  <div className="text-gray-400 text-xs mt-1">
+                                    {new Date(invitation.acceptedAt).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             {invitation.status !== 'ACCEPTED' && (

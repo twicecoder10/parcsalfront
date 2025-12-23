@@ -23,7 +23,9 @@ import {
   AlertCircle,
   MessageSquare,
   ArrowLeft,
-  Package
+  Package,
+  Share2,
+  Check
 } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -99,6 +101,7 @@ export default function CompanyProfilePage() {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [replyText, setReplyText] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   useEffect(() => {
     // Check if current user owns this company
@@ -154,9 +157,10 @@ export default function CompanyProfilePage() {
   const fetchShipments = async (resetOffset = true) => {
     setShipmentsLoading(true);
     try {
+      const currentOffset = resetOffset ? 0 : shipmentsPagination.offset + shipmentsPagination.limit;
       const params = {
         limit: shipmentsPagination.limit,
-        offset: resetOffset ? 0 : shipmentsPagination.offset,
+        offset: currentOffset,
       };
       const response = await publicApi.getCompanyShipments(companySlug, params);
       
@@ -164,7 +168,11 @@ export default function CompanyProfilePage() {
       let shipmentsData: ShipmentCardData[] = [];
       let paginationData = shipmentsPagination;
       
-      if (response.data && Array.isArray(response.data)) {
+      // API response structure: { status: "success", data: [...], pagination: {...} }
+      if (response.status === 'success' && response.data && Array.isArray(response.data)) {
+        shipmentsData = response.data;
+        paginationData = response.pagination || paginationData;
+      } else if (response.data && Array.isArray(response.data)) {
         shipmentsData = response.data;
         paginationData = response.pagination || paginationData;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
@@ -184,15 +192,23 @@ export default function CompanyProfilePage() {
       
       if (resetOffset) {
         setShipments(availableShipments);
+        // Reset pagination when starting fresh
+        setShipmentsPagination({
+          limit: paginationData.limit || shipmentsPagination.limit,
+          offset: 0,
+          total: paginationData.total || 0,
+          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= shipmentsPagination.limit),
+        });
       } else {
         setShipments([...shipments, ...availableShipments]);
+        // Update pagination with new offset
+        setShipmentsPagination({
+          limit: paginationData.limit || shipmentsPagination.limit,
+          offset: currentOffset,
+          total: paginationData.total || shipmentsPagination.total,
+          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= shipmentsPagination.limit),
+        });
       }
-      
-      // Update pagination - adjust hasMore based on filtered results
-      setShipmentsPagination({
-        ...paginationData,
-        hasMore: availableShipments.length >= shipmentsPagination.limit && (paginationData.hasMore || shipmentsData.length >= shipmentsPagination.limit),
-      });
     } catch (err) {
       console.error('Failed to fetch shipments:', err);
     } finally {
@@ -237,6 +253,38 @@ export default function CompanyProfilePage() {
       alert(err instanceof Error ? err.message : 'Failed to submit reply');
     } finally {
       setSubmittingReply(false);
+    }
+  };
+
+  const handleShareProfile = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: `${company?.name} - Company Profile`,
+      text: `Check out ${company?.name} on Parcsal`,
+      url: url,
+    };
+
+    try {
+      // Try Web Share API first (mobile-friendly)
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(url);
+        setCopiedUrl(true);
+        setTimeout(() => setCopiedUrl(false), 2000);
+      }
+    } catch (err) {
+      // If share is cancelled or fails, fallback to clipboard
+      if (err instanceof Error && err.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopiedUrl(true);
+          setTimeout(() => setCopiedUrl(false), 2000);
+        } catch (clipboardErr) {
+          console.error('Failed to copy URL:', clipboardErr);
+        }
+      }
     }
   };
 
@@ -353,6 +401,24 @@ export default function CompanyProfilePage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShareProfile}
+                        className="flex items-center gap-2"
+                      >
+                        {copiedUrl ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="h-4 w-4" />
+                            Share
+                          </>
+                        )}
+                      </Button>
                       {(() => {
                         const user = getStoredUser();
                         const isCustomer = user && hasRoleAccess(user.role, ['CUSTOMER']);

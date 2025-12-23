@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Package, Clock, ShoppingCart, Plus, AlertCircle, TrendingUp, TrendingDown, Loader2, PoundSterling } from 'lucide-react';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { authApi, getErrorMessage } from '@/lib/api';
-import { companyApi } from '@/lib/company-api';
+import { companyApi, getCustomerName, getBookingPrice } from '@/lib/company-api';
 import type { User } from '@/lib/api';
 import type { OverviewStats, RecentBooking, UpcomingShipment } from '@/lib/company-api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';

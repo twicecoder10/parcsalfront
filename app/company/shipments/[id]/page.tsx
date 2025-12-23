@@ -25,7 +25,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { companyApi } from '@/lib/company-api';
+import { companyApi, getCustomerName, getCustomerEmail, getBookingPrice } from '@/lib/company-api';
 import type { Shipment, Booking, SlotTrackingStatus } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
@@ -578,14 +578,16 @@ export default function ShipmentDetailPage() {
                   <TableRow key={booking.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{booking.customer.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{booking.customer.email}</p>
+                        <p className="font-medium">{getCustomerName(booking.customer)}</p>
+                        {getCustomerEmail(booking.customer) && (
+                          <p className="text-xs text-muted-foreground">{getCustomerEmail(booking.customer)}</p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       {booking.requestedWeightKg ? `${booking.requestedWeightKg} kg` : booking.requestedItemsCount ? `${booking.requestedItemsCount} items` : 'N/A'}
                     </TableCell>
-                    <TableCell className="font-medium">£{booking.calculatedPrice}</TableCell>
+                    <TableCell className="font-medium">£{getBookingPrice(booking)}</TableCell>
                     <TableCell>
                       <Badge className={
                         booking.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :

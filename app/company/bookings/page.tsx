@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Eye, Search, Loader2, Calendar, User } from 'lucide-react';
-import { companyApi } from '@/lib/company-api';
+import { companyApi, getCustomerName, getCustomerEmail, getBookingPrice } from '@/lib/company-api';
 import type { Booking, BookingStats } from '@/lib/company-api';
 
 const statusColors: Record<string, string> = {
@@ -190,8 +190,10 @@ export default function BookingsPage() {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="font-medium">{booking.customer.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{booking.customer.email}</p>
+                          <p className="font-medium">{getCustomerName(booking.customer)}</p>
+                          {getCustomerEmail(booking.customer) && (
+                            <p className="text-xs text-muted-foreground">{getCustomerEmail(booking.customer)}</p>
+                          )}
                         </div>
                       </div>
                     </TableCell>
@@ -203,7 +205,7 @@ export default function BookingsPage() {
                     <TableCell>
                       {booking.requestedWeightKg ? `${booking.requestedWeightKg} kg` : booking.requestedItemsCount ? `${booking.requestedItemsCount} items` : 'N/A'}
                     </TableCell>
-                    <TableCell className="font-medium">£{booking.calculatedPrice}</TableCell>
+                    <TableCell className="font-medium">£{getBookingPrice(booking)}</TableCell>
                     <TableCell>
                       <Badge className={statusColors[booking.status] || ''}>
                         {booking.status.replace('_', ' ')}

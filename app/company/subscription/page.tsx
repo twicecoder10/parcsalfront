@@ -234,6 +234,13 @@ function SubscriptionContent() {
             <div className="grid md:grid-cols-3 gap-6">
               {plans.map((plan) => {
                 const isCurrentPlan = subscription?.companyPlan.id === plan.id;
+                const currentPlanPrice = subscription?.companyPlan.priceMonthly 
+                  ? parseFloat(String(subscription.companyPlan.priceMonthly)) 
+                  : 0;
+                const planPrice = parseFloat(String(plan.priceMonthly));
+                const isUpgrade = planPrice > currentPlanPrice;
+                const isDowngrade = planPrice < currentPlanPrice && !isCurrentPlan;
+                
                 const features: string[] = [];
                 
                 if (plan.maxActiveShipmentSlots !== null) {
@@ -256,11 +263,27 @@ function SubscriptionContent() {
 
                 return (
                   <Card key={plan.id} className={plan.isDefault ? 'border-orange-600 border-2' : ''}>
-                    {plan.isDefault && (
-                      <div className="p-4 pb-0">
+                    <div className="p-4 pb-0 flex items-center justify-between">
+                      {plan.isDefault && (
                         <Badge className="bg-orange-600">Recommended</Badge>
-                      </div>
-                    )}
+                      )}
+                      {isCurrentPlan && (
+                        <Badge className="bg-green-100 text-green-800">Current Plan</Badge>
+                      )}
+                      {!isCurrentPlan && subscription && (
+                        <>
+                          {isUpgrade && (
+                            <Badge className="bg-blue-100 text-blue-800">Upgrade</Badge>
+                          )}
+                          {isDowngrade && (
+                            <Badge className="bg-gray-100 text-gray-800">Downgrade</Badge>
+                          )}
+                        </>
+                      )}
+                      {!plan.isDefault && !isCurrentPlan && !subscription && (
+                        <div></div>
+                      )}
+                    </div>
                     <CardHeader>
                       <CardTitle>{plan.name}</CardTitle>
                       <div className="mt-4">
@@ -281,7 +304,7 @@ function SubscriptionContent() {
                       </ul>
                       <Button
                         className="w-full"
-                        variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : 'outline'}
+                        variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : isUpgrade ? 'default' : 'outline'}
                         disabled={isCurrentPlan || processingPlan === plan.id}
                         onClick={() => handlePlanSelect(plan.id)}
                       >
@@ -292,6 +315,10 @@ function SubscriptionContent() {
                           </>
                         ) : isCurrentPlan ? (
                           'Current Plan'
+                        ) : isUpgrade ? (
+                          'Upgrade Plan'
+                        ) : isDowngrade ? (
+                          'Downgrade Plan'
                         ) : (
                           'Select Plan'
                         )}

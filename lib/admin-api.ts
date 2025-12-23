@@ -266,13 +266,15 @@ export interface ShipmentStats {
 // Status: PENDING | ACCEPTED | REJECTED | CANCELLED | IN_TRANSIT | DELIVERED
 export interface AdminBooking {
   id: string;
-  calculatedPrice: string;
+  calculatedPrice?: string | number;
+  price?: string | number; // API may return 'price' instead of 'calculatedPrice'
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_TRANSIT' | 'DELIVERED';
   paymentStatus: string;
   customer: {
     id: string;
-    email: string;
-    fullName: string;
+    email?: string;
+    fullName?: string;
+    name?: string; // API may return 'name' instead of 'fullName'
     phoneNumber?: string;
   };
   shipmentSlot: {
@@ -335,6 +337,28 @@ export interface AdminBookingDetail extends AdminBooking {
   images?: string[];
   pickupMethod?: PickupMethod;
   deliveryMethod?: DeliveryMethod;
+}
+
+// Helper functions to handle API response variations for AdminBooking
+export function getAdminCustomerName(customer: AdminBooking['customer']): string {
+  return customer.fullName || customer.name || 'N/A';
+}
+
+export function getAdminCustomerEmail(customer: AdminBooking['customer']): string | undefined {
+  return customer.email;
+}
+
+export function getAdminBookingPrice(booking: AdminBooking): string {
+  // Handle both calculatedPrice and price fields, which may be string or number
+  const calculatedPrice = booking.calculatedPrice;
+  const price = booking.price;
+  const value = calculatedPrice || price || '0';
+  
+  // Ensure it's always a string (API may return number)
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  return String(value);
 }
 
 export interface BookingListParams extends PaginationParams {

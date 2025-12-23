@@ -123,7 +123,7 @@ function PaymentContent() {
                 <span className="font-medium">
                   £{booking.baseAmount 
                     ? (booking.baseAmount / 100).toFixed(2)
-                    : (booking.calculatedPrice || booking.totalPrice || '0.00')}
+                    : (booking.calculatedPrice || booking.price || booking.totalPrice || '0.00')}
                 </span>
               </div>
               
@@ -153,7 +153,7 @@ function PaymentContent() {
               <span className="text-2xl font-bold text-orange-600">
                   £{booking.totalAmount 
                     ? (booking.totalAmount / 100).toFixed(2)
-                    : booking.calculatedPrice || booking.totalPrice || '0.00'}
+                    : booking.calculatedPrice || booking.price || booking.totalPrice || '0.00'}
               </span>
               </div>
             </div>

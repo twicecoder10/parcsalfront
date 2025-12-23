@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, MapPin, Calendar, Truck, Building2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { adminApi } from '@/lib/admin-api';
+import { adminApi, getAdminCustomerName, getAdminCustomerEmail, getAdminBookingPrice } from '@/lib/admin-api';
 import type { AdminShipmentDetail } from '@/lib/admin-api';
 import { toast } from '@/lib/toast';
 import { useConfirm } from '@/lib/use-confirm';
@@ -295,10 +295,12 @@ export default function ShipmentDetailPage() {
                 {shipment.bookings.map((booking) => (
                   <TableRow key={booking.id}>
                     <TableCell>
-                      <div className="font-medium">{booking.customer.fullName}</div>
-                      <div className="text-sm text-gray-500">{booking.customer.email}</div>
+                      <div className="font-medium">{getAdminCustomerName(booking.customer)}</div>
+                      {getAdminCustomerEmail(booking.customer) && (
+                        <div className="text-sm text-gray-500">{getAdminCustomerEmail(booking.customer)}</div>
+                      )}
                     </TableCell>
-                    <TableCell>£{parseFloat(booking.calculatedPrice).toFixed(2)}</TableCell>
+                    <TableCell>£{parseFloat(booking.calculatedPrice || '0').toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge className={bookingStatusColors[booking.status] || ''}>
                         {booking.status}
