@@ -14,6 +14,7 @@ import { getStoredUser, hasRoleAccess } from '@/lib/auth';
 import { format } from 'date-fns';
 import type { Shipment } from '@/lib/api-types';
 import { Navbar } from '@/components/navbar';
+import { CustomerHeader } from '@/components/customer-header';
 import { Footer } from '@/components/footer';
 
 export default function PublicShipmentDetailPage() {
@@ -103,10 +104,10 @@ export default function PublicShipmentDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        {isCustomer ? <CustomerHeader /> : <Navbar />}
+        <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
+          <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+            <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
           </div>
         </main>
         <Footer />
@@ -117,13 +118,13 @@ export default function PublicShipmentDetailPage() {
   if (!shipment) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        {isCustomer ? <CustomerHeader /> : <Navbar />}
+        <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
           <div className="max-w-6xl mx-auto">
             <Card>
-              <CardContent className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Slot not found</p>
+              <CardContent className="text-center py-8 md:py-12">
+                <AlertCircle className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-gray-600">Slot not found</p>
               </CardContent>
             </Card>
           </div>
@@ -140,24 +141,24 @@ export default function PublicShipmentDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
+      {isCustomer ? <CustomerHeader /> : <Navbar />}
+      <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
+        <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
           {/* Back Button */}
           <Link href="/">
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="mb-2 md:mb-4 -ml-2">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
           </Link>
 
           {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 md:gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold leading-tight">
                 {shipment.originCity} → {shipment.destinationCity}
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm md:text-base text-gray-600 mt-1 md:mt-2">
                 Departure: {format(departureDate, 'MMM dd, yyyy')} at {format(departureDate, 'HH:mm')}
               </p>
             </div>
@@ -165,7 +166,7 @@ export default function PublicShipmentDetailPage() {
               variant="outline"
               size="sm"
               onClick={handleShareShipment}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               {copiedUrl ? (
                 <>
@@ -181,53 +182,53 @@ export default function PublicShipmentDetailPage() {
             </Button>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
             {/* Main Content */}
-            <div className="md:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 md:space-y-6">
               {/* Route Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Route Information</CardTitle>
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-lg md:text-xl">Route Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-medium">Origin</p>
-                      <p className="text-sm text-gray-600">
+                <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm md:text-base">Origin</p>
+                      <p className="text-xs md:text-sm text-gray-600 truncate">
                         {shipment.originCity}, {shipment.originCountry}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">Destination</p>
-                      <p className="text-sm text-gray-600">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm md:text-base">Destination</p>
+                      <p className="text-xs md:text-sm text-gray-600 truncate">
                         {shipment.destinationCity}, {shipment.destinationCountry}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Estimated Arrival</p>
-                      <p className="text-sm text-gray-600">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm md:text-base">Estimated Arrival</p>
+                      <p className="text-xs md:text-sm text-gray-600">
                         {format(arrivalDate, 'MMM dd, yyyy')} at {format(arrivalDate, 'HH:mm')}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {shipment.mode === 'AIR' && <Plane className="h-5 w-5 text-purple-600" />}
-                    {shipment.mode === 'BUS' && <Bus className="h-5 w-5 text-purple-600" />}
-                    {shipment.mode === 'VAN' && <Truck className="h-5 w-5 text-purple-600" />}
-                    {shipment.mode === 'TRAIN' && <Train className="h-5 w-5 text-purple-600" />}
-                    {shipment.mode === 'SHIP' && <Ship className="h-5 w-5 text-purple-600" />}
-                    {shipment.mode === 'RIDER' && <Bike className="h-5 w-5 text-purple-600" />}
-                    {!['AIR', 'BUS', 'VAN', 'TRAIN', 'SHIP', 'RIDER'].includes(shipment.mode) && <Truck className="h-5 w-5 text-purple-600" />}
-                    <div>
-                      <p className="font-medium">Transport Mode</p>
-                      <Badge className="mt-1">{shipment.mode}</Badge>
+                  <div className="flex items-start gap-3">
+                    {shipment.mode === 'AIR' && <Plane className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {shipment.mode === 'BUS' && <Bus className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {shipment.mode === 'VAN' && <Truck className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {shipment.mode === 'TRAIN' && <Train className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {shipment.mode === 'SHIP' && <Ship className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {shipment.mode === 'RIDER' && <Bike className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    {!['AIR', 'BUS', 'VAN', 'TRAIN', 'SHIP', 'RIDER'].includes(shipment.mode) && <Truck className="h-4 w-4 md:h-5 md:w-5 text-purple-600 mt-0.5 flex-shrink-0" />}
+                    <div className="flex-1">
+                      <p className="font-medium text-sm md:text-base">Transport Mode</p>
+                      <Badge className="mt-1 text-xs">{shipment.mode}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -235,16 +236,16 @@ export default function PublicShipmentDetailPage() {
 
               {/* Company Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Company Information</CardTitle>
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-lg md:text-xl">Company Information</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 md:p-6 pt-0">
                   <Link 
                     href={`/companies/${shipment.company.slug || shipment.company.id}`}
-                    className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 md:gap-4 hover:opacity-80 transition-opacity"
                   >
                     {shipment.company.logoUrl && (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0">
+                      <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border flex-shrink-0">
                         <img
                           src={shipment.company.logoUrl}
                           alt={`${shipment.company.name} logo`}
@@ -252,17 +253,17 @@ export default function PublicShipmentDetailPage() {
                         />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium text-lg hover:text-orange-600 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Building2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium text-base md:text-lg hover:text-orange-600 transition-colors truncate">
                           {shipment.company.name}
                         </span>
                         {shipment.company.isVerified && (
-                          <Badge variant="outline" className="text-xs">Verified</Badge>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">Verified</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">View company profile</p>
+                      <p className="text-xs md:text-sm text-gray-500 mt-1">View company profile</p>
                     </div>
                   </Link>
                 </CardContent>
@@ -270,21 +271,21 @@ export default function PublicShipmentDetailPage() {
 
               {/* Capacity & Status */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                    <Package className="h-4 w-4 md:h-5 md:w-5" />
                     Capacity & Status
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-3 md:space-y-4">
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-600 flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          Remaining capacity (kg)
+                      <div className="flex justify-between items-center mb-2 gap-2">
+                        <span className="text-xs md:text-sm text-gray-600 flex items-center gap-1.5 md:gap-2">
+                          <Package className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                          <span className="truncate">Remaining capacity (kg)</span>
                         </span>
-                        <span className="font-medium">
+                        <span className="font-medium text-xs md:text-sm whitespace-nowrap">
                           {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
                         </span>
                       </div>
@@ -299,12 +300,12 @@ export default function PublicShipmentDetailPage() {
                     </div>
                     {shipment.totalCapacityItems !== null && (
                       <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-gray-600 flex items-center gap-2">
-                            <Package className="h-4 w-4" />
-                            Remaining items
+                        <div className="flex justify-between items-center mb-2 gap-2">
+                          <span className="text-xs md:text-sm text-gray-600 flex items-center gap-1.5 md:gap-2">
+                            <Package className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                            <span className="truncate">Remaining items</span>
                           </span>
-                          <span className="font-medium">
+                          <span className="font-medium text-xs md:text-sm whitespace-nowrap">
                             {shipment.remainingCapacityItems ?? 0} / {shipment.totalCapacityItems}
                           </span>
                         </div>
@@ -318,17 +319,17 @@ export default function PublicShipmentDetailPage() {
                         </div>
                       </div>
                     )}
-                    <div className="pt-2 border-t">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600 flex items-center gap-2">
+                    <div className="pt-2 md:pt-3 border-t">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs md:text-sm text-gray-600 flex items-center gap-1.5 md:gap-2">
                           {shipment.status === 'PUBLISHED' ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <CheckCircle2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600 flex-shrink-0" />
                           ) : (
-                            <AlertCircle className="h-4 w-4 text-gray-500" />
+                            <AlertCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-gray-500 flex-shrink-0" />
                           )}
-                          Status
+                          <span>Status</span>
                         </span>
-                        <Badge className={shipment.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                        <Badge className={`text-xs ${shipment.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                           {shipment.status}
                         </Badge>
                       </div>
@@ -339,46 +340,46 @@ export default function PublicShipmentDetailPage() {
 
               {/* Pricing */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                    <DollarSign className="h-4 w-4 md:h-5 md:w-5" />
                     Pricing Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-3 md:space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
+                      <p className="text-xs md:text-sm text-gray-600 mb-2 flex items-center gap-2">
+                        <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4" />
                         Pricing Model
                       </p>
-                      <Badge variant="outline" className="text-base px-3 py-1">
+                      <Badge variant="outline" className="text-xs md:text-base px-2 md:px-3 py-1">
                         {shipment.pricingModel.replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="pt-2 border-t">
                       {shipment.pricingModel === 'PER_KG' && shipment.pricePerKg && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Price per kilogram</p>
-                          <p className="text-3xl font-bold text-orange-600">
+                          <p className="text-xs md:text-sm text-gray-600 mb-1">Price per kilogram</p>
+                          <p className="text-2xl md:text-3xl font-bold text-orange-600">
                             £{parseFloat(String(shipment.pricePerKg)).toFixed(2)}
-                            <span className="text-lg text-gray-600 font-normal"> / kg</span>
+                            <span className="text-base md:text-lg text-gray-600 font-normal"> / kg</span>
                           </p>
                         </div>
                       )}
                       {shipment.pricingModel === 'PER_ITEM' && shipment.pricePerItem && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Price per item</p>
-                          <p className="text-3xl font-bold text-orange-600">
+                          <p className="text-xs md:text-sm text-gray-600 mb-1">Price per item</p>
+                          <p className="text-2xl md:text-3xl font-bold text-orange-600">
                             £{parseFloat(String(shipment.pricePerItem)).toFixed(2)}
-                            <span className="text-lg text-gray-600 font-normal"> / item</span>
+                            <span className="text-base md:text-lg text-gray-600 font-normal"> / item</span>
                           </p>
                         </div>
                       )}
                       {shipment.pricingModel === 'FLAT' && shipment.flatPrice && (
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Flat rate</p>
-                          <p className="text-3xl font-bold text-orange-600">
+                          <p className="text-xs md:text-sm text-gray-600 mb-1">Flat rate</p>
+                          <p className="text-2xl md:text-3xl font-bold text-orange-600">
                             £{parseFloat(String(shipment.flatPrice)).toFixed(2)}
                           </p>
                         </div>
@@ -390,40 +391,40 @@ export default function PublicShipmentDetailPage() {
 
               {/* Cutoff Time & Important Info */}
               <Card className={isPastCutoff ? "border-orange-500 bg-orange-50" : "border-blue-200 bg-blue-50"}>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
+                <CardContent className="pt-4 md:pt-6 p-4 md:p-6">
+                  <div className="space-y-3 md:space-y-4">
                     {isPastCutoff ? (
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-orange-900">Booking cutoff passed</p>
-                          <p className="text-sm text-orange-700 mt-1">
+                      <div className="flex items-start gap-2 md:gap-3">
+                        <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm md:text-base text-orange-900">Booking cutoff passed</p>
+                          <p className="text-xs md:text-sm text-orange-700 mt-1">
                             The cutoff time for this shipment was {format(cutoffDate, 'MMM dd, yyyy HH:mm')}. 
                             Bookings may no longer be accepted.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-start gap-3">
-                        <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-medium text-blue-900">Booking Deadline</p>
-                          <p className="text-sm text-blue-700 mt-1">
+                      <div className="flex items-start gap-2 md:gap-3">
+                        <Clock className="h-4 w-4 md:h-5 md:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm md:text-base text-blue-900">Booking Deadline</p>
+                          <p className="text-xs md:text-sm text-blue-700 mt-1">
                             Items must be received by {format(cutoffDate, 'MMM dd, yyyy')} at {format(cutoffDate, 'HH:mm')}
                           </p>
                         </div>
                       </div>
                     )}
                     {shipment.trackingStatus && (
-                      <div className="pt-3 border-t border-orange-200">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700">Tracking Status</span>
-                          <Badge className={
+                      <div className="pt-2 md:pt-3 border-t border-orange-200">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs md:text-sm text-gray-700">Tracking Status</span>
+                          <Badge className={`text-xs ${
                             shipment.trackingStatus === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                             shipment.trackingStatus === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
                             shipment.trackingStatus === 'DELAYED' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
-                          }>
+                          }`}>
                             {shipment.trackingStatus.replace('_', ' ')}
                           </Badge>
                         </div>
@@ -435,28 +436,28 @@ export default function PublicShipmentDetailPage() {
             </div>
 
             {/* Action Panel */}
-            <div className="md:col-span-1">
-              <Card className="sticky top-6">
-                <CardHeader>
-                  <CardTitle>Book This Slot</CardTitle>
+            <div className="lg:col-span-1">
+              <Card className="lg:sticky lg:top-6">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-lg md:text-xl">Book This Slot</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 md:space-y-4 p-4 md:p-6 pt-0">
                   {!isAuthenticated ? (
                     <>
-                      <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                      <div className="p-3 md:p-4 bg-orange-50 rounded-lg border border-orange-200">
                         <div className="flex items-center gap-2 mb-2">
-                          <Lock className="h-5 w-5 text-orange-600" />
-                          <p className="font-medium text-orange-900">Sign in required</p>
+                          <Lock className="h-4 w-4 md:h-5 md:w-5 text-orange-600 flex-shrink-0" />
+                          <p className="font-medium text-sm md:text-base text-orange-900">Sign in required</p>
                         </div>
-                        <p className="text-sm text-orange-700 mb-4">
+                        <p className="text-xs md:text-sm text-orange-700 mb-3 md:mb-4">
                           Please sign in to view detailed booking options and proceed with your reservation.
                         </p>
                         <Link href={`/auth/login?redirect=/shipments/${shipmentId}`}>
-                          <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                          <Button className="w-full bg-orange-600 hover:bg-orange-700 h-10 md:h-11 text-sm md:text-base">
                             Sign In to Book
                           </Button>
                         </Link>
-                        <p className="text-xs text-orange-600 text-center mt-3">
+                        <p className="text-xs text-orange-600 text-center mt-2 md:mt-3">
                           Don&apos;t have an account?{' '}
                           <Link href="/auth/register-customer" className="underline font-medium">
                             Sign up
@@ -466,12 +467,12 @@ export default function PublicShipmentDetailPage() {
                     </>
                   ) : !isCustomer ? (
                     <>
-                      <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                        <p className="text-sm text-orange-700 mb-4">
+                      <div className="p-3 md:p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <p className="text-xs md:text-sm text-orange-700 mb-3 md:mb-4">
                           You need a customer account to book slots. Please switch to a customer account or create one.
                         </p>
                         <Link href="/auth/register-customer">
-                          <Button variant="outline" className="w-full">
+                          <Button variant="outline" className="w-full h-10 md:h-11 text-sm md:text-base">
                             Create Customer Account
                           </Button>
                         </Link>
@@ -479,11 +480,11 @@ export default function PublicShipmentDetailPage() {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-600 mb-4">
+                      <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
                         Ready to book this slot? Click below to proceed with detailed booking options.
                       </p>
                       <Button
-                        className="w-full bg-orange-600 hover:bg-orange-700"
+                        className="w-full bg-orange-600 hover:bg-orange-700 h-10 md:h-11 text-sm md:text-base"
                         onClick={handleViewDetails}
                       >
                         View Details & Book

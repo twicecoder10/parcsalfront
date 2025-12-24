@@ -578,7 +578,8 @@ export default function ShipmentDetailPage() {
   const isPastCutoff = cutoffDate < new Date();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
       {/* Simple Header */}
       <div className="text-center">
         <h1 className="text-2xl font-bold">
@@ -1207,6 +1208,7 @@ export default function ShipmentDetailPage() {
             </CardContent>
           </Card>
         </GoogleMapsLoader>
+      </div>
       </div>
     </div>
   );

@@ -37,6 +37,32 @@ export default function PublicLayout({
     }
   }, [router, pathname]);
 
+  // Handle scroll to hash anchor on navigation
+  useEffect(() => {
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        // Small delay to ensure page is rendered
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    };
+
+    // Scroll on initial load
+    handleHashScroll();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashScroll);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashScroll);
+    };
+  }, [pathname]);
+
   return (
     <div className="min-h-screen flex flex-col">
       {children}

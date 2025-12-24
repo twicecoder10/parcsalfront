@@ -64,7 +64,7 @@ export default function CustomerDashboardPage() {
             <CardDescription>Common tasks and shortcuts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/customer/shipments/browse">
+            <Link href="/shipments/browse">
               <Button className="w-full justify-start" variant="outline">
                 <Package className="mr-2 h-4 w-4" />
                 Browse Available Shipments

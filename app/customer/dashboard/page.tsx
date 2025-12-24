@@ -152,7 +152,7 @@ export default function CustomerDashboardPage() {
             <CardDescription>Get started quickly</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/customer/shipments/browse">
+            <Link href="/shipments/browse">
               <Button className="w-full justify-between" variant="outline">
                 <span className="flex items-center">
                   <Package className="mr-2 h-4 w-4" />
@@ -192,7 +192,7 @@ export default function CustomerDashboardPage() {
               <div className="text-center py-8">
                 <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-600 mb-4">No bookings yet</p>
-                <Link href="/customer/shipments/browse">
+                <Link href="/shipments/browse">
                   <Button size="sm">Browse Shipments</Button>
                 </Link>
               </div>

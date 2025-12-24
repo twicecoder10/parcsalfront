@@ -58,10 +58,13 @@ export function MessageList({ messages, currentUser, chatRoomId }: MessageListPr
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4">
       {messages.length === 0 ? (
-        <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-          <p>No messages yet. Start the conversation!</p>
+        <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 px-4">
+          <div className="text-center">
+            <p className="text-sm">No messages yet</p>
+            <p className="text-xs mt-1 text-gray-400">Start the conversation!</p>
+          </div>
         </div>
       ) : (
         messages.map((message) => {
@@ -71,28 +74,28 @@ export function MessageList({ messages, currentUser, chatRoomId }: MessageListPr
 
           return (
             <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
+              <div className={`flex flex-col max-w-[85%] md:max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
                 {!isOwn && message.sender && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 mb-1 px-1">
                     {message.sender.fullName}
                   </span>
                 )}
                 <div
-                  className={`rounded-lg px-4 py-2 ${
+                  className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
                     isOwn
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-orange-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="text-sm md:text-base whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
                 </div>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 mt-1 px-1">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {format(messageDate, 'HH:mm')}
                   </span>
                   {isOwn && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {message.isRead ? 'seen' : 'sent'}
+                      · {message.isRead ? '✓✓' : '✓'}
                     </span>
                   )}
                 </div>

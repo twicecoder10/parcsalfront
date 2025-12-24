@@ -29,7 +29,7 @@ export function MessageInput({ onSendMessage, disabled = false, placeholder = 'T
   };
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-800 p-4">
+    <div className="border-t border-gray-200 dark:border-gray-800 p-3 md:p-4 bg-white dark:bg-gray-900">
       <div className="flex items-end gap-2">
         <Textarea
           value={message}
@@ -38,15 +38,15 @@ export function MessageInput({ onSendMessage, disabled = false, placeholder = 'T
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
-          className="resize-none min-h-[44px] max-h-32"
+          className="resize-none min-h-[40px] md:min-h-[44px] max-h-32 text-sm md:text-base"
         />
         <Button
           onClick={handleSend}
           disabled={disabled || !message.trim()}
           size="icon"
-          className="flex-shrink-0"
+          className="flex-shrink-0 h-10 w-10 md:h-11 md:w-11 bg-orange-600 hover:bg-orange-700"
         >
-          <Send className="h-4 w-4" />
+          <Send className="h-4 w-4 md:h-5 md:w-5" />
         </Button>
       </div>
     </div>

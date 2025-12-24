@@ -140,7 +140,7 @@ export const getCustomerOnboardingStepPath = (
     return '/onboarding/customer'; // Profile completion page
   }
   if (!steps.first_booking?.completed) {
-    return '/customer/shipments/browse'; // Browse shipments to make first booking
+    return '/shipments/browse'; // Browse shipments to make first booking
   }
   
   return null; // All steps complete

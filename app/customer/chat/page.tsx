@@ -11,7 +11,7 @@ import { ChatList } from '@/components/chat/chat-list';
 import { MessageList } from '@/components/chat/message-list';
 import { MessageInput } from '@/components/chat/message-input';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeft, Menu, Loader2 } from 'lucide-react';
+import { Plus, ArrowLeft, Menu, Loader2, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -258,94 +258,82 @@ function CustomerChatContent() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col">
-      {/* Header - Mobile: Show menu button, Desktop: Show title */}
-      <div className="mb-4 flex items-center justify-between md:block">
-        <div className="flex items-center gap-2 md:block">
-          {!showChatList && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToList}
-              className="md:hidden"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header - Desktop only, Mobile shows in chat header */}
+      <div className="hidden md:block mb-4 pb-4 border-b">
+        <h1 className="text-2xl font-bold">Messages</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          {isConnected ? (
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Connected
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+              Connecting...
+            </span>
           )}
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Messages</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">
-              {isConnected ? 'Connected' : 'Connecting...'}
-            </p>
-          </div>
-        </div>
-        {showChatList && !selectedChatRoomId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowChatList(!showChatList)}
-            className="md:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
+        </p>
       </div>
 
-      <div className="flex-1 flex border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-900 relative">
-        {/* Chat List */}
+      <div className="flex-1 flex rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm border border-gray-200 dark:border-gray-800 min-h-0">
+        {/* Chat List - Full screen on mobile, sidebar on desktop */}
         <div
           className={`
-            absolute md:relative inset-0 md:inset-auto
-            w-full md:w-1/3
-            border-r border-gray-200 dark:border-gray-800
+            ${showChatList || !selectedChatRoomId ? 'flex' : 'hidden md:flex'}
+            md:flex flex-col
+            w-full md:w-80 lg:w-96
+            border-r-0 md:border-r border-gray-200 dark:border-gray-800
             bg-white dark:bg-gray-900
-            z-10 md:z-auto
-            ${showChatList ? 'block' : 'hidden md:block'}
+            flex-shrink-0
           `}
         >
           {isLoadingRooms ? (
-            <div className="p-4 text-center">Loading conversations...</div>
+            <div className="p-4 text-center flex items-center justify-center flex-1">
+              <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+            </div>
           ) : (
             <ChatList
               chatRooms={chatRoomsData?.data || []}
               selectedChatRoomId={selectedChatRoomId || undefined}
               onSelectChatRoom={(id) => {
                 setSelectedChatRoomId(id);
-                // On mobile, hide chat list after selection
-                if (window.innerWidth < 768) {
-                  setShowChatList(false);
-                }
+                setShowChatList(false);
               }}
             />
           )}
         </div>
 
-        {/* Chat Window */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Chat Window - Full screen on mobile when chat selected */}
+        <div className={`
+          ${!showChatList && selectedChatRoomId ? 'flex' : 'hidden md:flex'}
+          md:flex flex-col flex-1 min-w-0 bg-gray-50 dark:bg-gray-900
+        `}>
           {selectedChatRoom || pendingCompanyId ? (
             <>
               {/* Chat Header */}
-              <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2 md:gap-3">
+              <div className="px-3 py-3 md:px-4 md:py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 bg-white dark:bg-gray-900">
                 {/* Back button for mobile */}
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={handleBackToList}
-                  className="md:hidden -ml-2"
+                  className="md:hidden flex-shrink-0"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-5 w-5" />
                 </Button>
                 {(selectedChatRoom?.company.logoUrl || companyInfo?.logoUrl) ? (
                   <Image
                     src={(selectedChatRoom?.company.logoUrl || companyInfo?.logoUrl)!}
                     alt={(selectedChatRoom?.company.name || companyInfo?.name)!}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover flex-shrink-0"
+                    width={44}
+                    height={44}
+                    className="rounded-full object-cover flex-shrink-0 w-10 h-10 md:w-11 md:h-11"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                    <span className="text-gray-600 dark:text-gray-300 font-semibold text-sm">
+                  <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-base md:text-lg">
                       {(selectedChatRoom?.company.name || companyInfo?.name || 'C').charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -357,7 +345,7 @@ function CustomerChatContent() {
                   {(selectedChatRoom?.booking || pendingBookingId) && (
                     <Link 
                       href={`/customer/bookings/${selectedChatRoom?.bookingId || selectedChatRoom?.booking?.id || pendingBookingId}`}
-                      className="text-xs md:text-sm text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 truncate transition-colors"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 truncate transition-colors block"
                     >
                       Booking #{(selectedChatRoom?.bookingId || selectedChatRoom?.booking?.id || pendingBookingId || '').slice(0, 8)}
                     </Link>
@@ -375,13 +363,13 @@ function CustomerChatContent() {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 p-4">
-                    <p className="text-center">Start the conversation by sending a message</p>
+                    <p className="text-center text-sm">Start the conversation by sending a message</p>
                   </div>
                 )}
               </div>
 
               {/* Message Input */}
-              <div className="border-t border-gray-200 dark:border-gray-800">
+              <div className="bg-white dark:bg-gray-900">
                 <MessageInput
                   onSendMessage={handleSendMessage}
                   disabled={!isConnected || sendMessageMutation.isPending}
@@ -392,8 +380,11 @@ function CustomerChatContent() {
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 p-4">
               <div className="text-center">
-                <p className="text-base md:text-lg mb-2">Select a conversation to start messaging</p>
-                <p className="text-xs md:text-sm">Or create a new conversation with a company</p>
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="h-8 w-8 md:h-10 md:w-10 text-gray-400" />
+                </div>
+                <p className="text-base md:text-lg font-medium mb-2">No conversation selected</p>
+                <p className="text-xs md:text-sm text-gray-400">Choose a conversation from the list to start messaging</p>
               </div>
             </div>
           )}
@@ -406,10 +397,10 @@ function CustomerChatContent() {
 export default function CustomerChatPage() {
   return (
     <Suspense fallback={
-      <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-orange-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading chat...</p>
+          <p className="text-sm text-gray-600">Loading chat...</p>
         </div>
       </div>
     }>

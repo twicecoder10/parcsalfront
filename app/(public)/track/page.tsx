@@ -133,39 +133,41 @@ function TrackContent() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <main className="flex-1 container mx-auto px-4 py-6 md:py-8 pt-16 md:pt-20">
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold">Track Your Shipment</h1>
-            <p className="text-gray-600 mt-2">Enter your booking ID to track your shipment status</p>
+            <h1 className="text-2xl md:text-3xl font-bold">Track Your Shipment</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-1 md:mt-2">Enter your booking ID to track your shipment status</p>
           </div>
 
           {/* Search Form */}
           <Card>
-            <CardHeader>
-              <CardTitle>Enter Booking ID</CardTitle>
-              <CardDescription>Find your booking ID in your confirmation email</CardDescription>
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="text-base md:text-lg">Enter Booking ID</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Find your booking ID in your confirmation email</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
+            <CardContent className="p-4 md:p-6 pt-0">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
-                  placeholder="Enter booking ID (e.g., abc123def456)"
+                  placeholder="Enter booking ID (e.g., BKG-...)"
                   value={bookingId}
                   onChange={(e) => setBookingId(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="flex-1"
+                  className="flex-1 text-sm md:text-base"
                 />
-                <Button onClick={handleSearch} disabled={loading}>
+                <Button onClick={handleSearch} disabled={loading} className="w-full sm:w-auto">
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Searching...
+                      <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                      <span className="hidden sm:inline">Searching...</span>
+                      <span className="sm:hidden">Searching...</span>
                     </>
                   ) : (
                     <>
-                      <Search className="mr-2 h-4 w-4" />
-                      Track
+                      <Search className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Track</span>
+                      <span className="sm:hidden">Track Shipment</span>
                     </>
                   )}
                 </Button>
@@ -176,8 +178,8 @@ function TrackContent() {
           {/* Loading State */}
           {loading && !trackingData && (
             <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+              <CardContent className="flex items-center justify-center py-10 md:py-12">
+                <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
               </CardContent>
             </Card>
           )}
@@ -185,10 +187,10 @@ function TrackContent() {
           {/* Error State */}
           {error && !trackingData && searched && (
             <Card>
-              <CardContent className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">{error}</p>
-                <Button onClick={handleSearch} variant="outline">
+              <CardContent className="text-center py-10 md:py-12 px-4">
+                <AlertCircle className="h-10 w-10 md:h-12 md:w-12 text-red-400 mx-auto mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-gray-600 mb-4 break-words">{error}</p>
+                <Button onClick={handleSearch} variant="outline" className="w-full sm:w-auto">
                   Try Again
                 </Button>
               </CardContent>
@@ -200,53 +202,53 @@ function TrackContent() {
             <>
               {/* Current Status Card */}
               <Card className="border-2 border-orange-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
+                <CardHeader className="p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                       {getStatusIcon(trackingData.shipment?.trackingStatus || trackingData.booking?.status || 'PENDING')}
                       Current Status
                     </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge className={statusColors[trackingData.shipment?.trackingStatus || trackingData.booking?.status || 'PENDING'] || ''}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={`text-xs ${statusColors[trackingData.shipment?.trackingStatus || trackingData.booking?.status || 'PENDING'] || ''}`}>
                         {(trackingData.shipment?.trackingStatus || trackingData.booking?.status || 'PENDING')?.replace(/_/g, ' ')}
                       </Badge>
                       {trackingData.shipment?.trackingStatus === 'DELAYED' && (
-                        <Badge className="bg-red-100 text-red-800">
+                        <Badge className="bg-red-100 text-red-800 text-xs">
                           DELAYED
                         </Badge>
                       )}
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 md:p-6 pt-0">
                   {trackingData.shipment?.trackingStatus === 'DELAYED' && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="mb-3 md:mb-4 p-2.5 md:p-3 bg-red-50 border border-red-200 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5 text-red-600" />
-                        <p className="font-medium text-red-900">Shipment Delayed</p>
+                        <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 flex-shrink-0" />
+                        <p className="font-medium text-sm md:text-base text-red-900">Shipment Delayed</p>
                       </div>
-                      <p className="text-sm text-red-700 mt-1">
+                      <p className="text-xs md:text-sm text-red-700 mt-1">
                         Your shipment is experiencing delays. We&apos;ll keep you updated.
                       </p>
                     </div>
                   )}
                   {trackingData.shipment?.trackingStatus === 'ARRIVED_AT_DESTINATION' && (
-                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="mb-3 md:mb-4 p-2.5 md:p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-blue-600" />
-                        <p className="font-medium text-blue-900">Arrived at Destination</p>
+                        <MapPin className="h-4 w-4 md:h-5 md:w-5 text-blue-600 flex-shrink-0" />
+                        <p className="font-medium text-sm md:text-base text-blue-900">Arrived at Destination</p>
                       </div>
-                      <p className="text-sm text-blue-700 mt-1">
+                      <p className="text-xs md:text-sm text-blue-700 mt-1">
                         Your shipment has arrived and is being prepared for delivery.
                       </p>
                     </div>
                   )}
                   {trackingData.booking?.updatedAt && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="font-medium">Last Update</p>
-                        <p className="text-sm text-gray-600">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-blue-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Last Update</p>
+                        <p className="text-xs md:text-sm text-gray-600 truncate">
                           {format(new Date(trackingData.booking.updatedAt), 'MMM dd, yyyy HH:mm:ss')}
                         </p>
                       </div>
@@ -257,20 +259,20 @@ function TrackContent() {
 
               {/* Tracking Timeline */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Tracking Timeline</CardTitle>
-                  <CardDescription>Track the progress of your shipment</CardDescription>
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg">Tracking Timeline</CardTitle>
+                  <CardDescription className="text-xs md:text-sm">Track the progress of your shipment</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="space-y-4 md:space-y-6">
                     {getStatusTimeline(
                       trackingData.booking?.status || 'PENDING',
                       trackingData.shipment?.trackingStatus || trackingData.booking?.status || 'PENDING'
                     ).map((item, index, timeline) => (
-                      <div key={index} className="flex items-start gap-4">
-                        <div className="flex flex-col items-center">
+                      <div key={index} className="flex items-start gap-3 md:gap-4">
+                        <div className="flex flex-col items-center flex-shrink-0">
                           <div
-                            className={`rounded-full p-2 ${
+                            className={`rounded-full p-1.5 md:p-2 ${
                               item.completed
                                 ? 'bg-orange-100 text-orange-600'
                                 : 'bg-gray-100 text-gray-400'
@@ -280,26 +282,26 @@ function TrackContent() {
                           </div>
                           {index < timeline.length - 1 && (
                             <div
-                              className={`w-0.5 h-full min-h-[60px] ${
+                              className={`w-0.5 h-full min-h-[50px] md:min-h-[60px] ${
                                 item.completed ? 'bg-orange-200' : 'bg-gray-200'
                               }`}
                             />
                           )}
                         </div>
-                        <div className="flex-1 pb-6">
+                        <div className="flex-1 pb-4 md:pb-6 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-lg">
+                            <h3 className="font-semibold text-sm md:text-base lg:text-lg break-words">
                               {item.status.replace(/_/g, ' ')}
                             </h3>
                           </div>
                           {item.isDelayed && (
-                            <div className="flex items-center gap-2 text-sm text-red-600 mb-1">
-                              <AlertCircle className="h-4 w-4" />
+                            <div className="flex items-center gap-2 text-xs md:text-sm text-red-600 mb-1">
+                              <AlertCircle className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                               <span>Delayed</span>
                             </div>
                           )}
                           {!item.completed && (
-                            <p className="text-sm text-gray-400 italic">Pending</p>
+                            <p className="text-xs md:text-sm text-gray-400 italic">Pending</p>
                           )}
                         </div>
                       </div>
@@ -310,60 +312,60 @@ function TrackContent() {
 
               {/* Route Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Route Information</CardTitle>
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg">Route Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">Origin</p>
-                      <p className="text-sm text-gray-600">
+                <CardContent className="p-4 md:p-6 pt-0 space-y-3 md:space-y-4">
+                  <div className="flex items-start gap-2 md:gap-3">
+                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm md:text-base">Origin</p>
+                      <p className="text-xs md:text-sm text-gray-600 break-words">
                         {trackingData.shipment?.originCity || 'N/A'}
                         {trackingData.shipment?.originCountry && `, ${trackingData.shipment.originCountry}`}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-red-600" />
-                    <div>
-                      <p className="font-medium">Destination</p>
-                      <p className="text-sm text-gray-600">
+                  <div className="flex items-start gap-2 md:gap-3">
+                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm md:text-base">Destination</p>
+                      <p className="text-xs md:text-sm text-gray-600 break-words">
                         {trackingData.shipment?.destinationCity || 'N/A'}
                         {trackingData.shipment?.destinationCountry && `, ${trackingData.shipment.destinationCountry}`}
                       </p>
                     </div>
                   </div>
                   {trackingData.shipment?.mode && (
-                    <div className="flex items-center gap-3">
-                      <div className="h-5 w-5 text-purple-600">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <div className="h-4 w-4 md:h-5 md:w-5 text-purple-600 flex-shrink-0 mt-0.5">
                         {getModeIcon(trackingData.shipment.mode)}
                       </div>
-                      <div>
-                        <p className="font-medium">Transport Mode</p>
-                        <p className="text-sm text-gray-600">{trackingData.shipment.mode}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Transport Mode</p>
+                        <p className="text-xs md:text-sm text-gray-600">{trackingData.shipment.mode}</p>
                       </div>
                     </div>
                   )}
                   {trackingData.shipment?.departureTime && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="font-medium">Departure Time</p>
-                        <p className="text-sm text-gray-600">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Departure Time</p>
+                        <p className="text-xs md:text-sm text-gray-600 break-words">
                           {format(new Date(trackingData.shipment.departureTime), 'MMM dd, yyyy HH:mm')}
                         </p>
                       </div>
                     </div>
                   )}
                   {trackingData.shipment?.arrivalTime && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="font-medium">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">
                           {trackingData.shipment?.trackingStatus === 'DELIVERED' ? 'Arrival Time' : 'Estimated Arrival'}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs md:text-sm text-gray-600 break-words">
                           {format(new Date(trackingData.shipment.arrivalTime), 'MMM dd, yyyy HH:mm')}
                         </p>
                       </div>
@@ -375,16 +377,16 @@ function TrackContent() {
               {/* Company Information */}
               {trackingData.company?.name && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Shipping Company</CardTitle>
+                  <CardHeader className="p-4 md:p-6">
+                    <CardTitle className="text-base md:text-lg">Shipping Company</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-3">
-                      <Truck className="h-5 w-5 text-green-600" />
-                      <div>
+                  <CardContent className="p-4 md:p-6 pt-0">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Truck className="h-4 w-4 md:h-5 md:w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
                         <Link 
                           href={`/companies/${trackingData.company.slug || trackingData.company.id || 'unknown'}`}
-                          className="font-medium hover:text-orange-600 transition-colors"
+                          className="font-medium text-sm md:text-base hover:text-orange-600 transition-colors break-words"
                         >
                           {trackingData.company.name}
                         </Link>
@@ -396,41 +398,41 @@ function TrackContent() {
 
               {/* Booking Details */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Booking Details</CardTitle>
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg">Booking Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Package className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Booking ID</p>
-                      <p className="text-sm text-gray-600 font-mono">{trackingData.booking?.id || bookingId}</p>
+                <CardContent className="p-4 md:p-6 pt-0 space-y-3 md:space-y-4">
+                  <div className="flex items-start gap-2 md:gap-3">
+                    <Package className="h-4 w-4 md:h-5 md:w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm md:text-base">Booking ID</p>
+                      <p className="text-xs md:text-sm text-gray-600 font-mono break-all">{trackingData.booking?.id || bookingId}</p>
                     </div>
                   </div>
                   {trackingData.booking?.requestedWeightKg && (
-                    <div className="flex items-center gap-3">
-                      <Package className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="font-medium">Weight</p>
-                        <p className="text-sm text-gray-600">{trackingData.booking.requestedWeightKg} kg</p>
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Package className="h-4 w-4 md:h-5 md:w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Weight</p>
+                        <p className="text-xs md:text-sm text-gray-600">{trackingData.booking.requestedWeightKg} kg</p>
                       </div>
                     </div>
                   )}
                   {trackingData.booking?.requestedItemsCount && (
-                    <div className="flex items-center gap-3">
-                      <Package className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="font-medium">Items</p>
-                        <p className="text-sm text-gray-600">{trackingData.booking.requestedItemsCount} items</p>
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Package className="h-4 w-4 md:h-5 md:w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Items</p>
+                        <p className="text-xs md:text-sm text-gray-600">{trackingData.booking.requestedItemsCount} items</p>
                       </div>
                     </div>
                   )}
                   {trackingData.booking?.createdAt && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="font-medium">Booking Created</p>
-                        <p className="text-sm text-gray-600">
+                    <div className="flex items-start gap-2 md:gap-3">
+                      <Clock className="h-4 w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm md:text-base">Booking Created</p>
+                        <p className="text-xs md:text-sm text-gray-600 break-words">
                           {format(new Date(trackingData.booking.createdAt), 'MMM dd, yyyy HH:mm')}
                         </p>
                       </div>
@@ -451,10 +453,10 @@ export default function TrackPage() {
     <Suspense fallback={
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 container mx-auto px-4 py-6 md:py-8 pt-16 md:pt-20">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+            <div className="flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+              <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
             </div>
           </div>
         </main>

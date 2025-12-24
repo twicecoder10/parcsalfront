@@ -59,7 +59,7 @@ export const removeStoredUser = (): void => {
 export const getDashboardPath = (role: UserRole): string => {
   switch (role) {
     case 'CUSTOMER':
-      return '/customer/shipments/browse';
+      return '/shipments/browse';
     case 'COMPANY_ADMIN':
     case 'COMPANY_STAFF':
       return '/company/overview';

@@ -270,23 +270,25 @@ function BookingDetailContent() {
   const needsPayment = booking.paymentStatus === 'PENDING' || booking.paymentStatus === 'UNPAID' || !booking.payment;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
       {/* Back Button */}
       <Link href="/customer/bookings">
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="mb-2 md:mb-0">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Bookings
+          <span className="hidden sm:inline">Back to Bookings</span>
+          <span className="sm:hidden">Back</span>
         </Button>
       </Link>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Booking Details</h1>
-          <p className="text-gray-600 mt-2">Booking #{booking.id || bookingId}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl md:text-3xl font-bold truncate">Booking Details</h1>
+          <p className="text-xs md:text-sm text-gray-600 mt-1 md:mt-2 font-mono truncate">#{booking.id || bookingId}</p>
         </div>
-        <Link href={`/customer/bookings/${bookingId}/track`}>
-          <Button>
+        <Link href={`/customer/bookings/${bookingId}/track`} className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto h-10 md:h-auto">
             <Navigation className="h-4 w-4 mr-2" />
             Track Booking
           </Button>
@@ -296,17 +298,17 @@ function BookingDetailContent() {
       {/* Payment Verification Message */}
       {paymentStatus === 'verifying' && (
         <Card className="border-blue-500 bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-blue-100 p-2">
-                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="rounded-full bg-blue-100 p-2 flex-shrink-0">
+                <Loader2 className="h-5 w-5 md:h-6 md:w-6 text-blue-600 animate-spin" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-1">Verifying Payment...</h3>
-                <p className="text-sm text-blue-700">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm md:text-base font-semibold text-blue-900 mb-1">Verifying Payment...</h3>
+                <p className="text-xs md:text-sm text-blue-700">
                   Please wait while we confirm your payment status.
                   {paymentVerificationAttempts > 0 && (
-                    <span className="ml-2">(Attempt {paymentVerificationAttempts}/{maxVerificationAttempts})</span>
+                    <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">(Attempt {paymentVerificationAttempts}/{maxVerificationAttempts})</span>
                   )}
                 </p>
               </div>
@@ -318,19 +320,19 @@ function BookingDetailContent() {
       {/* Payment Success Message */}
       {paymentStatus === 'success' && (
         <Card className="border-green-500 bg-green-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-green-100 p-2">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="rounded-full bg-green-100 p-2 flex-shrink-0">
+                <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-green-900 mb-1">Payment Successful!</h3>
-                <p className="text-sm text-green-700 mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm md:text-base font-semibold text-green-900 mb-1">Payment Successful!</h3>
+                <p className="text-xs md:text-sm text-green-700 mb-2">
                   Your payment has been processed successfully. Your booking is now confirmed.
                 </p>
                 {booking?.payment && (
-                  <div className="mt-3 pt-3 border-t border-green-200">
-                    <p className="text-xs text-green-600">
+                  <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-green-200">
+                    <p className="text-xs text-green-600 break-all">
                       Transaction ID: {booking.payment.id}
                     </p>
                     {booking.payment.createdAt && (
@@ -343,11 +345,11 @@ function BookingDetailContent() {
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setPaymentStatus('idle')}
-                className="text-green-700 hover:text-green-900"
+                className="text-green-700 hover:text-green-900 flex-shrink-0"
               >
-                <XCircle className="h-5 w-5" />
+                <XCircle className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
           </CardContent>
@@ -357,14 +359,14 @@ function BookingDetailContent() {
       {/* Payment Cancelled Message */}
       {paymentStatus === 'cancelled' && (
         <Card className="border-orange-500 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="rounded-full bg-orange-100 p-2">
-                <AlertCircle className="h-6 w-6 text-orange-600" />
+          <CardContent className="p-4 md:pt-6">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="rounded-full bg-orange-100 p-2 flex-shrink-0">
+                <AlertCircle className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 mb-1">Payment Cancelled</h3>
-                <p className="text-sm text-orange-700 mb-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm md:text-base font-semibold text-orange-900 mb-1">Payment Cancelled</h3>
+                <p className="text-xs md:text-sm text-orange-700 mb-3 md:mb-4">
                   The payment checkout was cancelled. Your booking is still pending payment.
                 </p>
                 {needsPayment && (
@@ -372,7 +374,7 @@ function BookingDetailContent() {
                     onClick={handlePayNow}
                     variant="outline"
                     size="sm"
-                    className="border-orange-600 text-orange-700 hover:bg-orange-100"
+                    className="w-full sm:w-auto border-orange-600 text-orange-700 hover:bg-orange-100"
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
                     Pay Now
@@ -381,11 +383,11 @@ function BookingDetailContent() {
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setPaymentStatus('idle')}
-                className="text-orange-700 hover:text-orange-900"
+                className="text-orange-700 hover:text-orange-900 flex-shrink-0"
               >
-                <XCircle className="h-5 w-5" />
+                <XCircle className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
           </CardContent>
@@ -394,27 +396,27 @@ function BookingDetailContent() {
 
       {/* Status Card */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Status</CardTitle>
-            <Badge className={statusColors[booking.status] || ''}>
+        <CardHeader className="pb-3 md:pb-6">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base md:text-lg">Status</CardTitle>
+            <Badge className={`${statusColors[booking.status] || ''} text-xs`}>
               {booking.status.replace('_', ' ')}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {timeline.map((item, index) => (
-              <div key={index} className="flex items-center gap-4">
+              <div key={index} className="flex items-start gap-3 md:gap-4">
                 {item.completed ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 flex-shrink-0 mt-0.5" />
                 )}
-                <div className="flex-1">
-                  <p className="font-medium">{item.status.replace('_', ' ')}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm md:text-base font-medium">{item.status.replace('_', ' ')}</p>
                   {item.date && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs md:text-sm text-gray-600 mt-0.5">
                       {format(new Date(item.date), 'MMM dd, yyyy HH:mm')}
                     </p>
                   )}
@@ -428,20 +430,20 @@ function BookingDetailContent() {
       {/* Customer Information */}
       {booking.customer && (
         <Card>
-          <CardHeader>
-            <CardTitle>Customer Information</CardTitle>
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg">Customer Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {booking.customer.fullName && (
               <div>
-                <p className="text-sm font-medium text-gray-700">Name</p>
-                <p className="text-sm text-gray-900">{booking.customer.fullName}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-700">Name</p>
+                <p className="text-sm md:text-base text-gray-900 mt-0.5">{booking.customer.fullName}</p>
               </div>
             )}
             {booking.customer.email && (
               <div>
-                <p className="text-sm font-medium text-gray-700">Email</p>
-                <p className="text-sm text-gray-900">{booking.customer.email}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-700">Email</p>
+                <p className="text-sm md:text-base text-gray-900 mt-0.5 break-all">{booking.customer.email}</p>
               </div>
             )}
           </CardContent>
@@ -450,80 +452,85 @@ function BookingDetailContent() {
 
       {/* Shipment Info */}
       <Card>
-        <CardHeader>
-          <CardTitle>Shipment Information</CardTitle>
+        <CardHeader className="pb-3 md:pb-6">
+          <CardTitle className="text-base md:text-lg">Shipment Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <MapPin className="h-5 w-5 text-orange-600" />
-            <div>
-              <p className="font-medium">Route</p>
-              <p className="text-sm text-gray-600">
+        <CardContent className="space-y-3 md:space-y-4">
+          <div className="flex items-start gap-3">
+            <MapPin className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm md:text-base font-medium">Route</p>
+              <p className="text-xs md:text-sm text-gray-600">
                 {booking.shipmentSlot?.originCity || booking.originCity} → {booking.shipmentSlot?.destinationCity || booking.destinationCity}
               </p>
             </div>
           </div>
           {booking.shipmentSlot?.departureTime && (
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="font-medium">Departure</p>
-                <p className="text-sm text-gray-600">
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm md:text-base font-medium">Departure</p>
+                <p className="text-xs md:text-sm text-gray-600">
                   {format(new Date(booking.shipmentSlot.departureTime), 'MMM dd, yyyy HH:mm')}
                 </p>
               </div>
             </div>
           )}
           {booking.requestedWeightKg && (
-            <div className="flex items-center gap-3">
-              <Package className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="font-medium">Weight</p>
-                <p className="text-sm text-gray-600">{booking.requestedWeightKg} kg</p>
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm md:text-base font-medium">Weight</p>
+                <p className="text-xs md:text-sm text-gray-600">{booking.requestedWeightKg} kg</p>
               </div>
             </div>
           )}
           {booking.requestedItemsCount && (
-            <div className="flex items-center gap-3">
-              <Package className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="font-medium">Items</p>
-                <p className="text-sm text-gray-600">{booking.requestedItemsCount} items</p>
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm md:text-base font-medium">Items</p>
+                <p className="text-xs md:text-sm text-gray-600">{booking.requestedItemsCount} items</p>
               </div>
             </div>
           )}
           {(booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName) && (
-            <div className="flex items-center gap-3">
-              <Truck className="h-5 w-5 text-green-600" />
-              <div className="flex items-center gap-2 flex-1">
-                {(booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl) && (
-                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                    <Image
-                      src={booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl || ''}
-                      alt={`${booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName} logo`}
-                      fill
-                      className="object-cover"
-                      sizes="32px"
-                    />
+            <div className="border-t pt-3 md:pt-4">
+              <div className="flex items-start gap-3">
+                <Truck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-2 mb-2">
+                    {(booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl) && (
+                      <div className="relative w-8 h-8 md:w-10 md:h-10 rounded overflow-hidden flex-shrink-0">
+                        <Image
+                          src={booking.company?.logoUrl || booking.shipmentSlot?.company?.logoUrl || ''}
+                          alt={`${booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName} logo`}
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm md:text-base font-medium">Company</p>
+                      <Link 
+                        href={`/companies/${booking.company?.slug || booking.shipmentSlot?.company?.slug || booking.company?.id || booking.shipmentSlot?.company?.id}`}
+                        className="text-xs md:text-sm text-gray-600 hover:text-orange-600 transition-colors block truncate"
+                      >
+                        {booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName}
+                      </Link>
+                    </div>
                   </div>
-                )}
-                <div className="flex-1">
-                  <p className="font-medium">Company</p>
-                  <Link 
-                    href={`/companies/${booking.company?.slug || booking.shipmentSlot?.company?.slug || booking.company?.id || booking.shipmentSlot?.company?.id}`}
-                    className="text-sm text-gray-600 hover:text-orange-600 transition-colors"
+                  <Button
+                    onClick={handleMessageCompany}
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
                   >
-                    {booking.company?.name || booking.shipmentSlot?.company?.name || booking.companyName}
-                  </Link>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message Company
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleMessageCompany}
-                  variant="outline"
-                  size="sm"
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Message
-                </Button>
               </div>
             </div>
           )}
@@ -533,10 +540,10 @@ function BookingDetailContent() {
       {/* Pickup & Delivery Information */}
       {(booking.pickupWarehouse || booking.deliveryWarehouse || booking.pickupMethod || booking.deliveryMethod || booking.pickupAddress || booking.deliveryAddress) && (
         <Card>
-          <CardHeader>
-            <CardTitle>Pickup & Delivery</CardTitle>
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg">Pickup & Delivery</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 md:space-y-4">
             {booking.pickupMethod && (
               <div className="flex items-center gap-3">
                 <Truck className="h-5 w-5 text-blue-600" />
@@ -644,43 +651,43 @@ function BookingDetailContent() {
       {/* Parcel Information */}
       {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || (booking.images && booking.images.length > 0)) && (
         <Card>
-          <CardHeader>
-            <CardTitle>Parcel Information</CardTitle>
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg">Parcel Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 md:space-y-4">
             {booking.parcelType && (
-              <div className="flex items-center gap-3">
-                <Package className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="font-medium">Parcel Type</p>
-                  <p className="text-sm text-gray-600">{booking.parcelType}</p>
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium">Parcel Type</p>
+                  <p className="text-xs md:text-sm text-gray-600">{booking.parcelType}</p>
                 </div>
               </div>
             )}
             {booking.weight && (
-              <div className="flex items-center gap-3">
-                <Package className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="font-medium">Actual Weight</p>
-                  <p className="text-sm text-gray-600">{booking.weight} kg</p>
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium">Actual Weight</p>
+                  <p className="text-xs md:text-sm text-gray-600">{booking.weight} kg</p>
                 </div>
               </div>
             )}
             {booking.value && (
-              <div className="flex items-center gap-3">
-                <Package className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">Parcel Value</p>
-                  <p className="text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium">Parcel Value</p>
+                  <p className="text-xs md:text-sm text-gray-600">£{parseFloat(String(booking.value)).toFixed(2)}</p>
                 </div>
               </div>
             )}
             {(booking.length || booking.width || booking.height) && (
-              <div className="flex items-center gap-3">
-                <Package className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium">Dimensions</p>
-                  <p className="text-sm text-gray-600">
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium">Dimensions</p>
+                  <p className="text-xs md:text-sm text-gray-600">
                     {booking.length && booking.width && booking.height
                       ? `${booking.length} × ${booking.width} × ${booking.height} cm`
                       : booking.length
@@ -696,27 +703,27 @@ function BookingDetailContent() {
             )}
             {booking.description && (
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-orange-600 mt-0.5" />
-                <div>
-                  <p className="font-medium">Description</p>
-                  <p className="text-sm text-gray-600">{booking.description}</p>
+                <Package className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm md:text-base font-medium">Description</p>
+                  <p className="text-xs md:text-sm text-gray-600 break-words">{booking.description}</p>
                 </div>
               </div>
             )}
             {booking.images && booking.images.length > 0 && (
               <div className="flex items-start gap-3">
-                <Package className="h-5 w-5 text-purple-600 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium mb-2">Images</p>
-                  <div className="grid grid-cols-2 gap-2">
+                <Package className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm md:text-base font-medium mb-2">Images</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                     {booking.images.map((image: string, index: number) => (
-                      <div key={index} className="relative w-full h-32 rounded-lg border overflow-hidden">
+                      <div key={index} className="relative w-full aspect-square rounded-lg border overflow-hidden bg-gray-100">
                         <Image
                           src={image}
                           alt={`Parcel image ${index + 1}`}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
+                          sizes="(max-width: 768px) 50vw, 33vw"
                         />
                       </div>
                     ))}
@@ -733,20 +740,20 @@ function BookingDetailContent() {
 
       {/* Payment Info */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Payment Information</CardTitle>
-            <Badge className={booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+        <CardHeader className="pb-3 md:pb-6">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base md:text-lg">Payment Information</CardTitle>
+            <Badge className={`${booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs`}>
               {booking.paymentStatus || 'PENDING'}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <p className="font-medium">Total Amount</p>
-                <p className="text-2xl font-bold text-orange-600 mt-1">
+                <p className="text-sm md:text-base font-medium">Total Amount</p>
+                <p className="text-xl md:text-2xl font-bold text-orange-600 mt-1">
                   £{(() => {
                     // Use payment.totalAmount (in cents) if available
                     if (booking.payment?.totalAmount) {
@@ -770,7 +777,7 @@ function BookingDetailContent() {
                 </p>
               </div>
               {needsPayment && (
-                <Button onClick={handlePayNow}>
+                <Button onClick={handlePayNow} className="w-full sm:w-auto h-10 md:h-auto">
                   <CreditCard className="mr-2 h-4 w-4" />
                   Pay Now
                 </Button>
@@ -861,26 +868,35 @@ function BookingDetailContent() {
       {/* Actions */}
       {canCancel && (
         <Card>
-          <CardHeader>
-            <CardTitle>Actions</CardTitle>
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg">Actions</CardTitle>
           </CardHeader>
           <CardContent>
             <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
               <DialogTrigger asChild>
-                <Button variant="destructive">Cancel Booking</Button>
+                <Button variant="destructive" className="w-full sm:w-auto">Cancel Booking</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[90vw] sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Cancel Booking</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg">Cancel Booking</DialogTitle>
+                  <DialogDescription className="text-sm">
                     Are you sure you want to cancel this booking? This action cannot be undone.
                   </DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowCancelDialog(false)}
+                    className="w-full sm:w-auto"
+                  >
                     Keep Booking
                   </Button>
-                  <Button variant="destructive" onClick={handleCancel} disabled={cancelling}>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleCancel} 
+                    disabled={cancelling}
+                    className="w-full sm:w-auto"
+                  >
                     {cancelling ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -896,6 +912,7 @@ function BookingDetailContent() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 }
@@ -903,9 +920,11 @@ function BookingDetailContent() {
 export default function BookingDetailPage() {
   return (
     <Suspense fallback={
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+          </div>
         </div>
       </div>
     }>

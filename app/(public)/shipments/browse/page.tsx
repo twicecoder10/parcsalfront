@@ -10,14 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ShipmentCard, ShipmentCardData } from '@/components/shipment-card';
-import { Search, Loader2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Filter, Truck, DollarSign } from 'lucide-react';
+import { Search, Loader2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Filter, Truck, DollarSign, Package } from 'lucide-react';
 import { shipmentApi } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { Navbar } from '@/components/navbar';
+import { CustomerHeader } from '@/components/customer-header';
 import { Footer } from '@/components/footer';
 import { isShipmentAvailable } from '@/lib/utils';
+import { getStoredUser } from '@/lib/auth';
 
 export default function BrowseShipmentsPage() {
   const [originCountry, setOriginCountry] = useState('');
@@ -28,6 +30,7 @@ export default function BrowseShipmentsPage() {
   const [departureDateTo, setDepartureDateTo] = useState('');
   const [arrivalDateFrom, setArrivalDateFrom] = useState('');
   const [arrivalDateTo, setArrivalDateTo] = useState('');
+  const [isCustomer, setIsCustomer] = useState(false);
   const [mode, setMode] = useState<string>('all');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -73,6 +76,10 @@ export default function BrowseShipmentsPage() {
   };
 
   useEffect(() => {
+    // Check if user is logged in as customer
+    const user = getStoredUser();
+    setIsCustomer(user?.role === 'CUSTOMER');
+
     // Get URL params and populate search form
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -262,21 +269,27 @@ export default function BrowseShipmentsPage() {
   return (
     <GoogleMapsLoader>
       <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold">Browse Available Slots</h1>
-              <p className="text-gray-600 mt-2">Find available shipment slots that match your needs</p>
+        {isCustomer ? <CustomerHeader /> : <Navbar />}
+        <main className="flex-1 pt-16 md:pt-20">
+          {/* Sticky Header Section */}
+          <div className="sticky top-16 md:top-20 z-40 bg-white border-b shadow-sm">
+            <div className="container mx-auto px-4 py-3 md:py-4">
+              <h1 className="text-2xl md:text-3xl font-bold">Browse Available Slots</h1>
+              <p className="text-sm md:text-base text-gray-600 mt-1">Find available shipment slots that match your needs</p>
             </div>
+          </div>
 
-            {/* Search Filters */}
-            <Card className="overflow-hidden">
+          {/* Main Content */}
+          <div className="container mx-auto px-4 py-4 md:py-6">
+            <div className="space-y-4 md:space-y-6">
+
+            {/* Search Filters - Sticky Below Header */}
+            <Card className="overflow-hidden sticky top-[140px] md:top-[176px] z-30 shadow-md">
               {/* Route Section - Always Visible */}
-              <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white p-4">
-                <div className="flex items-center gap-2 mb-3">
+              <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white p-3 md:p-4">
+                <div className="flex items-center gap-2 mb-2 md:mb-3">
                   <MapPin className="h-4 w-4 text-orange-600" />
-                  <CardTitle className="text-sm">Route</CardTitle>
+                  <CardTitle className="text-sm md:text-base">Route</CardTitle>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
@@ -289,7 +302,7 @@ export default function BrowseShipmentsPage() {
                       }}
                       label=""
                       placeholder="Country"
-                      className="[&_button]:h-8 [&_button]:text-xs"
+                      className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>
                   <div>
@@ -301,7 +314,7 @@ export default function BrowseShipmentsPage() {
                       label=""
                       placeholder="City"
                       disabled={!originCountry}
-                      className="[&_button]:h-8 [&_button]:text-xs"
+                      className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>
                   <div>
@@ -314,7 +327,7 @@ export default function BrowseShipmentsPage() {
                       }}
                       label=""
                       placeholder="Country"
-                      className="[&_button]:h-8 [&_button]:text-xs"
+                      className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>
                   <div>
@@ -326,21 +339,21 @@ export default function BrowseShipmentsPage() {
                       label=""
                       placeholder="City"
                       disabled={!destinationCountry}
-                      className="[&_button]:h-8 [&_button]:text-xs"
+                      className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>
                 </div>
               </CardHeader>
 
               {/* Additional Filters Button and Search */}
-              <div className="px-4 py-3 border-t flex items-center justify-between gap-3">
+              <div className="px-3 md:px-4 py-2 md:py-3 border-t flex items-center gap-2 md:gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsFiltersModalOpen(true)}
-                  className="flex-1 justify-between h-9 text-sm"
+                  className="flex-1 justify-between h-9 md:h-10 text-xs md:text-sm"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <Filter className="h-4 w-4 text-orange-600" />
                     <span className="font-medium">Filters</span>
                     {activeFiltersCount > 0 && (
@@ -350,16 +363,17 @@ export default function BrowseShipmentsPage() {
                     )}
                   </div>
                 </Button>
-                <Button onClick={handleSearch} className="bg-orange-600 hover:bg-orange-700 h-9 px-6 text-sm" disabled={loading}>
+                <Button onClick={handleSearch} className="bg-orange-600 hover:bg-orange-700 h-9 md:h-10 px-4 md:px-6 text-xs md:text-sm flex-shrink-0" disabled={loading}>
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Searching...
+                      <Loader2 className="mr-1 md:mr-2 h-4 w-4 animate-spin" />
+                      <span className="hidden sm:inline">Searching...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
-                      <Search className="mr-2 h-4 w-4" />
-                      Search
+                      <Search className="mr-1 md:mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">Search</span>
                     </>
                   )}
                 </Button>
@@ -604,61 +618,70 @@ export default function BrowseShipmentsPage() {
             <div>
               {loading && allShipments.length === 0 ? (
                 <Card>
-                  <CardContent className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                  <CardContent className="flex items-center justify-center py-8 md:py-12">
+                    <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
                   </CardContent>
                 </Card>
               ) : allShipments.length === 0 ? (
                 <Card>
-                  <CardContent className="text-center py-12">
-                    <p className="text-gray-600 mb-4">No slots found</p>
-                    <p className="text-sm text-gray-500">Try adjusting your search filters</p>
+                  <CardContent className="text-center py-8 md:py-12">
+                    <Package className="h-12 w-12 md:h-16 md:w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2 text-sm md:text-base font-medium">No slots found</p>
+                    <p className="text-xs md:text-sm text-gray-500 mb-4">Try adjusting your search filters</p>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="outline"
+                        onClick={handleClearFilters}
+                        className="text-sm"
+                      >
+                        Clear all filters
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ) : (
                 <>
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
+                  <div className="mb-4 md:mb-6 flex items-center justify-between">
+                    <div className="text-xs md:text-sm text-gray-600">
                       Showing <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
                       <span className="font-semibold text-gray-900">{Math.min(endIndex, allShipments.length)}</span> of{' '}
                       <span className="font-semibold text-gray-900">{allShipments.length}</span> slots
                     </div>
                   </div>
 
-                  {/* Scrollable Results Container */}
-                  <Card className="overflow-hidden">
-                    <div className="max-h-[800px] overflow-y-auto scrollbar-hide p-6">
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {currentShipments.map((shipment, index) => (
-                          <div
-                            key={shipment.id}
-                            className="animate-slide-in"
-                            style={{
-                              animationDelay: `${(index % itemsPerPage) * 0.05}s`,
-                            }}
-                          >
-                            <ShipmentCard shipment={shipment} />
-                          </div>
-                        ))}
-                      </div>
+                  {/* Results Grid - No fixed height on mobile, scrollable on desktop */}
+                  <div className="md:max-h-[800px] md:overflow-y-auto md:scrollbar-hide">
+                    <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {currentShipments.map((shipment, index) => (
+                        <div
+                          key={shipment.id}
+                          className="animate-slide-in"
+                          style={{
+                            animationDelay: `${(index % itemsPerPage) * 0.05}s`,
+                          }}
+                        >
+                          <ShipmentCard shipment={shipment} />
+                        </div>
+                      ))}
                     </div>
-                  </Card>
+                  </div>
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (
-                    <div className="mt-6 flex items-center justify-center gap-2">
+                    <div className="mt-4 md:mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1 || loading}
-                        className="flex items-center gap-1"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1 h-9"
                       >
                         <ChevronLeft className="h-4 w-4" />
-                        Previous
+                        <span className="hidden sm:inline">Previous</span>
+                        <span className="sm:hidden">Prev</span>
                       </Button>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 overflow-x-auto max-w-full px-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
                           .filter((page) => {
                             // Show first page, last page, current page, and pages around current
@@ -672,14 +695,14 @@ export default function BrowseShipmentsPage() {
                             return (
                               <div key={page} className="flex items-center gap-1">
                                 {showEllipsisBefore && (
-                                  <span className="px-2 text-gray-400">...</span>
+                                  <span className="px-1 md:px-2 text-gray-400 text-sm">...</span>
                                 )}
                                 <Button
                                   variant={currentPage === page ? 'default' : 'outline'}
                                   size="sm"
                                   onClick={() => handlePageChange(page)}
                                   disabled={loading}
-                                  className={`min-w-[40px] ${currentPage === page
+                                  className={`min-w-[36px] md:min-w-[40px] h-9 ${currentPage === page
                                       ? 'bg-orange-600 hover:bg-orange-700'
                                       : ''
                                     }`}
@@ -696,7 +719,7 @@ export default function BrowseShipmentsPage() {
                         size="sm"
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages || loading}
-                        className="flex items-center gap-1"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1 h-9"
                       >
                         Next
                         <ChevronRight className="h-4 w-4" />
@@ -711,6 +734,7 @@ export default function BrowseShipmentsPage() {
                         variant="outline"
                         onClick={() => fetchShipments(false)}
                         disabled={loading}
+                        className="w-full sm:w-auto h-10"
                       >
                         {loading ? (
                           <>
@@ -726,6 +750,7 @@ export default function BrowseShipmentsPage() {
                 </>
               )}
             </div>
+          </div>
           </div>
         </main>
         <Footer />

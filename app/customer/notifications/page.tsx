@@ -192,7 +192,8 @@ export default function CustomerNotificationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Notifications</h1>
@@ -387,6 +388,7 @@ export default function CustomerNotificationsPage() {
         </CardContent>
       </Card>
       <ConfirmDialog />
+      </div>
     </div>
   );
 }

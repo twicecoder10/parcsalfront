@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, Search, Loader2, Filter, ChevronDown, Copy, Check } from 'lucide-react';
+import { Eye, Search, Loader2, Filter, ChevronDown, Copy, Check, Calendar, MapPin, Building2, CreditCard } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { format } from 'date-fns';
 import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
@@ -174,48 +174,53 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">My Bookings</h1>
-        <p className="text-gray-600 mt-2">Track and manage your shipment bookings</p>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Fixed Header Section */}
+      <div className="flex-shrink-0 space-y-3 md:space-y-4 pb-3 md:pb-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">My Bookings</h1>
+          <p className="text-sm md:text-base text-gray-600 mt-1 md:mt-2">Track and manage your shipment bookings</p>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader className="p-3 pb-2 md:p-6 md:pb-6">
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <CardTitle className="text-base md:text-xl">Filters</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 md:p-6">
+            <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-4">
+              <Input
+                placeholder="Search bookings..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full h-9 md:h-10 md:max-w-md text-sm"
+              />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full h-9 md:h-10 md:max-w-md text-sm">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="ACCEPTED">Accepted</SelectItem>
+                  <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+                  <SelectItem value="DELIVERED">Delivered</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <CardTitle>Filters</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              placeholder="Search by booking ID, company, city, or status..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="max-w-md"
-            />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="max-w-md">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-                <SelectItem value="DELIVERED">Delivered</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bookings Table */}
-      <Card>
+      {/* Scrollable Content Section */}
+      <div className="flex-1 overflow-y-auto space-y-3 md:space-y-4 pb-4">
+        {/* Bookings - Desktop Table View */}
+        <Card className="hidden lg:block">
         <CardHeader>
           <CardTitle>Booking History</CardTitle>
           <CardDescription>
@@ -233,7 +238,7 @@ export default function BookingsPage() {
           ) : filteredBookings.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 mb-4">No bookings found</p>
-              <Link href="/customer/shipments/browse">
+              <Link href="/shipments/browse">
                 <Button>Browse Shipments</Button>
               </Link>
             </div>
@@ -349,7 +354,177 @@ export default function BookingsPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+
+        {/* Bookings - Mobile Card View */}
+        <div className="lg:hidden space-y-3">
+        <div className="px-1">
+          <p className="text-sm text-gray-600">
+            {searchQuery || statusFilter !== 'all'
+              ? `${filteredBookings.length} ${filteredBookings.length === 1 ? 'booking' : 'bookings'} found`
+              : `Showing ${bookings.length} of ${pagination.total} ${pagination.total === 1 ? 'booking' : 'bookings'}`
+            }
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+          </div>
+        ) : filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-gray-600 mb-4">No bookings found</p>
+              <Link href="/shipments/browse">
+                <Button>Browse Shipments</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {filteredBookings.map((booking) => {
+              // Calculate price: use payment.totalAmount (in cents) if available, otherwise calculatedPrice
+              let displayPrice = '0.00';
+              if (booking.payment?.totalAmount) {
+                displayPrice = (booking.payment.totalAmount / 100).toFixed(2);
+              } else if (booking.payment?.amount) {
+                displayPrice = parseFloat(booking.payment.amount).toFixed(2);
+              } else if (booking.calculatedPrice) {
+                displayPrice = parseFloat(booking.calculatedPrice.toString()).toFixed(2);
+              } else if (booking.price) {
+                displayPrice = parseFloat(booking.price.toString()).toFixed(2);
+              }
+
+              // Get payment status
+              const paymentStatus = booking.paymentStatus || (booking.payment ? booking.payment.status : 'PENDING');
+
+              return (
+                <Card key={booking.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    {/* Header with ID and Price */}
+                    <div className="flex items-start justify-between mb-3 pb-3 border-b">
+                      <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => copyBookingId(booking.id)}
+                          className="flex items-center gap-2 hover:text-orange-600 transition-colors cursor-pointer group"
+                          title="Click to copy booking ID"
+                        >
+                          <span className="font-mono text-xs text-gray-600 truncate">
+                            {booking.id}
+                          </span>
+                          {copiedBookingId === booking.id ? (
+                            <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
+                          ) : (
+                            <Copy className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity flex-shrink-0" />
+                          )}
+                        </button>
+                      </div>
+                      <span className="text-lg font-bold text-orange-600 ml-3 flex-shrink-0">
+                        £{displayPrice}
+                      </span>
+                    </div>
+
+                    {/* Company */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-sm">
+                        {booking.companyName || booking.shipmentSlot?.company?.name || 'N/A'}
+                      </span>
+                    </div>
+
+                    {/* Route */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">
+                        {booking.shipmentSlot?.originCity || booking.originCity || 'N/A'}
+                        {' → '}
+                        {booking.shipmentSlot?.destinationCity || booking.destinationCity || 'N/A'}
+                      </span>
+                    </div>
+
+                    {/* Departure Date */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">
+                        {booking.shipmentSlot?.departureTime 
+                          ? format(new Date(booking.shipmentSlot.departureTime), 'MMM dd, yyyy')
+                          : 'N/A'}
+                      </span>
+                    </div>
+
+                    {/* Status Information */}
+                    <div className="space-y-2.5 mb-4 pt-3 border-t">
+                      {/* Booking Status - Primary */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-medium">Status</span>
+                        <Badge className={`${statusColors[booking.status] || 'bg-gray-100 text-gray-800'} text-xs`}>
+                          {booking.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      {/* Payment Status - Only show if different or needs attention */}
+                      {(paymentStatus === 'FAILED' || 
+                        paymentStatus === 'REFUNDED' || 
+                        paymentStatus === 'PARTIALLY_REFUNDED' || 
+                        (paymentStatus === 'PAID' && ['PENDING', 'ACCEPTED'].includes(booking.status))) && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5 text-gray-400" />
+                            <span className="text-xs text-gray-500 font-medium">Payment</span>
+                          </div>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${
+                            paymentStatus === 'PAID' 
+                              ? 'bg-green-50 text-green-700 border-green-200' 
+                              : paymentStatus === 'FAILED'
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : paymentStatus === 'REFUNDED' || paymentStatus === 'PARTIALLY_REFUNDED'
+                              ? 'bg-orange-50 text-orange-700 border-orange-200'
+                              : 'bg-gray-50 text-gray-700 border-gray-200'
+                          }`}>
+                            {paymentStatus.replace('_', ' ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* View Button */}
+                    <Link href={`/customer/bookings/${booking.id}`} className="block">
+                      <Button className="w-full h-10" size="sm">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {/* Load More Button - Mobile */}
+            {!loading && !searchQuery && pagination.hasMore && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchBookings(false)}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Load More
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+        </div>
+      </div>
     </div>
   );
 }

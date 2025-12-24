@@ -309,9 +309,9 @@ export default function CompanyProfilePage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        <main className="flex-1 pt-16 md:pt-20 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[300px] sm:min-h-[400px]">
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-orange-600" />
           </div>
         </main>
         <Footer />
@@ -323,17 +323,17 @@ export default function CompanyProfilePage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 pt-16 md:pt-20 container mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="max-w-6xl mx-auto">
             <Card>
-              <CardContent className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Company not found</p>
-                <p className="text-sm text-gray-500 mb-4">
+              <CardContent className="text-center py-8 sm:py-12 px-4">
+                <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-gray-600 mb-2">Company not found</p>
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">
                   {error || 'The company profile you are looking for does not exist.'}
                 </p>
                 <Link href="/">
-                  <Button variant="outline">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Go Home
                   </Button>
@@ -350,118 +350,112 @@ export default function CompanyProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <main className="flex-1 pt-16 md:pt-20 container mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8">
+        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
           {/* Back Button */}
-          <Link href="/">
-            <Button variant="ghost" className="mb-4">
+          <Link href="/companies/browse">
+            <Button variant="ghost" size="sm" className="mb-2 sm:mb-4 -ml-2">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
           </Link>
 
           {/* Company Header */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-6">
+          <Card className="shadow-sm">
+            <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6 pb-4 sm:pb-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 {/* Logo */}
                 {company.logoUrl && (
-                  <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 border">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0 border mx-auto sm:mx-0">
                     <Image
                       src={company.logoUrl}
                       alt={`${company.name} logo`}
                       fill
                       className="object-cover"
-                      sizes="96px"
+                      sizes="(max-width: 640px) 80px, 96px"
                     />
                   </div>
                 )}
 
                 {/* Company Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
-                      <h1 className="text-3xl font-bold mb-2">{company.name}</h1>
-                      <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  {/* Title and Badges - Mobile Stacked */}
+                  <div className="space-y-3 sm:space-y-0 sm:flex sm:items-start sm:justify-between sm:gap-4 mb-4">
+                    <div className="text-center sm:text-left">
+                      <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3">{company.name}</h1>
+                      <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 flex-wrap">
                         {company.isVerified && (
-                          <Badge variant="outline" className="flex items-center gap-1">
+                          <Badge variant="outline" className="flex items-center gap-1 text-xs">
                             <CheckCircle2 className="h-3 w-3 text-green-600" />
                             Verified
                           </Badge>
                         )}
                         {company.rating !== null && company.rating !== undefined && (
-                          <Badge variant="outline" className="flex items-center gap-1">
+                          <Badge variant="outline" className="flex items-center gap-1 text-xs">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             {company.rating.toFixed(1)}
                             <span className="text-gray-500 ml-1">
-                              ({company.reviewCount} {company.reviewCount === 1 ? 'review' : 'reviews'})
+                              ({company.reviewCount})
                             </span>
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleShareProfile}
-                        className="flex items-center gap-2"
-                      >
-                        {copiedUrl ? (
-                          <>
-                            <Check className="h-4 w-4" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Share2 className="h-4 w-4" />
-                            Share
-                          </>
-                        )}
-                      </Button>
-                      {(() => {
-                        const user = getStoredUser();
-                        const isCustomer = user && hasRoleAccess(user.role, ['CUSTOMER']);
-                        return !isCompanyOwner && isCustomer && (
+                  </div>
+
+                  {/* Action Buttons - Full width on mobile */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleShareProfile}
+                      className="w-full sm:w-auto h-10"
+                    >
+                      {copiedUrl ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
+                        </>
+                      )}
+                    </Button>
+                    {(() => {
+                      const user = getStoredUser();
+                      const isCustomer = user && hasRoleAccess(user.role, ['CUSTOMER']);
+                      return !isCompanyOwner && isCustomer && (
+                        <div className="w-full sm:w-auto">
                           <StartChatButton
                             companyId={company.id}
                             variant="default"
                             size="default"
                           />
-                        );
-                      })()}
-                      {isCompanyOwner && (
-                        <Link href="/company/settings">
-                          <Button variant="outline" size="sm">
-                            Edit Profile
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
+                        </div>
+                      );
+                    })()}
+                    {isCompanyOwner && (
+                      <Link href="/company/settings" className="w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="w-full h-10">
+                          Edit Profile
+                        </Button>
+                      </Link>
+                    )}
                   </div>
 
                   {/* Description */}
                   {company.description && (
-                    <p className="text-gray-600 mb-4">{company.description}</p>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 text-center sm:text-left">{company.description}</p>
                   )}
 
                   {/* Details */}
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
                       <span>{company.city}, {company.country}</span>
                     </div>
-                    {company.website && (
-                      <a
-                        href={company.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-orange-600 transition-colors"
-                      >
-                        <Globe className="h-4 w-4" />
-                        <span>Website</span>
-                      </a>
-                    )}
                   </div>
                 </div>
               </div>
@@ -469,59 +463,60 @@ export default function CompanyProfilePage() {
           </Card>
 
           {/* Tabs Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Information</CardTitle>
+          <Card className="shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+              <CardTitle className="text-lg sm:text-xl">Company Information</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               <Tabs defaultValue="reviews" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="reviews" className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Reviews
+                <TabsList className="grid w-full grid-cols-2 h-auto">
+                  <TabsTrigger value="reviews" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm py-2">
+                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Reviews</span>
+                    <span className="xs:hidden">Reviews</span>
                     {company.reviewCount > 0 && (
-                      <span className="text-xs text-gray-500">({company.reviewCount})</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500">({company.reviewCount})</span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="slots" className="flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Live Slots
+                  <TabsTrigger value="slots" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm py-2">
+                    <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span>Live Slots</span>
                   </TabsTrigger>
                 </TabsList>
                 
                 {/* Reviews Tab */}
-                <TabsContent value="reviews" className="mt-6">
+                <TabsContent value="reviews" className="mt-4 sm:mt-6">
                   <div className="space-y-4">
                     {company.rating !== null && company.rating !== undefined && (
-                      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Average Rating</p>
+                      <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1">Average Rating</p>
                         <div className="flex items-center gap-2">
                           {renderStars(Math.round(company.rating))}
-                          <span className="text-lg font-semibold">{company.rating.toFixed(1)}</span>
-                          <span className="text-sm text-gray-500">out of 5</span>
+                          <span className="text-base sm:text-lg font-semibold">{company.rating.toFixed(1)}</span>
+                          <span className="text-xs sm:text-sm text-gray-500">out of 5</span>
                         </div>
                       </div>
                     )}
                     
                     {reviewsLoading && reviews.length === 0 ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                      <div className="flex items-center justify-center py-8 sm:py-12">
+                        <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-orange-600" />
                       </div>
                     ) : reviews.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No reviews yet</p>
-                        <p className="text-sm mt-1">Be the first to review this company!</p>
+                      <div className="text-center py-8 sm:py-12 text-gray-500">
+                        <MessageSquare className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                        <p className="text-sm sm:text-base">No reviews yet</p>
+                        <p className="text-xs sm:text-sm mt-1">Be the first to review this company!</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {reviews.map((review) => (
                           <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium">{review.customer.fullName}</p>
-                                  <span className="text-sm text-gray-500">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                                  <p className="font-medium text-sm sm:text-base">{review.customer.fullName}</p>
+                                  <span className="text-xs sm:text-sm text-gray-500">
                                     {format(new Date(review.createdAt), 'MMM dd, yyyy')}
                                   </span>
                                 </div>
@@ -529,24 +524,24 @@ export default function CompanyProfilePage() {
                               </div>
                             </div>
                             {review.comment && (
-                              <p className="text-gray-600 mt-2 text-sm">{review.comment}</p>
+                              <p className="text-gray-600 mt-2 text-xs sm:text-sm leading-relaxed">{review.comment}</p>
                             )}
                             {review.booking?.shipmentSlot && (
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-[10px] sm:text-xs text-gray-400 mt-2">
                                 Route: {review.booking.shipmentSlot.originCity} → {review.booking.shipmentSlot.destinationCity}
                               </p>
                             )}
                             
                             {/* Company Reply Section */}
                             {review.companyReply && (
-                              <div className="mt-3 pl-4 border-l-2 border-orange-200 bg-orange-50 rounded p-3">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-medium text-sm text-orange-900">Company Response</p>
-                                  <span className="text-xs text-orange-600">
+                              <div className="mt-3 pl-3 sm:pl-4 border-l-2 border-orange-200 bg-orange-50 rounded p-2.5 sm:p-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1.5">
+                                  <p className="font-medium text-xs sm:text-sm text-orange-900">Company Response</p>
+                                  <span className="text-[10px] sm:text-xs text-orange-600">
                                     {format(new Date(review.updatedAt), 'MMM dd, yyyy')}
                                   </span>
                                 </div>
-                                <p className="text-sm text-orange-800">{review.companyReply}</p>
+                                <p className="text-xs sm:text-sm text-orange-800 leading-relaxed">{review.companyReply}</p>
                               </div>
                             )}
                             
@@ -557,7 +552,7 @@ export default function CompanyProfilePage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => openReplyDialog(review)}
-                                  className="text-xs"
+                                  className="text-xs w-full sm:w-auto"
                                 >
                                   <MessageSquare className="h-3 w-3 mr-1" />
                                   {review.companyReply ? 'Edit Reply' : 'Reply'}
@@ -573,6 +568,7 @@ export default function CompanyProfilePage() {
                               variant="outline"
                               onClick={loadMoreReviews}
                               disabled={reviewsLoading}
+                              className="w-full sm:w-auto"
                             >
                               {reviewsLoading ? (
                                 <>
@@ -591,20 +587,20 @@ export default function CompanyProfilePage() {
                 </TabsContent>
                 
                 {/* Live Slots Tab */}
-                <TabsContent value="slots" className="mt-6">
+                <TabsContent value="slots" className="mt-4 sm:mt-6">
                   {shipmentsLoading && shipments.length === 0 ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+                    <div className="flex items-center justify-center py-8 sm:py-12">
+                      <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-orange-600" />
                     </div>
                   ) : shipments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No live slots available</p>
-                      <p className="text-sm mt-1">Check back later for available shipment slots.</p>
+                    <div className="text-center py-8 sm:py-12 text-gray-500">
+                      <Package className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                      <p className="text-sm sm:text-base">No live slots available</p>
+                      <p className="text-xs sm:text-sm mt-1">Check back later for available shipment slots.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 sm:grid-cols-2">
                         {shipments.map((shipment) => (
                           <ShipmentCard key={shipment.id} shipment={shipment} />
                         ))}
@@ -616,6 +612,7 @@ export default function CompanyProfilePage() {
                             variant="outline"
                             onClick={loadMoreShipments}
                             disabled={shipmentsLoading}
+                            className="w-full sm:w-auto"
                           >
                             {shipmentsLoading ? (
                               <>
@@ -640,12 +637,12 @@ export default function CompanyProfilePage() {
       
       {/* Reply Dialog */}
       <Dialog open={replyDialogOpen} onOpenChange={setReplyDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg sm:text-xl">
               {selectedReview?.companyReply ? 'Edit Reply' : 'Reply to Review'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {selectedReview?.companyReply 
                 ? 'Update your response to this customer review.'
                 : 'Write a response to this customer review. Your reply will be visible to all visitors.'}
@@ -654,15 +651,15 @@ export default function CompanyProfilePage() {
           <div className="space-y-4">
             {selectedReview && (
               <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="font-medium text-sm">{selectedReview.customer.fullName}</p>
-                  <span className="text-xs text-gray-500">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                  <p className="font-medium text-xs sm:text-sm">{selectedReview.customer.fullName}</p>
+                  <span className="text-[10px] sm:text-xs text-gray-500">
                     {format(new Date(selectedReview.createdAt), 'MMM dd, yyyy')}
                   </span>
                 </div>
                 {renderStars(selectedReview.rating)}
                 {selectedReview.comment && (
-                  <p className="text-sm text-gray-600 mt-2">{selectedReview.comment}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-2">{selectedReview.comment}</p>
                 )}
               </div>
             )}
@@ -672,19 +669,25 @@ export default function CompanyProfilePage() {
               onChange={(e) => setReplyText(e.target.value)}
               rows={4}
               maxLength={1000}
-              className="resize-none"
+              className="resize-none text-sm"
             />
             <p className="text-xs text-gray-500 text-right">
               {replyText.length}/1000 characters
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeReplyDialog} disabled={submittingReply}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={closeReplyDialog} 
+              disabled={submittingReply}
+              className="w-full sm:w-auto order-2 sm:order-1"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleSubmitReply} 
               disabled={submittingReply || !replyText.trim()}
+              className="w-full sm:w-auto order-1 sm:order-2"
             >
               {submittingReply ? (
                 <>

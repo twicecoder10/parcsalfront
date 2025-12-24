@@ -131,16 +131,16 @@ export function ShipmentCard({ shipment, showViewButton = true }: ShipmentCardPr
   const departureTimeFormatted = departureTime ? formatTime(departureTime) : null;
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <CardTitle className="text-lg font-semibold mb-1">
+    <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+      <CardHeader className="p-4 md:p-6 pb-3 md:pb-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
+          <div className="flex-1 w-full">
+            <CardTitle className="text-base md:text-lg font-semibold mb-2 leading-tight">
               {origin || 'Origin'} → {destination || 'Destination'}
             </CardTitle>
             <div className="flex items-center gap-2 mt-1">
               {companyLogoUrl && (
-                <div className="relative w-6 h-6 rounded overflow-hidden flex-shrink-0">
+                <div className="relative w-5 h-5 md:w-6 md:h-6 rounded overflow-hidden flex-shrink-0">
                   <Image
                     src={companyLogoUrl}
                     alt={`${companyName} logo`}
@@ -152,7 +152,7 @@ export function ShipmentCard({ shipment, showViewButton = true }: ShipmentCardPr
               )}
               <Link 
                 href={`/companies/${shipment.company?.slug || shipment.company?.id || 'unknown'}`}
-                className="text-sm hover:text-orange-600 transition-colors"
+                className="text-xs md:text-sm hover:text-orange-600 transition-colors truncate"
                 onClick={(e) => e.stopPropagation()}
               >
                 {companyName}
@@ -160,46 +160,53 @@ export function ShipmentCard({ shipment, showViewButton = true }: ShipmentCardPr
             </div>
           </div>
           {companyRating && (
-            <Badge variant="outline" className="flex items-center gap-1">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs flex-shrink-0">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               {companyRating.toFixed(1)}
             </Badge>
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+      
+      <CardContent className="p-4 md:p-6 pt-0 flex-1 flex flex-col">
+        <div className="space-y-3 flex-1">
+          {/* Date and Mode */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm text-gray-600">
             {departureDateFormatted && (
               <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {departureDateFormatted}
-                {departureTimeFormatted && ` at ${departureTimeFormatted}`}
+                <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                <span className="truncate">
+                  {departureDateFormatted}
+                  {departureTimeFormatted && <span className="hidden sm:inline"> at {departureTimeFormatted}</span>}
+                </span>
               </span>
             )}
             {shipment.mode && (
-              <Badge className={modeColors[shipment.mode] || 'bg-gray-100 text-gray-800'}>
+              <Badge className={`${modeColors[shipment.mode] || 'bg-gray-100 text-gray-800'} text-xs`}>
                 <span className="mr-1">{modeIcons[shipment.mode] || '📦'}</span>
                 {shipment.mode}
               </Badge>
             )}
           </div>
 
+          {/* Capacity */}
           {remainingCapacity !== undefined && (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs md:text-sm text-gray-600">
               <span className="font-medium">Available:</span> {remainingCapacity} {shipment.capacityUnit || 'kg'}
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-1 text-orange-600 font-semibold">
-              <span>{calculatePrice()}</span>
+          {/* Price and Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t mt-auto">
+            <div className="text-orange-600 font-semibold text-sm md:text-base">
+              {calculatePrice()}
             </div>
             {showViewButton && (
-              <Link href={`/shipments/${shipment.id}`}>
-                <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
-                  View Details
-                  <ArrowRight className="ml-1 h-4 w-4" />
+              <Link href={`/shipments/${shipment.id}`} className="w-full sm:w-auto">
+                <Button size="sm" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-xs md:text-sm h-8 md:h-9">
+                  <span className="hidden sm:inline">View Details</span>
+                  <span className="sm:hidden">View</span>
+                  <ArrowRight className="ml-1 h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Button>
               </Link>
             )}

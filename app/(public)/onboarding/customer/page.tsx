@@ -180,7 +180,7 @@ export default function CustomerOnboardingPage() {
                   </div>
 
                   <div className="flex justify-center gap-4">
-                    <Link href="/customer/shipments/browse">
+                    <Link href="/shipments/browse">
                       <Button className="bg-orange-600 hover:bg-orange-700 h-12 px-8">
                         Browse Shipments
                         <ArrowRight className="ml-2 h-5 w-5" />

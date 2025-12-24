@@ -5,7 +5,7 @@ export function AppFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-white py-4">
+    <footer className="flex-shrink-0 border-t bg-white py-4">
       <div className="container mx-auto px-4">
         {/* Mobile layout - stacked */}
         <div className="flex flex-col gap-3 md:hidden">

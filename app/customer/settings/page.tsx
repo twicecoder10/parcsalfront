@@ -200,23 +200,25 @@ export default function SettingsPage() {
 
   return (
     <GoogleMapsLoader>
-      <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your account settings and preferences</p>
+      <div className="h-full overflow-y-auto">
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 pb-6">
+      {/* Page Header */}
+      <div className="px-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Manage your account settings and preferences</p>
       </div>
 
       {/* Message Alert */}
       {message && (
-        <Card className={message.type === 'success' ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
+        <Card className={`${message.type === 'success' ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'} mx-1`}>
+          <CardContent className="pt-4 pb-4 px-4">
+            <div className="flex items-start gap-3">
               {message.type === 'success' ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-red-600" />
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               )}
-              <p className={message.type === 'success' ? 'text-green-700' : 'text-red-700'}>
+              <p className={`text-sm sm:text-base ${message.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
                 {message.text}
               </p>
             </div>
@@ -224,51 +226,75 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="password">Password</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="delete">Delete Account</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="profile" className="space-y-4 md:space-y-6">
+        {/* Mobile-responsive tabs list with horizontal scroll */}
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="w-full min-w-max grid grid-cols-4 h-auto">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="password" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+              Password
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap">
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="delete" className="text-xs sm:text-sm px-2 sm:px-4 py-2 whitespace-nowrap">
+              Delete
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your personal information</CardDescription>
+        <TabsContent value="profile" className="mt-0">
+          <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-lg sm:text-xl">Profile Information</CardTitle>
+              <CardDescription className="text-sm">Update your personal information</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              <form onSubmit={handleProfileUpdate} className="space-y-4 sm:space-y-5">
+                {/* Full Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
                   <Input
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
+                    className="h-10 sm:h-11"
+                    placeholder="Enter your full name"
                   />
                 </div>
+
+                {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-10 sm:h-11"
+                    placeholder="your.email@example.com"
                   />
                 </div>
+
+                {/* Phone Number */}
                 <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Label htmlFor="phoneNumber" className="text-sm font-medium">Phone Number</Label>
                   <Input
                     id="phoneNumber"
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="h-10 sm:h-11"
+                    placeholder="+1 (555) 000-0000"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                {/* Country & City - Stacked on mobile, side-by-side on desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <CountrySelect
                     value={country}
                     onChange={(value) => setCountry(value)}
@@ -283,6 +309,8 @@ export default function SettingsPage() {
                     placeholder="Select city"
                   />
                 </div>
+
+                {/* Address */}
                 <AddressAutocomplete
                   value={address}
                   onChange={(value) => setAddress(value)}
@@ -290,41 +318,54 @@ export default function SettingsPage() {
                   placeholder="Enter address"
                   country={country}
                 />
-                <Button type="submit" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </Button>
+
+                {/* Submit Button */}
+                <div className="pt-2">
+                  <Button 
+                    type="submit" 
+                    disabled={saving}
+                    className="w-full sm:w-auto min-w-[140px] h-10 sm:h-11"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="password">
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Update your password to keep your account secure</CardDescription>
+        <TabsContent value="password" className="mt-0">
+          <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-lg sm:text-xl">Change Password</CardTitle>
+              <CardDescription className="text-sm">Update your password to keep your account secure</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+              <form onSubmit={handlePasswordUpdate} className="space-y-4 sm:space-y-5">
+                {/* Current Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Label htmlFor="currentPassword" className="text-sm font-medium">Current Password</Label>
                   <Input
                     id="currentPassword"
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
+                    className="h-10 sm:h-11"
+                    placeholder="Enter current password"
                   />
                 </div>
+
+                {/* New Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -332,11 +373,15 @@ export default function SettingsPage() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={8}
+                    className="h-10 sm:h-11"
+                    placeholder="Enter new password"
                   />
                   <p className="text-xs text-gray-500">Must be at least 8 characters</p>
                 </div>
+
+                {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm New Password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -344,89 +389,127 @@ export default function SettingsPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={8}
+                    className="h-10 sm:h-11"
+                    placeholder="Confirm new password"
                   />
                 </div>
-                <Button type="submit" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    'Update Password'
-                  )}
-                </Button>
+
+                {/* Submit Button */}
+                <div className="pt-2">
+                  <Button 
+                    type="submit" 
+                    disabled={saving}
+                    className="w-full sm:w-auto min-w-[160px] h-10 sm:h-11"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Manage how you receive notifications</CardDescription>
+        <TabsContent value="notifications" className="mt-0">
+          <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-lg sm:text-xl">Notification Preferences</CardTitle>
+              <CardDescription className="text-sm">Manage how you receive notifications</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-orange-50 border-orange-200">
-                <div>
-                  <Label htmlFor="emailNotifications" className="text-base font-medium">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-5">
+              {/* Email Notifications */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-4 rounded-lg border bg-orange-50 border-orange-200">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="emailNotifications" className="text-sm sm:text-base font-medium cursor-pointer">
                     Email Notifications
                   </Label>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 pr-2">
                     Receive all notifications via email. You&apos;ll get emails for booking updates, payment confirmations, shipment status changes, and more.
                   </p>
                 </div>
-                <input
-                  id="emailNotifications"
-                  type="checkbox"
-                  checked={emailNotifications}
-                  onChange={(e) => setEmailNotifications(e.target.checked)}
-                  className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="smsNotifications">SMS Notifications</Label>
-                  <p className="text-sm text-gray-500">Receive updates via SMS</p>
+                <div className="flex items-center justify-between sm:justify-start sm:ml-4">
+                  <span className="text-sm text-gray-700 sm:hidden mr-2">
+                    {emailNotifications ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <input
+                    id="emailNotifications"
+                    type="checkbox"
+                    checked={emailNotifications}
+                    onChange={(e) => setEmailNotifications(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                  />
                 </div>
-                <input
-                  id="smsNotifications"
-                  type="checkbox"
-                  checked={smsNotifications}
-                  onChange={(e) => setSmsNotifications(e.target.checked)}
-                  className="h-4 w-4"
-                />
               </div>
-              <Button onClick={handleNotificationUpdate} disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Preferences'
-                )}
-              </Button>
+
+              {/* SMS Notifications */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-4 rounded-lg border bg-gray-50">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="smsNotifications" className="text-sm sm:text-base font-medium cursor-pointer">
+                    SMS Notifications
+                  </Label>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 pr-2">
+                    Receive updates via SMS
+                  </p>
+                </div>
+                <div className="flex items-center justify-between sm:justify-start sm:ml-4">
+                  <span className="text-sm text-gray-700 sm:hidden mr-2">
+                    {smsNotifications ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <input
+                    id="smsNotifications"
+                    type="checkbox"
+                    checked={smsNotifications}
+                    onChange={(e) => setSmsNotifications(e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <Button 
+                  onClick={handleNotificationUpdate} 
+                  disabled={saving}
+                  className="w-full sm:w-auto min-w-[160px] h-10 sm:h-11"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Preferences'
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="delete">
-          <Card className="border-red-200">
-            <CardHeader>
-              <CardTitle className="text-red-600 flex items-center gap-2">
-                <Trash2 className="h-5 w-5" />
-                Delete Account
+        <TabsContent value="delete" className="mt-0">
+          <Card className="border-red-200 border-0 sm:border shadow-none sm:shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-red-600 flex items-center gap-2 text-lg sm:text-xl">
+                <Trash2 className="h-5 w-5 flex-shrink-0" />
+                <span>Delete Account</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Permanently delete your account and all associated data
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-5">
+              {/* Warning Box */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                <h4 className="font-semibold text-red-900 text-sm sm:text-base">
+                  Warning: This action cannot be undone
+                </h4>
+                <ul className="list-disc list-inside space-y-1.5 text-xs sm:text-sm text-red-800">
                   <li>Your account will be permanently deleted</li>
                   <li>All personal information will be anonymized</li>
                   <li>Booking records will be kept for business purposes but anonymized</li>
@@ -434,11 +517,13 @@ export default function SettingsPage() {
                   <li>You will be logged out immediately</li>
                 </ul>
               </div>
+
+              {/* Delete Button */}
               <Button
                 type="button"
                 variant="destructive"
                 onClick={() => setDeleteDialogOpen(true)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto h-10 sm:h-11"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete My Account
@@ -457,21 +542,29 @@ export default function SettingsPage() {
           setMessage(null);
         }
       }}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Account</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-red-600 text-lg sm:text-xl">Delete Account</DialogTitle>
+            <DialogDescription className="text-sm">
               This action cannot be undone. This will permanently delete your account and anonymize your data.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          
+          <div className="space-y-4 py-2">
+            {/* Warning Banner */}
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-800 font-medium">Warning: This is destructive and cannot be undone</p>
+              <p className="text-xs sm:text-sm text-red-800 font-medium">
+                Warning: This is destructive and cannot be undone
+              </p>
             </div>
             
+            {/* Email Confirmation */}
             <div className="space-y-2">
-              <Label htmlFor="confirm-email">
-                To verify, type your email address <strong className="text-gray-700">{user?.email}</strong>
+              <Label htmlFor="confirm-email" className="text-sm">
+                To verify, type your email address{' '}
+                <strong className="text-gray-700 block sm:inline mt-1 sm:mt-0 break-all">
+                  {user?.email}
+                </strong>
               </Label>
               <Input
                 id="confirm-email"
@@ -481,14 +574,16 @@ export default function SettingsPage() {
                 placeholder={user?.email}
                 disabled={deleting}
                 autoComplete="off"
+                className="h-10 sm:h-11 text-sm"
               />
               {deleteConfirmEmail && deleteConfirmEmail !== user?.email && (
                 <p className="text-xs text-red-600">Email does not match</p>
               )}
             </div>
 
+            {/* Password Confirmation */}
             <div className="space-y-2">
-              <Label htmlFor="delete-password">
+              <Label htmlFor="delete-password" className="text-sm">
                 Enter your password to confirm
               </Label>
               <Input
@@ -499,10 +594,13 @@ export default function SettingsPage() {
                 placeholder="Password"
                 disabled={deleting}
                 autoComplete="current-password"
+                className="h-10 sm:h-11 text-sm"
               />
             </div>
           </div>
-          <DialogFooter>
+
+          {/* Dialog Actions */}
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
@@ -513,6 +611,7 @@ export default function SettingsPage() {
                 setMessage(null);
               }}
               disabled={deleting}
+              className="w-full sm:w-auto order-2 sm:order-1"
             >
               Cancel
             </Button>
@@ -525,6 +624,7 @@ export default function SettingsPage() {
                 deleteConfirmEmail !== user?.email ||
                 !deletePassword
               }
+              className="w-full sm:w-auto order-1 sm:order-2"
             >
               {deleting ? (
                 <>
@@ -541,6 +641,7 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </div>
       </div>
     </GoogleMapsLoader>
   );
