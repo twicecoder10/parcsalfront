@@ -75,6 +75,12 @@ export default function CompanySettingsPage() {
     shipmentUpdates: true,
   });
 
+  const [marketingSettings, setMarketingSettings] = useState({
+    emailMarketingOptIn: true,
+    whatsappMarketingOptIn: true,
+    carrierMarketingOptIn: true,
+  });
+
   // Staff restrictions state
   const [savingRestrictions, setSavingRestrictions] = useState(false);
   const [restrictions, setRestrictions] = useState<Record<string, boolean>>({});
@@ -112,6 +118,9 @@ export default function CompanySettingsPage() {
       setSettings(settingsData);
       if (settingsData) {
         setNotificationSettings(settingsData.notifications);
+        if (settingsData.marketing) {
+          setMarketingSettings(settingsData.marketing);
+        }
       }
       
     } catch (error) {
@@ -150,6 +159,7 @@ export default function CompanySettingsPage() {
     try {
       const updatedSettings = await companyApi.updateCompanySettings({
         notifications: notificationSettings,
+        marketing: marketingSettings,
       });
       setSettings(updatedSettings);
       setSuccessMessage('Settings updated successfully!');
@@ -762,6 +772,85 @@ export default function CompanySettingsPage() {
                       }
                       className="h-4 w-4 rounded border-gray-300"
                     />
+                  </div>
+                </div>
+
+                {/* Marketing Preferences Section */}
+                <div className="pt-6 border-t">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">Marketing Communications</h3>
+                  
+                  <div className="space-y-4">
+                    {/* Email Marketing */}
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50 border-blue-200">
+                      <div>
+                        <Label htmlFor="email-marketing-opt-in" className="text-base font-medium">
+                          Email Marketing
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Receive marketing emails from Parcsal about platform updates, new features, and special offers
+                        </p>
+                      </div>
+                      <input
+                        id="email-marketing-opt-in"
+                        type="checkbox"
+                        checked={marketingSettings.emailMarketingOptIn}
+                        onChange={(e) =>
+                          setMarketingSettings({
+                            ...marketingSettings,
+                            emailMarketingOptIn: e.target.checked,
+                          })
+                        }
+                        className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    {/* WhatsApp Marketing */}
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-green-50 border-green-200">
+                      <div>
+                        <Label htmlFor="whatsapp-marketing-opt-in" className="text-base font-medium">
+                          WhatsApp Marketing
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Receive marketing messages from Parcsal via WhatsApp about platform updates and features
+                        </p>
+                      </div>
+                      <input
+                        id="whatsapp-marketing-opt-in"
+                        type="checkbox"
+                        checked={marketingSettings.whatsappMarketingOptIn}
+                        onChange={(e) =>
+                          setMarketingSettings({
+                            ...marketingSettings,
+                            whatsappMarketingOptIn: e.target.checked,
+                          })
+                        }
+                        className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    {/* Carrier Marketing */}
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-purple-50 border-purple-200">
+                      <div>
+                        <Label htmlFor="carrier-marketing-opt-in" className="text-base font-medium">
+                          Platform Marketing
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Receive marketing communications from Parcsal about platform updates, features, and promotions
+                        </p>
+                      </div>
+                      <input
+                        id="carrier-marketing-opt-in"
+                        type="checkbox"
+                        checked={marketingSettings.carrierMarketingOptIn}
+                        onChange={(e) =>
+                          setMarketingSettings({
+                            ...marketingSettings,
+                            carrierMarketingOptIn: e.target.checked,
+                          })
+                        }
+                        className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                    </div>
                   </div>
                 </div>
 

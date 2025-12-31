@@ -7,7 +7,7 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote, Mail } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { RouteGuard } from '@/lib/route-guards';
@@ -66,6 +66,11 @@ function getNavItems(permissions: ReturnType<typeof usePermissions>) {
 
   // Warehouses - typically always visible for company users
   items.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
+
+  // Marketing - only visible for company admins, not staff
+  if (!isCompanyStaff) {
+    items.push({ title: 'Marketing', href: '/company/marketing', icon: Mail });
+  }
 
   // Settings - typically always visible for company users
   items.push({ title: 'Settings', href: '/company/settings', icon: Settings });

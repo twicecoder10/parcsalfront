@@ -304,3 +304,81 @@ export interface Booking {
   payment?: any;
 }
 
+// Marketing Types
+export type CampaignChannel = 'EMAIL' | 'IN_APP' | 'WHATSAPP';
+export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'FAILED' | 'CANCELLED';
+export type AudienceType = 'COMPANY_PAST_CUSTOMERS' | 'PLATFORM_CUSTOMERS_ONLY' | 'PLATFORM_COMPANIES_ONLY' | 'PLATFORM_ALL_USERS';
+
+export interface MarketingCampaign {
+  id: string;
+  senderType: 'ADMIN' | 'COMPANY';
+  senderCompanyId?: string | null;
+  createdByUserId: string;
+  audienceType: AudienceType;
+  channel: CampaignChannel;
+  subject?: string | null;
+  title?: string | null;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  inAppBody?: string | null;
+  whatsappTemplateKey?: string | null;
+  status: CampaignStatus;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
+  sentAt?: string | null;
+  failureReason?: string | null;
+  totalRecipients: number;
+  deliveredCount: number;
+  failedCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketingConsent {
+  id: string;
+  userId: string;
+  emailMarketingOptIn: boolean;
+  whatsappMarketingOptIn: boolean;
+  carrierMarketingOptIn: boolean;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface CampaignPreviewResponse {
+  totalCount: number;
+  campaignId: string;
+  audienceType: string;
+  channel: string;
+  sampleRecipients?: Array<{
+    email: string;
+    maskedEmail: string;
+  }>;
+}
+
+export interface CreateCampaignRequest {
+  audienceType: AudienceType;
+  channel: CampaignChannel;
+  subject?: string;
+  title?: string;
+  contentHtml?: string;
+  contentText?: string;
+  inAppBody?: string;
+  whatsappTemplateKey?: string;
+}
+
+export interface ScheduleCampaignRequest {
+  scheduledAt: string; // ISO 8601 datetime
+}
+
+export interface UpdateCampaignRequest {
+  audienceType?: AudienceType;
+  channel?: CampaignChannel;
+  subject?: string | null;
+  title?: string | null;
+  contentHtml?: string | null;
+  contentText?: string | null;
+  inAppBody?: string | null;
+  whatsappTemplateKey?: string | null;
+  scheduledAt?: string | null; // ISO 8601 datetime or null to clear
+}
+

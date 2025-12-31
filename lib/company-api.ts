@@ -416,6 +416,11 @@ export interface CompanySettings {
     bookingUpdates: boolean;
     shipmentUpdates: boolean;
   };
+  marketing?: {
+    emailMarketingOptIn: boolean;
+    whatsappMarketingOptIn: boolean;
+    carrierMarketingOptIn: boolean;
+  };
 }
 
 export interface StaffRestrictions {

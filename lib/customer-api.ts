@@ -282,14 +282,32 @@ export const customerApi = {
   getNotificationPreferences: async (): Promise<{
     email: boolean;
     sms: boolean;
+    marketing?: {
+      emailMarketingOptIn: boolean;
+      whatsappMarketingOptIn: boolean;
+      carrierMarketingOptIn: boolean;
+    };
   }> => {
-    const response = await api.get<ApiResponse<{ email: boolean; sms: boolean }>>('/customer/notifications/preferences');
+    const response = await api.get<ApiResponse<{
+      email: boolean;
+      sms: boolean;
+      marketing?: {
+        emailMarketingOptIn: boolean;
+        whatsappMarketingOptIn: boolean;
+        carrierMarketingOptIn: boolean;
+      };
+    }>>('/customer/notifications/preferences');
     return extractData(response);
   },
 
   updateNotificationPreferences: async (data: {
     email?: boolean;
     sms?: boolean;
+    marketing?: {
+      emailMarketingOptIn?: boolean;
+      whatsappMarketingOptIn?: boolean;
+      carrierMarketingOptIn?: boolean;
+    };
   }): Promise<{ message: string }> => {
     const response = await api.put<ApiResponse<{ message: string }>>('/customer/notifications/preferences', data);
     if (response.data.status === 'error') {

@@ -55,6 +55,9 @@ export default function SettingsPage() {
   // Notification preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
+  const [emailMarketingOptIn, setEmailMarketingOptIn] = useState(true);
+  const [whatsappMarketingOptIn, setWhatsappMarketingOptIn] = useState(true);
+  const [carrierMarketingOptIn, setCarrierMarketingOptIn] = useState(true);
 
   useEffect(() => {
     fetchProfile();
@@ -84,6 +87,11 @@ export default function SettingsPage() {
       const prefs = await customerApi.getNotificationPreferences();
       setEmailNotifications(prefs.email);
       setSmsNotifications(prefs.sms);
+      if (prefs.marketing) {
+        setEmailMarketingOptIn(prefs.marketing.emailMarketingOptIn);
+        setWhatsappMarketingOptIn(prefs.marketing.whatsappMarketingOptIn);
+        setCarrierMarketingOptIn(prefs.marketing.carrierMarketingOptIn);
+      }
     } catch (error) {
       console.error('Failed to fetch notification preferences:', error);
       // Default to email enabled if fetch fails
@@ -153,6 +161,11 @@ export default function SettingsPage() {
       await customerApi.updateNotificationPreferences({
         email: emailNotifications,
         sms: smsNotifications,
+        marketing: {
+          emailMarketingOptIn: emailMarketingOptIn,
+          whatsappMarketingOptIn: whatsappMarketingOptIn,
+          carrierMarketingOptIn: carrierMarketingOptIn,
+        },
       });
       setMessage({ type: 'success', text: 'Notification preferences updated successfully' });
     } catch (error: any) {
@@ -468,6 +481,83 @@ export default function SettingsPage() {
                     onChange={(e) => setSmsNotifications(e.target.checked)}
                     className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
                   />
+                </div>
+              </div>
+
+              {/* Marketing Preferences Section */}
+              <div className="pt-4 border-t">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-4">Marketing Communications</h3>
+                
+                {/* Email Marketing */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-4 rounded-lg border bg-blue-50 border-blue-200 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="emailMarketingOptIn" className="text-sm sm:text-base font-medium cursor-pointer">
+                      Email Marketing
+                    </Label>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 pr-2">
+                      Receive marketing emails from Parcsal about promotions, new features, and special offers. Also required to receive marketing emails from companies you&apos;ve booked with.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:ml-4">
+                    <span className="text-sm text-gray-700 sm:hidden mr-2">
+                      {emailMarketingOptIn ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <input
+                      id="emailMarketingOptIn"
+                      type="checkbox"
+                      checked={emailMarketingOptIn}
+                      onChange={(e) => setEmailMarketingOptIn(e.target.checked)}
+                      className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                    />
+                  </div>
+                </div>
+
+                {/* WhatsApp Marketing */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-4 rounded-lg border bg-green-50 border-green-200 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="whatsappMarketingOptIn" className="text-sm sm:text-base font-medium cursor-pointer">
+                      WhatsApp Marketing
+                    </Label>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 pr-2">
+                      Receive marketing messages from Parcsal via WhatsApp
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:ml-4">
+                    <span className="text-sm text-gray-700 sm:hidden mr-2">
+                      {whatsappMarketingOptIn ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <input
+                      id="whatsappMarketingOptIn"
+                      type="checkbox"
+                      checked={whatsappMarketingOptIn}
+                      onChange={(e) => setWhatsappMarketingOptIn(e.target.checked)}
+                      className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                    />
+                  </div>
+                </div>
+
+                {/* Carrier Marketing */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-4 rounded-lg border bg-purple-50 border-purple-200">
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="carrierMarketingOptIn" className="text-sm sm:text-base font-medium cursor-pointer">
+                      Carrier Marketing
+                    </Label>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 pr-2">
+                      Allow companies you&apos;ve booked with to send you marketing emails and in-app notifications about their services and promotions
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-start sm:ml-4">
+                    <span className="text-sm text-gray-700 sm:hidden mr-2">
+                      {carrierMarketingOptIn ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <input
+                      id="carrierMarketingOptIn"
+                      type="checkbox"
+                      checked={carrierMarketingOptIn}
+                      onChange={(e) => setCarrierMarketingOptIn(e.target.checked)}
+                      className="h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                    />
+                  </div>
                 </div>
               </div>
 
