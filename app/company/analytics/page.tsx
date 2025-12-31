@@ -1,11 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, TrendingUp, TrendingDown, PoundSterling, Package, ShoppingCart, Users } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { AnalyticsData } from '@/lib/company-api';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend
+} from 'recharts';
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +42,71 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
   };
+
+  // Format revenue data for the chart
+  const chartData = useMemo(() => {
+    if (!analytics?.revenueByPeriod) return [];
+
+    return analytics.revenueByPeriod.map((item) => {
+      let formattedPeriod = item.period;
+      
+      // Format period based on its format
+      if (item.period.includes('Q')) {
+        // Quarter format: "2025-Q4" -> "Q4 2025"
+        const [year, quarter] = item.period.split('-Q');
+        formattedPeriod = `Q${quarter} ${year}`;
+      } else if (item.period.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Daily format: "2025-12-18" -> "Dec 18"
+        const date = new Date(item.period);
+        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (item.period.match(/^\d{4}-\d{2}$/)) {
+        // Monthly format: "2025-12" -> "Dec 2025"
+        const [year, month] = item.period.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }
+      // Yearly format stays as is: "2025" -> "2025"
+
+      return {
+        period: formattedPeriod,
+        revenue: item.revenue,
+      };
+    });
+  }, [analytics?.revenueByPeriod]);
+
+  // Format booking status data for pie chart
+  const bookingStatusData = useMemo(() => {
+    if (!analytics?.bookings) return [];
+    
+    return [
+      { name: 'Accepted', value: analytics.bookings.accepted, color: '#22c55e' },
+      { name: 'Pending', value: analytics.bookings.pending, color: '#eab308' },
+      { name: 'Rejected', value: analytics.bookings.rejected, color: '#ef4444' },
+    ].filter(item => item.value > 0);
+  }, [analytics?.bookings]);
+
+  // Format top routes data for bar chart
+  const topRoutesData = useMemo(() => {
+    if (!analytics?.topRoutes) return [];
+    
+    return analytics.topRoutes.map((route) => ({
+      route: route.route.length > 20 ? `${route.route.substring(0, 20)}...` : route.route,
+      fullRoute: route.route,
+      bookings: route.bookingsCount,
+      revenue: route.revenue,
+    }));
+  }, [analytics?.topRoutes]);
+
+  // Format shipment performance data for bar chart
+  const shipmentPerformanceData = useMemo(() => {
+    if (!analytics?.shipments) return [];
+    
+    return [
+      { name: 'Active', value: analytics.shipments.active, color: '#3b82f6' },
+      { name: 'Published', value: analytics.shipments.published, color: '#8b5cf6' },
+      { name: 'Completed', value: analytics.shipments.completed, color: '#22c55e' },
+    ];
+  }, [analytics?.shipments]);
 
   return (
     <div className="space-y-6">
@@ -140,17 +220,66 @@ export default function AnalyticsPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
-                  <div className="text-sm">
-                    <span className="text-green-600 font-medium">{analytics.bookings.accepted}</span> accepted
+                {bookingStatusData.length > 0 ? (
+                  <div className="flex flex-col items-center justify-center">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={bookingStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={false}
+                          outerRadius={70}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {bookingStatusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            padding: '8px'
+                          }}
+                          formatter={(value: number, name: string, props: any) => {
+                            const total = bookingStatusData.reduce((sum, item) => sum + item.value, 0);
+                            const percent = total > 0 ? (value / total) * 100 : 0;
+                            return [`${value} (${percent.toFixed(1)}%)`, props.payload?.name || name];
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap justify-center gap-4 mt-2">
+                      {bookingStatusData.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {entry.name}: <span className="font-medium text-foreground">{entry.value}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <span className="text-yellow-600 font-medium">{analytics.bookings.pending}</span> pending
+                ) : (
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      <span className="text-green-600 font-medium">{analytics.bookings.accepted}</span> accepted
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-yellow-600 font-medium">{analytics.bookings.pending}</span> pending
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-red-600 font-medium">{analytics.bookings.rejected}</span> rejected
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <span className="text-red-600 font-medium">{analytics.bookings.rejected}</span> rejected
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -163,10 +292,48 @@ export default function AnalyticsPage() {
                 <CardDescription>Revenue over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  Chart visualization will be implemented here
-                  {/* TODO: Add chart library (e.g., recharts) */}
-                </div>
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={256}>
+                    <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                      <XAxis 
+                        dataKey="period" 
+                        className="text-xs"
+                        tick={{ fill: '#6b7280' }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis 
+                        className="text-xs"
+                        tick={{ fill: '#6b7280' }}
+                        tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '8px'
+                        }}
+                        formatter={(value: number) => [`£${value.toLocaleString()}`, 'Revenue']}
+                        labelStyle={{ color: '#374151', fontWeight: 600 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#f97316" 
+                        strokeWidth={2}
+                        dot={{ fill: '#f97316', r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-gray-500">
+                    No revenue data available for this period
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -177,20 +344,57 @@ export default function AnalyticsPage() {
                 <CardDescription>Most popular routes by bookings</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {analytics.topRoutes.map((route, index) => (
-                    <div key={index} className="flex items-center justify-between pb-4 border-b last:border-0">
-                      <div>
-                        <p className="font-medium">{route.route}</p>
-                        <p className="text-sm text-muted-foreground">{route.bookingsCount} bookings</p>
+                {topRoutesData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={256}>
+                    <BarChart
+                      data={topRoutesData}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                      <XAxis type="number" className="text-xs" tick={{ fill: '#6b7280' }} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="route" 
+                        className="text-xs"
+                        tick={{ fill: '#6b7280' }}
+                        width={100}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '8px'
+                        }}
+                        formatter={(value: number, name: string, props: any) => {
+                          if (name === 'bookings') {
+                            return [`${value} bookings`, 'Bookings'];
+                          }
+                          return [`£${value.toLocaleString()}`, 'Revenue'];
+                        }}
+                        labelFormatter={(label) => topRoutesData.find(d => d.route === label)?.fullRoute || label}
+                        labelStyle={{ color: '#374151', fontWeight: 600 }}
+                      />
+                      <Bar dataKey="bookings" fill="#f97316" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="space-y-4">
+                    {analytics.topRoutes.map((route, index) => (
+                      <div key={index} className="flex items-center justify-between pb-4 border-b last:border-0">
+                        <div>
+                          <p className="font-medium">{route.route}</p>
+                          <p className="text-sm text-muted-foreground">{route.bookingsCount} bookings</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">£{route.revenue.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">Revenue</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">£{route.revenue.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">Revenue</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -202,20 +406,52 @@ export default function AnalyticsPage() {
                 <CardTitle>Shipment Performance</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Active</span>
-                    <span className="font-medium">{analytics.shipments.active}</span>
+                {shipmentPerformanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={shipmentPerformanceData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                      <XAxis 
+                        dataKey="name" 
+                        className="text-xs"
+                        tick={{ fill: '#6b7280' }}
+                      />
+                      <YAxis 
+                        className="text-xs"
+                        tick={{ fill: '#6b7280' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          padding: '8px'
+                        }}
+                        formatter={(value: number) => [value, 'Shipments']}
+                        labelStyle={{ color: '#374151', fontWeight: 600 }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {shipmentPerformanceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Active</span>
+                      <span className="font-medium">{analytics.shipments.active}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Published</span>
+                      <span className="font-medium">{analytics.shipments.published}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Completed</span>
+                      <span className="font-medium">{analytics.shipments.completed}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Published</span>
-                    <span className="font-medium">{analytics.shipments.published}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Completed</span>
-                    <span className="font-medium">{analytics.shipments.completed}</span>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 

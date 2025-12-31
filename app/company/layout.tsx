@@ -7,73 +7,120 @@ import { DashboardHeader } from '@/components/dashboard-header';
 import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { checkEmailVerification, getDetailedOnboardingStatus } from '@/lib/onboarding';
 import { authApi } from '@/lib/api';
-import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote, Mail } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, CreditCard, Users, Settings, BarChart3, Wallet, Warehouse, Star, ScanLine, MessageSquare, Banknote, Mail, Briefcase, UserCircle } from 'lucide-react';
+import type { NavItem } from '@/components/dashboard-sidebar';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { RouteGuard } from '@/lib/route-guards';
 
 // Helper function to get navigation items based on permissions
-function getNavItems(permissions: ReturnType<typeof usePermissions>) {
+function getNavItems(permissions: ReturnType<typeof usePermissions>): NavItem[] {
   const user = getStoredUser();
   const isCompanyStaff = user?.role === 'COMPANY_STAFF';
   
-  const items = [
+  const items: NavItem[] = [];
+
+  // Dashboard section
+  const dashboardChildren: NavItem[] = [
     { title: 'Overview', href: '/company/overview', icon: LayoutDashboard },
   ];
 
+  // Only show Analytics if user can view analytics
+  if (canPerformAction(permissions, 'viewAnalytics')) {
+    dashboardChildren.push({ title: 'Analytics', href: '/company/analytics', icon: BarChart3 });
+  }
+
+  items.push({
+    title: 'Dashboard',
+    icon: LayoutDashboard,
+    children: dashboardChildren,
+  });
+
+  // Operations section
+  const operationsChildren: NavItem[] = [];
+
   // Only show Shipments if user can view shipments
   if (canPerformAction(permissions, 'viewShipments')) {
-    items.push({ title: 'Slots', href: '/company/shipments', icon: Package });
+    operationsChildren.push({ title: 'Slots', href: '/company/shipments', icon: Package });
   }
 
   // Only show Bookings if user can view bookings
   if (canPerformAction(permissions, 'viewBookings')) {
-    items.push({ title: 'Bookings', href: '/company/bookings', icon: ShoppingCart });
+    operationsChildren.push({ title: 'Bookings', href: '/company/bookings', icon: ShoppingCart });
   }
 
   // Scan - always visible for company users (scanning barcodes)
-  items.push({ title: 'Scan', href: '/company/scan', icon: ScanLine });
+  operationsChildren.push({ title: 'Scan', href: '/company/scan', icon: ScanLine });
 
-  // Reviews - typically always visible for company users
-  items.push({ title: 'Reviews', href: '/company/reviews', icon: Star });
+  // Warehouses - typically always visible for company users
+  operationsChildren.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
 
-  // Messages - always visible for company users
-  items.push({ title: 'Messages', href: '/company/chat', icon: MessageSquare });
-
-  // Only show Analytics if user can view analytics
-  if (canPerformAction(permissions, 'viewAnalytics')) {
-    items.push({ title: 'Analytics', href: '/company/analytics', icon: BarChart3 });
+  if (operationsChildren.length > 0) {
+    items.push({
+      title: 'Operations',
+      icon: Briefcase,
+      children: operationsChildren,
+    });
   }
+
+  // Customers section
+  const customersChildren: NavItem[] = [
+    { title: 'Reviews', href: '/company/reviews', icon: Star },
+    { title: 'Messages', href: '/company/chat', icon: MessageSquare },
+  ];
+
+  items.push({
+    title: 'Customers',
+    icon: Users,
+    children: customersChildren,
+  });
+
+  // Money section
+  const moneyChildren: NavItem[] = [];
 
   // Payments - only if user can view payments
   if (canPerformAction(permissions, 'viewPayments')) {
-    items.push({ title: 'Payments', href: '/company/payments', icon: Wallet });
+    moneyChildren.push({ title: 'Payments', href: '/company/payments', icon: Wallet });
     // Payouts - for company admins to manage their earnings
     if (!isCompanyStaff) {
-      items.push({ title: 'Payouts', href: '/company/payouts', icon: Banknote });
+      moneyChildren.push({ title: 'Payouts', href: '/company/payouts', icon: Banknote });
     }
   }
 
-  // Subscription - only visible for company admins, not staff
-  if (!isCompanyStaff) {
-    items.push({ title: 'Subscription', href: '/company/subscription', icon: CreditCard });
+  if (moneyChildren.length > 0) {
+    items.push({
+      title: 'Money',
+      icon: Wallet,
+      children: moneyChildren,
+    });
   }
-
-  // Team - only visible for company admins, not staff
-  if (!isCompanyStaff) {
-    items.push({ title: 'Team', href: '/company/team', icon: Users });
-  }
-
-  // Warehouses - typically always visible for company users
-  items.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
 
   // Marketing - only visible for company admins, not staff
   if (!isCompanyStaff) {
     items.push({ title: 'Marketing', href: '/company/marketing', icon: Mail });
   }
 
+  // Account section
+  const accountChildren: NavItem[] = [];
+
+  // Subscription - only visible for company admins, not staff
+  if (!isCompanyStaff) {
+    accountChildren.push({ title: 'Subscription', href: '/company/subscription', icon: CreditCard });
+  }
+
+  // Team - only visible for company admins, not staff
+  if (!isCompanyStaff) {
+    accountChildren.push({ title: 'Team', href: '/company/team', icon: Users });
+  }
+
   // Settings - typically always visible for company users
-  items.push({ title: 'Settings', href: '/company/settings', icon: Settings });
+  accountChildren.push({ title: 'Settings', href: '/company/settings', icon: Settings });
+
+  items.push({
+    title: 'Account',
+    icon: UserCircle,
+    children: accountChildren,
+  });
 
   return items;
 }
@@ -180,4 +227,5 @@ export default function CompanyLayout({
     </RouteGuard>
   );
 }
+
 
