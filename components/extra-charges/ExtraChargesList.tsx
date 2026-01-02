@@ -38,7 +38,7 @@ export function ExtraChargesList({ bookingId, onRefresh }: ExtraChargesListProps
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const fetchExtraCharges = async () => {
+  const fetchExtraCharges = useCallback(async () => {
     setLoading(true);
     try {
       const charges = await customerApi.getExtraCharges(bookingId);

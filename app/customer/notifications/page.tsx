@@ -172,12 +172,7 @@ export default function CustomerNotificationsPage() {
     };
   }, [socket, unreadOnly, typeFilter]);
 
-  useEffect(() => {
-    fetchNotifications();
-    fetchUnreadCount();
-  }, [page, unreadOnly, typeFilter]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const response = await customerApi.getNotifications({
@@ -227,7 +222,12 @@ export default function CustomerNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, unreadOnly, typeFilter]);
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchUnreadCount();
+  }, [fetchNotifications]);
 
   const fetchUnreadCount = async () => {
     try {

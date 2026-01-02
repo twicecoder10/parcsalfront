@@ -46,7 +46,7 @@ export function CompanyExtraChargesList({
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
-  const fetchExtraCharges = async () => {
+  const fetchExtraCharges = useCallback(async () => {
     setLoading(true);
     try {
       const charges = await companyApi.getExtraCharges(bookingId);

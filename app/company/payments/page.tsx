@@ -81,28 +81,6 @@ export default function PaymentsPage() {
     }
   };
 
-  useEffect(() => {
-    if (permissions.loading) return;
-
-    if (canViewPayments) {
-      fetchPayments();
-    }
-    if (canViewPaymentStats) {
-      fetchPaymentStats();
-    }
-  }, [
-    currentPage,
-    statusFilter,
-    searchQuery,
-    dateFrom,
-    dateTo,
-    canViewPayments,
-    canViewPaymentStats,
-    permissions.loading,
-    fetchPayments,
-    fetchPaymentStats,
-  ]);
-
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
@@ -163,7 +141,29 @@ export default function PaymentsPage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, permissions]);
+
+  useEffect(() => {
+    if (permissions.loading) return;
+
+    if (canViewPayments) {
+      fetchPayments();
+    }
+    if (canViewPaymentStats) {
+      fetchPaymentStats();
+    }
+  }, [
+    currentPage,
+    statusFilter,
+    searchQuery,
+    dateFrom,
+    dateTo,
+    canViewPayments,
+    canViewPaymentStats,
+    permissions.loading,
+    fetchPayments,
+    fetchPaymentStats,
+  ]);
 
   const handleRefund = async () => {
     if (!paymentToRefund) return;

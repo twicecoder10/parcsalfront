@@ -101,14 +101,7 @@ export default function ShipmentDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updatingTrackingStatus, setUpdatingTrackingStatus] = useState(false);
 
-  useEffect(() => {
-    if (shipmentId) {
-      fetchShipment();
-      fetchBookings();
-    }
-  }, [shipmentId]);
-
-  const fetchShipment = async () => {
+  const fetchShipment = useCallback(async () => {
     setLoading(true);
     try {
       const shipmentData = await companyApi.getShipmentById(shipmentId);
@@ -118,9 +111,9 @@ export default function ShipmentDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [shipmentId]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setBookingsLoading(true);
     try {
       const bookingsData = await companyApi.getShipmentBookings(shipmentId);
@@ -130,7 +123,14 @@ export default function ShipmentDetailPage() {
     } finally {
       setBookingsLoading(false);
     }
-  };
+  }, [shipmentId]);
+
+  useEffect(() => {
+    if (shipmentId) {
+      fetchShipment();
+      fetchBookings();
+    }
+  }, [shipmentId, fetchShipment, fetchBookings]);
 
   const handlePublishShipment = async () => {
     if (!shipment) return;
