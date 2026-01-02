@@ -177,6 +177,12 @@ export interface BookingStats {
 }
 
 export interface AnalyticsData {
+  period?: {
+    type: 'week' | 'month' | 'quarter' | 'year';
+    label: string;
+    startDate: string;
+    endDate: string;
+  };
   revenue: {
     total: number;
     changePercentage: number;
@@ -700,9 +706,12 @@ export const companyApi = {
   // Analytics
   // ============================================
 
-  getAnalytics: async (period: 'week' | 'month' | 'quarter' | 'year'): Promise<AnalyticsData> => {
+  getAnalytics: async (period: 'week' | 'month' | 'quarter' | 'year', offset?: number): Promise<AnalyticsData> => {
     const response = await api.get<ApiResponse<AnalyticsData>>('/companies/analytics', {
-      params: { period },
+      params: { 
+        period,
+        ...(offset !== undefined && offset > 0 && { offset }),
+      },
     });
     return extractData(response);
   },

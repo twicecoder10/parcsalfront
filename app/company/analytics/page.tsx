@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, TrendingUp, TrendingDown, PoundSterling, Package, ShoppingCart, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, TrendingUp, TrendingDown, PoundSterling, Package, ShoppingCart, Users, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { AnalyticsData } from '@/lib/company-api';
+import { getCachedAnalytics, setCachedAnalytics } from '@/lib/analytics-cache';
+import { toast } from 'sonner';
 import { 
   LineChart, 
   Line, 
@@ -25,21 +28,169 @@ import {
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
+  const [offset, setOffset] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  
+  // Request deduplication: track in-flight requests
+  const inFlightRequestRef = useRef<Promise<any> | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
+  // Check cache first, then fetch if needed
+  const fetchAnalytics = useCallback(async (skipCache = false) => {
+    // Prevent duplicate requests
+    if (inFlightRequestRef.current && !skipCache) {
+      return;
+    }
 
-  const fetchAnalytics = async () => {
+    // Check cache first
+    if (!skipCache) {
+      const cached = getCachedAnalytics(period, offset);
+      if (cached) {
+        setAnalytics(cached);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+    }
+
     setLoading(true);
+    setError(null);
+    setRetryAfter(null);
+
     try {
-      const analyticsData = await companyApi.getAnalytics(period as 'week' | 'month' | 'quarter' | 'year');
+      const requestPromise = companyApi.getAnalytics(
+        period as 'week' | 'month' | 'quarter' | 'year',
+        offset
+      );
+      
+      inFlightRequestRef.current = requestPromise;
+      const analyticsData = await requestPromise;
+      
+      // Cache the response
+      setCachedAnalytics(period, offset, analyticsData);
       setAnalytics(analyticsData);
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+      inFlightRequestRef.current = null;
+    } catch (error: any) {
+      inFlightRequestRef.current = null;
+      
+      // Handle rate limiting (429)
+      if (error?.response?.status === 429) {
+        const retryAfterHeader = error.response.headers?.['retry-after'] || 
+                                  error.response.headers?.['Retry-After'];
+        const retryAfterSeconds = retryAfterHeader 
+          ? parseInt(String(retryAfterHeader), 10) 
+          : 60; // Default to 60 seconds if not provided
+        
+        setRetryAfter(retryAfterSeconds);
+        setError(`Too many requests. Please try again in ${retryAfterSeconds} seconds.`);
+        
+        toast.error('Rate limit exceeded', {
+          description: `Please wait ${retryAfterSeconds} seconds before trying again.`,
+          duration: 5000,
+        });
+
+        // Auto-retry after the suggested delay
+        retryTimerRef.current = setTimeout(() => {
+          setRetryAfter(null);
+          fetchAnalytics(true); // Skip cache on retry
+        }, retryAfterSeconds * 1000);
+        
+        return;
+      }
+
+      // Check cache as fallback on error
+      const cached = getCachedAnalytics(period, offset);
+      if (cached) {
+        setAnalytics(cached);
+        toast.warning('Using cached data', {
+          description: 'Unable to fetch latest data. Showing cached results.',
+        });
+      } else {
+        setError(error.response?.data?.message || 'Failed to fetch analytics. Please try again.');
+        toast.error('Failed to load analytics', {
+          description: error.response?.data?.message || 'Please try again later.',
+        });
+      }
     } finally {
       setLoading(false);
+    }
+  }, [period, offset]);
+
+  // Debounced fetch for period/offset changes
+  useEffect(() => {
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Check cache immediately
+    const cached = getCachedAnalytics(period, offset);
+    if (cached) {
+      setAnalytics(cached);
+      setLoading(false);
+      setError(null);
+    } else {
+      setLoading(true);
+    }
+
+    // Debounce the API call
+    debounceTimerRef.current = setTimeout(() => {
+      fetchAnalytics();
+    }, 300); // 300ms debounce
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [period, offset, fetchAnalytics]);
+
+  // Cleanup retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handlePreviousPeriod = () => {
+    setOffset(prev => prev + 1);
+  };
+
+  const handleNextPeriod = () => {
+    setOffset(prev => Math.max(0, prev - 1));
+  };
+
+  const handlePeriodChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
+    setOffset(0); // Reset offset when changing period type
+  };
+
+  const getPeriodLabel = () => {
+    // Use backend-provided label if available, otherwise fallback to generated label
+    if (analytics?.period?.label) {
+      return analytics.period.label;
+    }
+    
+    // Fallback for when data is loading or not available
+    const periodLabels: Record<string, string> = {
+      week: 'Week',
+      month: 'Month',
+      quarter: 'Quarter',
+      year: 'Year',
+    };
+    const baseLabel = periodLabels[period] || period;
+    
+    if (offset === 0) {
+      return `This ${baseLabel}`;
+    } else if (offset === 1) {
+      return `Previous ${baseLabel}`;
+    } else {
+      return `${offset} ${baseLabel}s Ago`;
     }
   };
 
@@ -115,17 +266,78 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-bold">Analytics</h1>
           <p className="text-gray-600 mt-2">Insights and performance metrics</p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="week">Last Week</SelectItem>
-            <SelectItem value="month">Last Month</SelectItem>
-            <SelectItem value="quarter">Last Quarter</SelectItem>
-            <SelectItem value="year">Last Year</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={period} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Week</SelectItem>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="quarter">Quarter</SelectItem>
+              <SelectItem value="year">Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      {/* Error Message */}
+      {error && (
+        <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+                {retryAfter !== null && (
+                  <p className="text-xs text-red-600 dark:text-red-300 mt-1">
+                    Retrying automatically in {retryAfter} seconds...
+                  </p>
+                )}
+              </div>
+              {retryAfter === null && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchAnalytics(true)}
+                >
+                  Retry
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Period Label and Navigation */}
+      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePreviousPeriod}
+              title="Previous period (older)"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextPeriod}
+              disabled={offset === 0}
+              title="Next period (newer)"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Viewing:</span>
+            <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {getPeriodLabel()}
+            </span>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -307,7 +519,12 @@ export default function AnalyticsPage() {
                       <YAxis 
                         className="text-xs"
                         tick={{ fill: '#6b7280' }}
-                        tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`}
+                        tickFormatter={(value) => {
+                          if (value >= 1000) {
+                            return `£${(value / 1000).toFixed(0)}k`;
+                          }
+                          return `£${value}`;
+                        }}
                       />
                       <Tooltip 
                         contentStyle={{ 
@@ -490,34 +707,35 @@ export default function AnalyticsPage() {
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Period</span>
                     <span className="font-medium">
-                      {analytics.revenueByPeriod && analytics.revenueByPeriod.length > 0
-                        ? (() => {
-                            // Get the latest period (last item in array)
-                            const latestPeriod = analytics.revenueByPeriod[analytics.revenueByPeriod.length - 1].period;
-                            
-                            // Handle different period formats
-                            if (latestPeriod.includes('Q')) {
-                              // Quarter format: "2025-Q4" -> "Q4 2025"
-                              const [year, quarter] = latestPeriod.split('-Q');
-                              return `Q${quarter} ${year}`;
-                            } else if (latestPeriod.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                              // Daily format: "2025-12-18" -> "December 18, 2025"
-                              const date = new Date(latestPeriod);
-                              return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                            } else if (latestPeriod.match(/^\d{4}-\d{2}$/)) {
-                              // Monthly format: "2025-12" -> "December 2025"
-                              const [year, month] = latestPeriod.split('-');
-                              const date = new Date(parseInt(year), parseInt(month) - 1);
-                              return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                            } else if (latestPeriod.match(/^\d{4}$/)) {
-                              // Yearly format: "2025" -> "2025"
-                              return latestPeriod;
-                            } else {
-                              // Fallback: return as is
-                              return latestPeriod;
-                            }
-                          })()
-                        : period.charAt(0).toUpperCase() + period.slice(1)}
+                      {analytics.period?.label || 
+                        (analytics.revenueByPeriod && analytics.revenueByPeriod.length > 0
+                          ? (() => {
+                              // Get the latest period (last item in array)
+                              const latestPeriod = analytics.revenueByPeriod[analytics.revenueByPeriod.length - 1].period;
+                              
+                              // Handle different period formats
+                              if (latestPeriod.includes('Q')) {
+                                // Quarter format: "2025-Q4" -> "Q4 2025"
+                                const [year, quarter] = latestPeriod.split('-Q');
+                                return `Q${quarter} ${year}`;
+                              } else if (latestPeriod.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                // Daily format: "2025-12-18" -> "December 18, 2025"
+                                const date = new Date(latestPeriod);
+                                return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                              } else if (latestPeriod.match(/^\d{4}-\d{2}$/)) {
+                                // Monthly format: "2025-12" -> "December 2025"
+                                const [year, month] = latestPeriod.split('-');
+                                const date = new Date(parseInt(year), parseInt(month) - 1);
+                                return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                              } else if (latestPeriod.match(/^\d{4}$/)) {
+                                // Yearly format: "2025" -> "2025"
+                                return latestPeriod;
+                              } else {
+                                // Fallback: return as is
+                                return latestPeriod;
+                              }
+                            })()
+                          : period.charAt(0).toUpperCase() + period.slice(1))}
                     </span>
                   </div>
                   <div className="flex justify-between">

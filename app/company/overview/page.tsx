@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Package, Clock, ShoppingCart, Plus, AlertCircle, TrendingUp, TrendingDo
 import { getStoredUser, setStoredUser } from '@/lib/auth';
 import { authApi, getErrorMessage } from '@/lib/api';
 import { companyApi, getCustomerName, getBookingPrice } from '@/lib/company-api';
+import { getCachedOverviewStats, getCachedRecentBookings, getCachedUpcomingShipments } from '@/lib/cached-api';
 import type { User } from '@/lib/api';
 import type { OverviewStats, RecentBooking, UpcomingShipment } from '@/lib/company-api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
@@ -40,29 +41,66 @@ export default function CompanyOverviewPage() {
     };
     
     fetchUser();
-    fetchOverviewData();
   }, []);
 
-  const fetchOverviewData = async () => {
+  const fetchOverviewData = useCallback(async () => {
     setStatsLoading(true);
     setError(null);
     try {
-      const [statsResponse, bookingsResponse, shipmentsResponse] = await Promise.all([
-        companyApi.getOverviewStats(),
-        companyApi.getRecentBookings(5),
-        companyApi.getUpcomingShipments(5),
-      ]);
+      const hasAnalyticsPermission = canPerformAction(permissions, 'viewAnalytics');
       
-      setStats(statsResponse);
-      setRecentBookings(bookingsResponse);
-      setUpcomingShipments(shipmentsResponse);
+      // Only fetch stats if user has analytics permission
+      if (hasAnalyticsPermission) {
+        const [statsResponse, bookingsResponse, shipmentsResponse] = await Promise.all([
+          getCachedOverviewStats(),
+          getCachedRecentBookings(5),
+          getCachedUpcomingShipments(5),
+        ]);
+        
+        setStats(statsResponse);
+        setRecentBookings(bookingsResponse);
+        setUpcomingShipments(shipmentsResponse);
+      } else {
+        // Skip stats, only fetch bookings and shipments
+        const [bookingsResponse, shipmentsResponse] = await Promise.all([
+          getCachedRecentBookings(5),
+          getCachedUpcomingShipments(5),
+        ]);
+        
+        setRecentBookings(bookingsResponse);
+        setUpcomingShipments(shipmentsResponse);
+      }
     } catch (error: any) {
       console.error('Failed to fetch overview data:', error);
-      setError(getErrorMessage(error) || 'Failed to load overview data. Please try again.');
+      const errorMessage = getErrorMessage(error);
+      
+      // Don't show error for analytics permission issues - just skip stats
+      if (errorMessage?.includes('permission') && errorMessage?.toLowerCase().includes('analytics')) {
+        // Try to fetch other data without stats
+        try {
+          const [bookingsResponse, shipmentsResponse] = await Promise.all([
+            getCachedRecentBookings(5),
+            getCachedUpcomingShipments(5),
+          ]);
+          setRecentBookings(bookingsResponse);
+          setUpcomingShipments(shipmentsResponse);
+        } catch (fallbackError) {
+          setError(getErrorMessage(fallbackError) || 'Failed to load overview data. Please try again.');
+        }
+      } else {
+        setError(errorMessage || 'Failed to load overview data. Please try again.');
+      }
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [permissions]);
+
+  // Fetch overview data after permissions are loaded
+  useEffect(() => {
+    if (!permissions.loading) {
+      fetchOverviewData();
+    }
+  }, [permissions.loading, fetchOverviewData]);
 
   const isVerificationPending = !loading && 
                                 user?.onboardingCompleted === true && 
@@ -105,21 +143,22 @@ export default function CompanyOverviewPage() {
         )}
       </div>
 
-      {/* KPI Cards */}
-      {statsLoading ? (
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="h-24 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-4">
+      {/* KPI Cards - Only show if user has analytics permission */}
+      {canPerformAction(permissions, 'viewAnalytics') ? (
+        statsLoading ? (
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="h-24 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
@@ -192,10 +231,35 @@ export default function CompanyOverviewPage() {
             </CardContent>
           </Card>
         </div>
+        )
+      ) : (
+        // Simplified view for staff without analytics permission
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Analytics permission required</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Departures</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">-</div>
+              <p className="text-xs text-muted-foreground">Analytics permission required</p>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Additional Stats */}
-      {!statsLoading && (
+      {/* Additional Stats - Only show if user has analytics permission */}
+      {canPerformAction(permissions, 'viewAnalytics') && !statsLoading && (
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

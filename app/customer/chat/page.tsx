@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { chatApi, ChatRoom, Message } from '@/lib/chat-api';
@@ -161,7 +161,7 @@ function CustomerChatContent() {
         leaveChatRoom(selectedChatRoomId);
       }
     };
-  }, [selectedChatRoomId, isConnected]);
+  }, [selectedChatRoomId, isConnected, joinChatRoom, leaveChatRoom]);
 
   // Mark messages as read when chat room is selected (via REST API)
   useEffect(() => {

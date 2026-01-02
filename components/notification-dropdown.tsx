@@ -18,6 +18,7 @@ import { companyApi } from '@/lib/company-api';
 import { getStoredUser } from '@/lib/auth';
 import { Notification } from '@/lib/api-types';
 import { formatDistanceToNow } from 'date-fns';
+import { useSocket } from '@/lib/use-socket';
 
 interface NotificationDropdownProps {
   userRole: 'CUSTOMER' | 'COMPANY_ADMIN' | 'COMPANY_STAFF';
@@ -25,6 +26,7 @@ interface NotificationDropdownProps {
 
 export function NotificationDropdown({ userRole }: NotificationDropdownProps) {
   const router = useRouter();
+  const { socket } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -51,11 +53,61 @@ export function NotificationDropdown({ userRole }: NotificationDropdownProps) {
     }
   }, [api]);
 
+  // Real-time Socket.IO listeners for notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    // Handle new notification
+    const handleNewNotification = (notification: Notification) => {
+      setNotifications((prev) => {
+        // Check if notification already exists (avoid duplicates)
+        if (prev.some((n) => n.id === notification.id)) {
+          return prev;
+        }
+        // Add new notification to the top of the list
+        return [notification, ...prev];
+      });
+    };
+
+    // Handle notification updated (e.g., marked as read)
+    const handleNotificationUpdate = (notification: Notification) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? notification : n))
+      );
+    };
+
+    // Handle notification deleted
+    const handleNotificationDelete = ({ id }: { id: string }) => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    };
+
+    // Handle unread count update
+    const handleUnreadCount = ({ count }: { count: number }) => {
+      setUnreadCount(count);
+    };
+
+    // Register event listeners
+    socket.on('notification:new', handleNewNotification);
+    socket.on('notification:updated', handleNotificationUpdate);
+    socket.on('notification:deleted', handleNotificationDelete);
+    socket.on('notification:unreadCount', handleUnreadCount);
+
+    // Cleanup listeners on unmount or socket change
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+      socket.off('notification:updated', handleNotificationUpdate);
+      socket.off('notification:deleted', handleNotificationDelete);
+      socket.off('notification:unreadCount', handleUnreadCount);
+    };
+  }, [socket]);
+
+  // Reduced polling frequency (5 minutes instead of 30 seconds)
+  // Real-time updates via Socket.IO handle instant notifications
   useEffect(() => {
     fetchUnreadCount();
     const interval = setInterval(() => {
       fetchUnreadCount();
-    }, 30000); // Poll every 30 seconds
+    }, 5 * 60 * 1000); // Poll every 5 minutes as fallback
 
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);

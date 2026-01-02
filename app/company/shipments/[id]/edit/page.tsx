@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -43,11 +43,7 @@ export default function EditShipmentPage() {
     cutoffTime: '',
   });
 
-  useEffect(() => {
-    fetchShipment();
-  }, [shipmentId]);
-
-  const fetchShipment = async () => {
+  const fetchShipment = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -119,7 +115,11 @@ export default function EditShipmentPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [shipmentId]);
+
+  useEffect(() => {
+    fetchShipment();
+  }, [fetchShipment]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

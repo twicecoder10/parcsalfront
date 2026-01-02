@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { customerApi } from '@/lib/customer-api';
 import { Notification, NotificationType } from '@/lib/api-types';
 import { formatDistanceToNow } from 'date-fns';
 import { useConfirm } from '@/lib/use-confirm';
+import { useSocket } from '@/lib/use-socket';
 
 // Customer-specific notification types (excludes company-only types)
 const customerNotificationTypes: NotificationType[] = [
@@ -53,11 +54,13 @@ const notificationTypeLabels: Record<NotificationType, string> = {
   EXTRA_CHARGE_PAID: 'Extra Charge Paid',
   EXTRA_CHARGE_DECLINED: 'Extra Charge Declined',
   EXTRA_CHARGE_CANCELLED: 'Extra Charge Cancelled',
+  MARKETING_MESSAGE: 'Marketing Message',
 };
 
 export default function CustomerNotificationsPage() {
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -66,6 +69,108 @@ export default function CustomerNotificationsPage() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [processing, setProcessing] = useState<string | null>(null);
+
+  // Real-time Socket.IO listeners for notifications
+  useEffect(() => {
+    if (!socket) {
+      console.log('Notifications page: Socket not available');
+      return;
+    }
+
+    console.log('Notifications page: Setting up Socket.IO listeners', {
+      connected: socket.connected,
+      id: socket.id,
+    });
+
+    // Handle new notification
+    const handleNewNotification = (notification: Notification) => {
+      console.log('Notifications page: New notification received via Socket.IO', notification);
+      // Only add if it matches current filters
+      if (unreadOnly && notification.isRead) {
+        console.log('Notifications page: Notification filtered out (unreadOnly filter)');
+        return;
+      }
+      if (typeFilter !== 'all' && notification.type !== typeFilter) {
+        console.log('Notifications page: Notification filtered out (typeFilter)', { typeFilter, notificationType: notification.type });
+        return;
+      }
+      
+      setNotifications((prev) => {
+        // Check if notification already exists (avoid duplicates)
+        if (prev.some((n) => n.id === notification.id)) {
+          console.log('Notifications page: Notification already exists, skipping');
+          return prev;
+        }
+        console.log('Notifications page: Adding new notification to list');
+        // Reset to page 1 if we're on a different page
+        setPage(1);
+        // Add new notification to the top of the list
+        return [notification, ...prev].slice(0, 20); // Keep only first 20 to match page limit
+      });
+
+      // Update unread count if notification is unread
+      if (!notification.isRead) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
+    // Handle notification updated (e.g., marked as read)
+    const handleNotificationUpdate = (notification: Notification) => {
+      console.log('Notifications page: Notification updated via Socket.IO', notification);
+      setNotifications((prev) => {
+        const existing = prev.find((n) => n.id === notification.id);
+        const wasUnread = existing && !existing.isRead;
+        const nowRead = notification.isRead;
+
+        // Update unread count if status changed from unread to read
+        if (wasUnread && nowRead) {
+          setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+        }
+        // Update unread count if status changed from read to unread
+        if (!wasUnread && !nowRead) {
+          setUnreadCount((prevCount) => prevCount + 1);
+        }
+
+        return prev.map((n) => (n.id === notification.id ? notification : n));
+      });
+    };
+
+    // Handle notification deleted
+    const handleNotificationDelete = ({ id }: { id: string }) => {
+      console.log('Notifications page: Notification deleted via Socket.IO', id);
+      setNotifications((prev) => {
+        const notification = prev.find((n) => n.id === id);
+        // Update unread count if deleted notification was unread
+        if (notification && !notification.isRead) {
+          setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+        }
+        return prev.filter((n) => n.id !== id);
+      });
+    };
+
+    // Handle unread count update
+    const handleUnreadCount = ({ count }: { count: number }) => {
+      console.log('Notifications page: Unread count updated via Socket.IO', count);
+      setUnreadCount(count);
+    };
+
+    // Register event listeners
+    socket.on('notification:new', handleNewNotification);
+    socket.on('notification:updated', handleNotificationUpdate);
+    socket.on('notification:deleted', handleNotificationDelete);
+    socket.on('notification:unreadCount', handleUnreadCount);
+
+    console.log('Notifications page: Socket.IO listeners registered');
+
+    // Cleanup listeners on unmount or socket change
+    return () => {
+      console.log('Notifications page: Cleaning up Socket.IO listeners');
+      socket.off('notification:new', handleNewNotification);
+      socket.off('notification:updated', handleNotificationUpdate);
+      socket.off('notification:deleted', handleNotificationDelete);
+      socket.off('notification:unreadCount', handleUnreadCount);
+    };
+  }, [socket, unreadOnly, typeFilter]);
 
   useEffect(() => {
     fetchNotifications();
@@ -81,7 +186,37 @@ export default function CustomerNotificationsPage() {
         unreadOnly,
         type: typeFilter !== 'all' ? typeFilter : undefined,
       });
-      setNotifications(response.data);
+      
+      // When fetching, merge with any socket-added notifications that might not be in the API response yet
+      // This handles race conditions where a socket notification arrives just before the API call completes
+      setNotifications((prevSocketNotifications) => {
+        const apiNotificationIds = new Set(response.data.map((n: Notification) => n.id));
+        // Find socket-added notifications that aren't in the API response
+        const socketOnlyNotifications = prevSocketNotifications.filter(
+          (n) => !apiNotificationIds.has(n.id)
+        );
+        // Merge: socket-only notifications first (most recent), then API notifications
+        // But only if we're on page 1 (socket notifications are always most recent)
+        if (page === 1 && socketOnlyNotifications.length > 0) {
+          // Sort socket notifications by date (newest first) and merge with API notifications
+          const merged = [
+            ...socketOnlyNotifications.sort((a, b) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ),
+            ...response.data
+          ];
+          // Remove duplicates (in case API eventually includes them) and limit to 20
+          const seen = new Set<string>();
+          const unique = merged.filter((n) => {
+            if (seen.has(n.id)) return false;
+            seen.add(n.id);
+            return true;
+          }).slice(0, 20);
+          return unique;
+        }
+        return response.data;
+      });
+      
       // Use totalPages if available, otherwise calculate from total and limit
       const calculatedTotalPages = response.pagination.totalPages ?? 
         Math.ceil((response.pagination.total || 0) / (response.pagination.limit || 20));

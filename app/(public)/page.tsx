@@ -23,6 +23,7 @@ import {
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -349,10 +350,12 @@ export default function LandingPage() {
                 <source src="/videos/hero-background.mp4" type="video/mp4" />
               </video>
               {/* Fallback image */}
-              <img 
+              <Image 
                 src="/images/hero/hero-bg.jpg"
                 alt="Logistics background"
-                className="absolute inset-0 w-full h-full object-cover -z-10"
+                fill
+                className="object-cover -z-10"
+                priority
               />
               {/* Gradient overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/65" />
@@ -925,11 +928,12 @@ export default function LandingPage() {
                 <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                   {/* Left Side - Image */}
                   <div className="order-2 lg:order-1">
-                    <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                      <img 
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[500px] lg:h-[650px]">
+                      <Image 
                         src="/images/categories/warehouse.jpg"
                         alt="Modern logistics and warehouse operations"
-                        className="w-full h-[500px] lg:h-[650px] object-cover"
+                        fill
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-tr from-orange-900/40 to-transparent" />
                       {/* Overlay content */}

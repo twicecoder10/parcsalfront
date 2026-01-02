@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,19 +103,7 @@ export default function CompanyProfilePage() {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
-  useEffect(() => {
-    // Check if current user owns this company
-    const user = getStoredUser();
-    if (user && hasRoleAccess(user.role, ['COMPANY_ADMIN', 'COMPANY_STAFF'])) {
-      setIsCompanyOwner(user.company?.slug === companySlug || user.company?.id === companySlug);
-    }
-
-    fetchCompanyProfile();
-    fetchReviews();
-    fetchShipments();
-  }, [companySlug]);
-
-  const fetchCompanyProfile = async () => {
+  const fetchCompanyProfile = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -127,9 +115,9 @@ export default function CompanyProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companySlug]);
 
-  const fetchReviews = async (resetOffset = true) => {
+  const fetchReviews = useCallback(async (resetOffset = true) => {
     setReviewsLoading(true);
     try {
       const params = {
@@ -140,7 +128,7 @@ export default function CompanyProfilePage() {
       if (resetOffset) {
         setReviews(response.data);
       } else {
-        setReviews([...reviews, ...response.data]);
+        setReviews((prevReviews) => [...prevReviews, ...response.data]);
       }
       setPagination(response.pagination);
     } catch (err) {
@@ -148,13 +136,9 @@ export default function CompanyProfilePage() {
     } finally {
       setReviewsLoading(false);
     }
-  };
+  }, [companySlug, pagination.limit, pagination.offset]);
 
-  const loadMoreReviews = () => {
-    fetchReviews(false);
-  };
-
-  const fetchShipments = async (resetOffset = true) => {
+  const fetchShipments = useCallback(async (resetOffset = true) => {
     setShipmentsLoading(true);
     try {
       const currentOffset = resetOffset ? 0 : shipmentsPagination.offset + shipmentsPagination.limit;
@@ -200,7 +184,7 @@ export default function CompanyProfilePage() {
           hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= shipmentsPagination.limit),
         });
       } else {
-        setShipments([...shipments, ...availableShipments]);
+        setShipments((prevShipments) => [...prevShipments, ...availableShipments]);
         // Update pagination with new offset
         setShipmentsPagination({
           limit: paginationData.limit || shipmentsPagination.limit,
@@ -214,6 +198,22 @@ export default function CompanyProfilePage() {
     } finally {
       setShipmentsLoading(false);
     }
+  }, [companySlug, shipmentsPagination]);
+
+  useEffect(() => {
+    // Check if current user owns this company
+    const user = getStoredUser();
+    if (user && hasRoleAccess(user.role, ['COMPANY_ADMIN', 'COMPANY_STAFF'])) {
+      setIsCompanyOwner(user.company?.slug === companySlug || user.company?.id === companySlug);
+    }
+
+    fetchCompanyProfile();
+    fetchReviews();
+    fetchShipments();
+  }, [companySlug, fetchCompanyProfile, fetchReviews, fetchShipments]);
+
+  const loadMoreReviews = () => {
+    fetchReviews(false);
   };
 
   const loadMoreShipments = () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,11 +20,7 @@ function PaymentContent() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBookingData();
-  }, [bookingId]);
-
-  const fetchBookingData = async () => {
+  const fetchBookingData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await customerApi.getBookingById(bookingId);
@@ -41,7 +37,11 @@ function PaymentContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId, router]);
+
+  useEffect(() => {
+    fetchBookingData();
+  }, [fetchBookingData]);
 
   const handlePayment = async () => {
     setProcessing(true);

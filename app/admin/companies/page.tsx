@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,7 @@ export default function CompaniesPage() {
   const [planFilter, setPlanFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -50,11 +50,11 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, verifiedFilter, planFilter, searchQuery]);
 
   useEffect(() => {
     fetchCompanies();
-  }, [currentPage, verifiedFilter, planFilter]);
+  }, [fetchCompanies]);
 
   // Debounce search
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function CompaniesPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, fetchCompanies]);
 
   const verifiedCount = companies.filter((c) => c.isVerified).length;
   const unverifiedCount = companies.filter((c) => !c.isVerified).length;

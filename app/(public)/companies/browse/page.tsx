@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,11 +38,7 @@ export default function BrowseCompaniesPage() {
     hasMore: false,
   });
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
-
-  const fetchCompanies = async (resetOffset = true) => {
+  const fetchCompanies = useCallback(async (resetOffset = true) => {
     setLoading(true);
     setError(null);
     try {
@@ -63,7 +59,7 @@ export default function BrowseCompaniesPage() {
       if (resetOffset) {
         setCompanies(companiesData);
       } else {
-        setCompanies([...companies, ...companiesData]);
+        setCompanies((prevCompanies) => [...prevCompanies, ...companiesData]);
       }
 
       if (response.pagination) {
@@ -79,7 +75,11 @@ export default function BrowseCompaniesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, pagination.limit, pagination.offset]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

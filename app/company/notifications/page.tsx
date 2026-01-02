@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { companyApi } from '@/lib/company-api';
 import { Notification, NotificationType } from '@/lib/api-types';
 import { formatDistanceToNow } from 'date-fns';
 import { useConfirm } from '@/lib/use-confirm';
+import { useSocket } from '@/lib/use-socket';
 
 const notificationTypeLabels: Record<NotificationType, string> = {
   BOOKING_CREATED: 'Booking Created',
@@ -36,11 +37,13 @@ const notificationTypeLabels: Record<NotificationType, string> = {
   EXTRA_CHARGE_PAID: 'Extra Charge Paid',
   EXTRA_CHARGE_DECLINED: 'Extra Charge Declined',
   EXTRA_CHARGE_CANCELLED: 'Extra Charge Cancelled',
+  MARKETING_MESSAGE: 'Marketing Message',
 };
 
 export default function CompanyNotificationsPage() {
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -50,12 +53,59 @@ export default function CompanyNotificationsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [processing, setProcessing] = useState<string | null>(null);
 
+  // Real-time Socket.IO listeners for notifications
   useEffect(() => {
-    fetchNotifications();
-    fetchUnreadCount();
-  }, [page, unreadOnly, typeFilter]);
+    if (!socket) return;
 
-  const fetchNotifications = async () => {
+    // Handle new notification
+    const handleNewNotification = (notification: Notification) => {
+      // Only add if it matches current filters
+      if (unreadOnly && notification.isRead) return;
+      if (typeFilter !== 'all' && notification.type !== typeFilter) return;
+      
+      setNotifications((prev) => {
+        // Check if notification already exists (avoid duplicates)
+        if (prev.some((n) => n.id === notification.id)) {
+          return prev;
+        }
+        // Add new notification to the top of the list
+        return [notification, ...prev].slice(0, 20); // Keep only first 20 to match page limit
+      });
+    };
+
+    // Handle notification updated (e.g., marked as read)
+    const handleNotificationUpdate = (notification: Notification) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? notification : n))
+      );
+    };
+
+    // Handle notification deleted
+    const handleNotificationDelete = ({ id }: { id: string }) => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    };
+
+    // Handle unread count update
+    const handleUnreadCount = ({ count }: { count: number }) => {
+      setUnreadCount(count);
+    };
+
+    // Register event listeners
+    socket.on('notification:new', handleNewNotification);
+    socket.on('notification:updated', handleNotificationUpdate);
+    socket.on('notification:deleted', handleNotificationDelete);
+    socket.on('notification:unreadCount', handleUnreadCount);
+
+    // Cleanup listeners on unmount or socket change
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+      socket.off('notification:updated', handleNotificationUpdate);
+      socket.off('notification:deleted', handleNotificationDelete);
+      socket.off('notification:unreadCount', handleUnreadCount);
+    };
+  }, [socket, unreadOnly, typeFilter]);
+
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const response = await companyApi.getNotifications({
@@ -75,7 +125,12 @@ export default function CompanyNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, unreadOnly, typeFilter]);
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchUnreadCount();
+  }, [fetchNotifications]);
 
   const fetchUnreadCount = async () => {
     try {

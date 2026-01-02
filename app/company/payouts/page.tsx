@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,12 +38,7 @@ export default function PayoutsPage() {
   const [payoutAmount, setPayoutAmount] = useState('');
   const [processingPayout, setProcessingPayout] = useState(false);
 
-  useEffect(() => {
-    fetchStatus();
-    fetchBalance();
-  }, []);
-
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const data = await companyApi.getConnectStatus();
       setStatus(data);
@@ -53,9 +48,9 @@ export default function PayoutsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     setBalanceLoading(true);
     try {
       const data = await companyApi.getConnectBalance();
@@ -69,7 +64,12 @@ export default function PayoutsPage() {
     } finally {
       setBalanceLoading(false);
     }
-  };
+  }, [status?.stripeAccountId]);
+
+  useEffect(() => {
+    fetchStatus();
+    fetchBalance();
+  }, [fetchStatus, fetchBalance]);
 
   const handleEnablePayouts = async () => {
     try {

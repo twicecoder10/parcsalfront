@@ -306,7 +306,13 @@ function SubscriptionContent() {
                         className="w-full"
                         variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : isUpgrade ? 'default' : 'outline'}
                         disabled={isCurrentPlan || processingPlan === plan.id}
-                        onClick={() => handlePlanSelect(plan.id)}
+                        onClick={() => {
+                          if (isUpgrade || isDowngrade) {
+                            handleUpdatePaymentMethod();
+                          } else {
+                            handlePlanSelect(plan.id);
+                          }
+                        }}
                       >
                         {processingPlan === plan.id ? (
                           <>

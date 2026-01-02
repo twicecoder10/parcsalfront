@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,11 +64,7 @@ export default function ShipmentsPage() {
     hasMore: false,
   });
 
-  useEffect(() => {
-    fetchShipments();
-  }, [currentPage, statusFilter, modeFilter, searchQuery]);
-
-  const fetchShipments = async () => {
+  const fetchShipments = useCallback(async () => {
     setLoading(true);
     try {
       const response = await companyApi.getShipments({
@@ -115,7 +111,11 @@ export default function ShipmentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, modeFilter, searchQuery, pagination.limit]);
+
+  useEffect(() => {
+    fetchShipments();
+  }, [fetchShipments]);
 
   const handleDelete = async (shipmentId: string) => {
     try {

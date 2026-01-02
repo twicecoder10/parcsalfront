@@ -82,7 +82,8 @@ export type NotificationType =
   | 'EXTRA_CHARGE_REQUESTED'
   | 'EXTRA_CHARGE_PAID'
   | 'EXTRA_CHARGE_DECLINED'
-  | 'EXTRA_CHARGE_CANCELLED';
+  | 'EXTRA_CHARGE_CANCELLED'
+  | 'MARKETING_MESSAGE';
 
 export interface NotificationMetadata {
   // Booking notifications

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,11 +57,11 @@ export function CompanyExtraChargesList({
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
 
   useEffect(() => {
     fetchExtraCharges();
-  }, [bookingId]);
+  }, [fetchExtraCharges]);
 
   const handleCancel = async (charge: ExtraCharge) => {
     if (!confirm('Are you sure you want to cancel this extra charge request?')) {

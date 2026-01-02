@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import 'react-quill/dist/quill.snow.css';
 import { uploadProofImages, validateImageFile } from '@/lib/upload-api';
@@ -237,11 +238,12 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
               </button>
             </div>
           </div>
-          <div className="w-full rounded border border-gray-200 bg-gray-50 overflow-hidden">
-            <img
+          <div className="relative w-full rounded border border-gray-200 bg-gray-50 overflow-hidden aspect-video">
+            <Image
               src={heroImageUrl}
               alt="Hero"
-              className="w-full h-auto max-h-96 object-contain"
+              fill
+              className="object-contain"
             />
           </div>
           <div className="mt-2 text-xs text-gray-500 truncate">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,9 +99,11 @@ export default function PaymentsPage() {
     canViewPayments,
     canViewPaymentStats,
     permissions.loading,
+    fetchPayments,
+    fetchPaymentStats,
   ]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
       const response = await companyApi.getPayments({
@@ -143,9 +145,9 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo, pagination.limit]);
 
-  const fetchPaymentStats = async () => {
+  const fetchPaymentStats = useCallback(async () => {
     if (!canPerformAction(permissions, 'viewPaymentStats')) {
       return;
     }
@@ -161,7 +163,7 @@ export default function PaymentsPage() {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [dateFrom, dateTo]);
 
   const handleRefund = async () => {
     if (!paymentToRefund) return;

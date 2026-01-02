@@ -20,6 +20,7 @@ import { removeStoredUser, getStoredUser as getStoredUserHelper } from '@/lib/au
 import { useRouter } from 'next/navigation';
 import { companyApi } from '@/lib/company-api';
 import type { CompanyProfile, CompanySettings } from '@/lib/company-api';
+import { cacheInvalidation } from '@/lib/cached-api';
 import { getErrorMessage } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
@@ -139,6 +140,7 @@ export default function CompanySettingsPage() {
     
     try {
       const updatedProfile = await companyApi.updateCompanyProfile(formData);
+      cacheInvalidation.companyProfile(); // Invalidate profile cache
       setProfile(updatedProfile);
       setSuccessMessage('Company profile updated successfully!');
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -161,6 +163,7 @@ export default function CompanySettingsPage() {
         notifications: notificationSettings,
         marketing: marketingSettings,
       });
+      cacheInvalidation.companySettings(); // Invalidate settings cache
       setSettings(updatedSettings);
       setSuccessMessage('Settings updated successfully!');
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -462,6 +465,7 @@ export default function CompanySettingsPage() {
                                 logoUrl: logoUrl,
                               });
 
+                              cacheInvalidation.companyProfile(); // Invalidate profile cache
                               setProfile(updatedProfile);
                               setLogoFile(null);
                               setLogoPreview(null);
@@ -502,6 +506,7 @@ export default function CompanySettingsPage() {
                                 logoUrl: '',
                               });
 
+                              cacheInvalidation.companyProfile(); // Invalidate profile cache
                               setProfile(updatedProfile);
                               setSuccessMessage('Logo removed successfully!');
                               setTimeout(() => setSuccessMessage(null), 5000);

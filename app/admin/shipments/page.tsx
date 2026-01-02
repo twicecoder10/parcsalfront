@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +46,7 @@ export default function AdminShipmentsPage() {
   const [modeFilter, setModeFilter] = useState<'AIR' | 'BUS' | 'VAN' | 'TRAIN' | 'SHIP' | 'RIDER' | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchShipments = async () => {
+  const fetchShipments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -70,11 +70,11 @@ export default function AdminShipmentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, modeFilter, searchQuery]);
 
   useEffect(() => {
     fetchShipments();
-  }, [currentPage, statusFilter, modeFilter]);
+  }, [fetchShipments]);
 
   // Debounce search
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function AdminShipmentsPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, fetchShipments]);
 
   if (error && !shipments.length) {
     return (

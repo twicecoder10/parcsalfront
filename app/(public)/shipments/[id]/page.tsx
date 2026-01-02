@@ -16,6 +16,7 @@ import type { Shipment } from '@/lib/api-types';
 import { Navbar } from '@/components/navbar';
 import { CustomerHeader } from '@/components/customer-header';
 import { Footer } from '@/components/footer';
+import Image from 'next/image';
 
 export default function PublicShipmentDetailPage() {
   const params = useParams();
@@ -246,10 +247,12 @@ export default function PublicShipmentDetailPage() {
                   >
                     {shipment.company.logoUrl && (
                       <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border flex-shrink-0">
-                        <img
+                        <Image
                           src={shipment.company.logoUrl}
                           alt={`${shipment.company.name} logo`}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 48px, 64px"
                         />
                       </div>
                     )}

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,10 +62,11 @@ export default function PricingPage() {
         <section className="relative py-12 md:py-16 overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
-            <img 
+            <Image 
               src="/images/categories/warehouse.jpg"
               alt="Warehouse"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/90 to-white" />
           </div>

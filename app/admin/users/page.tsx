@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<'CUSTOMER' | 'COMPANY_ADMIN' | 'COMPANY_STAFF' | 'SUPER_ADMIN' | 'all'>('all');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -60,11 +60,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, roleFilter, searchQuery]);
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, roleFilter]);
+  }, [fetchUsers]);
 
   // Debounce search
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function UsersPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, fetchUsers]);
 
   if (error && !users.length) {
     return (

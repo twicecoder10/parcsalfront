@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,10 +18,12 @@ export function RouteCard({ origin, destination, nextDeparture, image, searchUrl
       <Card className="group overflow-hidden border-2 hover:border-orange-300 hover:shadow-xl transition-all duration-300 cursor-pointer">
         <div className="relative h-48 overflow-hidden bg-gradient-to-br from-orange-50 to-blue-50">
           {image && (
-            <img 
+            <Image 
               src={image} 
               alt={`${origin} to ${destination}`}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              fill
+              className="object-cover group-hover:scale-110 transition-transform duration-500"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
