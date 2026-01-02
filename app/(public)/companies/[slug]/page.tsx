@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,6 +102,19 @@ export default function CompanyProfilePage() {
   const [replyText, setReplyText] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  
+  // Use refs to track pagination values without causing re-renders
+  const shipmentsPaginationRef = useRef(shipmentsPagination);
+  const paginationRef = useRef(pagination);
+  
+  // Update refs when state changes
+  useEffect(() => {
+    shipmentsPaginationRef.current = shipmentsPagination;
+  }, [shipmentsPagination]);
+  
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const fetchCompanyProfile = useCallback(async () => {
     setLoading(true);
@@ -120,9 +133,10 @@ export default function CompanyProfilePage() {
   const fetchReviews = useCallback(async (resetOffset = true) => {
     setReviewsLoading(true);
     try {
+      const currentPagination = paginationRef.current;
       const params = {
-        limit: pagination.limit,
-        offset: resetOffset ? 0 : pagination.offset,
+        limit: currentPagination.limit,
+        offset: resetOffset ? 0 : currentPagination.offset,
       };
       const response = await publicApi.getCompanyReviews(companySlug, params);
       if (resetOffset) {
@@ -136,21 +150,22 @@ export default function CompanyProfilePage() {
     } finally {
       setReviewsLoading(false);
     }
-  }, [companySlug, pagination.limit, pagination.offset]);
+  }, [companySlug]);
 
   const fetchShipments = useCallback(async (resetOffset = true) => {
     setShipmentsLoading(true);
     try {
-      const currentOffset = resetOffset ? 0 : shipmentsPagination.offset + shipmentsPagination.limit;
+      const currentPagination = shipmentsPaginationRef.current;
+      const currentOffset = resetOffset ? 0 : currentPagination.offset + currentPagination.limit;
       const params = {
-        limit: shipmentsPagination.limit,
+        limit: currentPagination.limit,
         offset: currentOffset,
       };
       const response = await publicApi.getCompanyShipments(companySlug, params);
       
       // Handle different response formats
       let shipmentsData: ShipmentCardData[] = [];
-      let paginationData = shipmentsPagination;
+      let paginationData = currentPagination;
       
       // API response structure: { status: "success", data: [...], pagination: {...} }
       if (response.status === 'success' && response.data && Array.isArray(response.data)) {
@@ -178,19 +193,19 @@ export default function CompanyProfilePage() {
         setShipments(availableShipments);
         // Reset pagination when starting fresh
         setShipmentsPagination({
-          limit: paginationData.limit || shipmentsPagination.limit,
+          limit: paginationData.limit || currentPagination.limit,
           offset: 0,
           total: paginationData.total || 0,
-          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= shipmentsPagination.limit),
+          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= currentPagination.limit),
         });
       } else {
         setShipments((prevShipments) => [...prevShipments, ...availableShipments]);
         // Update pagination with new offset
         setShipmentsPagination({
-          limit: paginationData.limit || shipmentsPagination.limit,
+          limit: paginationData.limit || currentPagination.limit,
           offset: currentOffset,
-          total: paginationData.total || shipmentsPagination.total,
-          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= shipmentsPagination.limit),
+          total: paginationData.total || currentPagination.total,
+          hasMore: paginationData.hasMore !== undefined ? paginationData.hasMore : (availableShipments.length >= currentPagination.limit),
         });
       }
     } catch (err) {
@@ -198,7 +213,7 @@ export default function CompanyProfilePage() {
     } finally {
       setShipmentsLoading(false);
     }
-  }, [companySlug, shipmentsPagination]);
+  }, [companySlug]);
 
   useEffect(() => {
     // Check if current user owns this company

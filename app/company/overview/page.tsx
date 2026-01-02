@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { CompanyMapView } from '@/components/company-map-view';
 
 export default function CompanyOverviewPage() {
   const permissions = usePermissions();
+  const permissionsRef = useRef(permissions);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<OverviewStats | null>(null);
@@ -23,6 +24,11 @@ export default function CompanyOverviewPage() {
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
   const [upcomingShipments, setUpcomingShipments] = useState<UpcomingShipment[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Update ref when permissions change
+  useEffect(() => {
+    permissionsRef.current = permissions;
+  }, [permissions]);
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -47,7 +53,9 @@ export default function CompanyOverviewPage() {
     setStatsLoading(true);
     setError(null);
     try {
-      const hasAnalyticsPermission = canPerformAction(permissions, 'viewAnalytics');
+      // Use ref to get current permissions without causing re-renders
+      const currentPermissions = permissionsRef.current;
+      const hasAnalyticsPermission = canPerformAction(currentPermissions, 'viewAnalytics');
       
       // Only fetch stats if user has analytics permission
       if (hasAnalyticsPermission) {
@@ -93,7 +101,7 @@ export default function CompanyOverviewPage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [permissions]);
+  }, []); // Empty deps - use ref to access permissions
 
   // Fetch overview data after permissions are loaded
   useEffect(() => {

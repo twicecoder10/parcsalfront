@@ -73,35 +73,24 @@ export default function CustomerNotificationsPage() {
   // Real-time Socket.IO listeners for notifications
   useEffect(() => {
     if (!socket) {
-      console.log('Notifications page: Socket not available');
       return;
     }
 
-    console.log('Notifications page: Setting up Socket.IO listeners', {
-      connected: socket.connected,
-      id: socket.id,
-    });
-
     // Handle new notification
     const handleNewNotification = (notification: Notification) => {
-      console.log('Notifications page: New notification received via Socket.IO', notification);
       // Only add if it matches current filters
       if (unreadOnly && notification.isRead) {
-        console.log('Notifications page: Notification filtered out (unreadOnly filter)');
         return;
       }
       if (typeFilter !== 'all' && notification.type !== typeFilter) {
-        console.log('Notifications page: Notification filtered out (typeFilter)', { typeFilter, notificationType: notification.type });
         return;
       }
       
       setNotifications((prev) => {
         // Check if notification already exists (avoid duplicates)
         if (prev.some((n) => n.id === notification.id)) {
-          console.log('Notifications page: Notification already exists, skipping');
           return prev;
         }
-        console.log('Notifications page: Adding new notification to list');
         // Reset to page 1 if we're on a different page
         setPage(1);
         // Add new notification to the top of the list
@@ -116,7 +105,6 @@ export default function CustomerNotificationsPage() {
 
     // Handle notification updated (e.g., marked as read)
     const handleNotificationUpdate = (notification: Notification) => {
-      console.log('Notifications page: Notification updated via Socket.IO', notification);
       setNotifications((prev) => {
         const existing = prev.find((n) => n.id === notification.id);
         const wasUnread = existing && !existing.isRead;
@@ -137,7 +125,6 @@ export default function CustomerNotificationsPage() {
 
     // Handle notification deleted
     const handleNotificationDelete = ({ id }: { id: string }) => {
-      console.log('Notifications page: Notification deleted via Socket.IO', id);
       setNotifications((prev) => {
         const notification = prev.find((n) => n.id === id);
         // Update unread count if deleted notification was unread
@@ -150,7 +137,6 @@ export default function CustomerNotificationsPage() {
 
     // Handle unread count update
     const handleUnreadCount = ({ count }: { count: number }) => {
-      console.log('Notifications page: Unread count updated via Socket.IO', count);
       setUnreadCount(count);
     };
 
@@ -160,11 +146,9 @@ export default function CustomerNotificationsPage() {
     socket.on('notification:deleted', handleNotificationDelete);
     socket.on('notification:unreadCount', handleUnreadCount);
 
-    console.log('Notifications page: Socket.IO listeners registered');
 
     // Cleanup listeners on unmount or socket change
     return () => {
-      console.log('Notifications page: Cleaning up Socket.IO listeners');
       socket.off('notification:new', handleNewNotification);
       socket.off('notification:updated', handleNotificationUpdate);
       socket.off('notification:deleted', handleNotificationDelete);
@@ -217,7 +201,6 @@ export default function CustomerNotificationsPage() {
         Math.ceil((response.pagination.total || 0) / (response.pagination.limit || 20));
       setTotalPages(calculatedTotalPages || 1);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -234,7 +217,6 @@ export default function CustomerNotificationsPage() {
       const count = await customerApi.getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
-      console.error('Failed to fetch unread count:', error);
     }
   };
 
@@ -247,7 +229,6 @@ export default function CustomerNotificationsPage() {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
     } finally {
       setProcessing(null);
     }
@@ -260,7 +241,6 @@ export default function CustomerNotificationsPage() {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
     } finally {
       setProcessing(null);
     }
@@ -279,7 +259,6 @@ export default function CustomerNotificationsPage() {
         setPage(page - 1);
       }
     } catch (error) {
-      console.error('Failed to delete notification:', error);
     } finally {
       setProcessing(null);
     }
@@ -299,7 +278,6 @@ export default function CustomerNotificationsPage() {
       await fetchNotifications();
       await fetchUnreadCount();
     } catch (error) {
-      console.error('Failed to delete read notifications:', error);
     } finally {
       setProcessing(null);
     }

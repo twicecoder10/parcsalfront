@@ -32,11 +32,29 @@ export function GoogleMapsLoader({ children }: GoogleMapsLoaderProps) {
       return;
     }
 
-    // Check if script is already being loaded
+    // Check if script is already being loaded or loaded
     const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
     if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      existingScript.addEventListener('error', () => setIsError(true));
+      // If script exists, check if it's already loaded
+      if (window.google && window.google.maps && window.google.maps.places && window.google.maps.Geocoder) {
+        setIsLoaded(true);
+        return;
+      }
+      // Otherwise wait for it to load
+      const checkLoaded = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.places && window.google.maps.Geocoder) {
+          clearInterval(checkLoaded);
+          setIsLoaded(true);
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        clearInterval(checkLoaded);
+        if (!window.google?.maps?.Geocoder) {
+          setIsError(true);
+        }
+      }, 5000);
       return;
     }
 
@@ -70,12 +88,9 @@ export function GoogleMapsLoader({ children }: GoogleMapsLoaderProps) {
     script.onerror = () => setIsError(true);
     document.head.appendChild(script);
 
+    // Don't remove script on unmount - it should persist for other components
     return () => {
-      // Cleanup if component unmounts
-      const scriptToRemove = document.querySelector(`script[src*="maps.googleapis.com"]`);
-      if (scriptToRemove && scriptToRemove === script) {
-        scriptToRemove.remove();
-      }
+      // No cleanup needed - keep the script loaded for other components
     };
   }, []);
 

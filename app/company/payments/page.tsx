@@ -84,9 +84,10 @@ export default function PaymentsPage() {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
+      const limit = 20; // Fixed limit to avoid dependency issues
       const response = await companyApi.getPayments({
-        limit: pagination.limit,
-        offset: currentPage * pagination.limit,
+        limit: limit,
+        offset: currentPage * limit,
         status: statusFilter !== 'all' ? (statusFilter as 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED') : undefined,
         search: searchQuery || undefined,
         dateFrom: dateFrom || undefined,
@@ -123,7 +124,7 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo, pagination.limit]);
+  }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo]);
 
   const fetchPaymentStats = useCallback(async () => {
     if (!canPerformAction(permissions, 'viewPaymentStats')) {

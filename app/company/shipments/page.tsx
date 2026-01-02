@@ -67,9 +67,10 @@ export default function ShipmentsPage() {
   const fetchShipments = useCallback(async () => {
     setLoading(true);
     try {
+      const limit = 20; // Fixed limit to avoid dependency issues
       const response = await companyApi.getShipments({
-        limit: pagination.limit,
-        offset: currentPage * pagination.limit,
+        limit: limit,
+        offset: currentPage * limit,
         status: statusFilter !== 'all' ? statusFilter as 'DRAFT' | 'PUBLISHED' | 'CLOSED' : undefined,
         mode: modeFilter !== 'all' ? modeFilter : undefined,
         search: searchQuery || undefined,
@@ -80,13 +81,13 @@ export default function ShipmentsPage() {
         setShipments(Array.isArray(response.data) ? response.data : []);
         setPagination(response.pagination && typeof response.pagination === 'object' ? {
           total: response.pagination.total || 0,
-          limit: response.pagination.limit || pagination.limit,
-          offset: response.pagination.offset || currentPage * pagination.limit,
+          limit: response.pagination.limit || 20,
+          offset: response.pagination.offset || currentPage * 20,
           hasMore: response.pagination.hasMore || false,
         } : {
           total: 0,
-          limit: pagination.limit,
-          offset: currentPage * pagination.limit,
+          limit: 20,
+          offset: currentPage * 20,
           hasMore: false,
         });
       } else {
@@ -94,8 +95,8 @@ export default function ShipmentsPage() {
         setShipments([]);
         setPagination({
           total: 0,
-          limit: pagination.limit,
-          offset: currentPage * pagination.limit,
+          limit: 20,
+          offset: currentPage * 20,
           hasMore: false,
         });
       }
@@ -104,14 +105,14 @@ export default function ShipmentsPage() {
       setShipments([]); // Set to empty array on error
       setPagination({
         total: 0,
-        limit: pagination.limit,
-        offset: currentPage * pagination.limit,
+        limit: 20,
+        offset: currentPage * 20,
         hasMore: false,
       });
     } finally {
       setLoading(false);
     }
-  }, [currentPage, statusFilter, modeFilter, searchQuery, pagination.limit]);
+  }, [currentPage, statusFilter, modeFilter, searchQuery]);
 
   useEffect(() => {
     fetchShipments();
