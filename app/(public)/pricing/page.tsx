@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Check, Package, ArrowRight } from 'lucide-react';
@@ -10,48 +11,150 @@ import { Check, Package, ArrowRight } from 'lucide-react';
 export default function PricingPage() {
   const plans = [
     {
-      name: 'Basic',
-      price: '£29',
+      id: 'FREE',
+      name: 'Free',
+      price: '£0',
       period: '/month',
-      description: 'Perfect for small companies getting started',
-      features: [
-        'Up to 10 active shipments',
-        'Basic analytics',
-        'Email support',
-        'Standard booking management',
-      ],
+      commission: '15%',
+      tagline: 'Get started — list for free, pay only when you get bookings',
       recommended: false,
+      features: {
+        operations: [
+          'List services on Parcsal (standard ranking)',
+          'Create/manage Slots & Bookings with simple label printing',
+        ],
+        customers: [
+          'View reviews/ratings',
+          'Reply to messages one-to-one',
+        ],
+        money: [
+          'View Payments & Payouts',
+          'Standard payout within 48 hours of delivery',
+        ],
+        marketing: [
+          'Basic analytics (shipments, revenue, average rating)',
+          'Email + SMS/WhatsApp system notifications only',
+          'Promo campaigns via pay-as-you-go credits',
+        ],
+        account: [
+          '1 admin user',
+        ],
+      },
+      cta: 'Get started',
+      ctaLink: '/auth/register-company',
     },
     {
-      name: 'Pro',
-      price: '£99',
+      id: 'STARTER',
+      name: 'Starter',
+      price: '£49',
       period: '/month',
-      description: 'Best for growing logistics businesses',
-      features: [
-        'Unlimited active shipments',
-        'Advanced analytics & reports',
-        'Priority email & phone support',
-        'Advanced booking management',
-        'Team collaboration tools',
-        'API access',
-      ],
+      commission: '15%',
+      tagline: 'Grow your volume — priority visibility + marketing tools',
       recommended: true,
+      features: {
+        operations: [
+          'Everything in Free',
+          'Slot templates to reuse offers',
+        ],
+        customers: [
+          '"Verified Carrier" badge on listings',
+        ],
+        money: [
+          'Faster payouts (24–48 hours)',
+          'Simple CSV exports',
+        ],
+        insights: [
+          'Enhanced analytics: corridor/service breakdown',
+          'New vs repeat customers, basic conversion metrics',
+        ],
+        marketing: [
+          'Email campaigns to past customers (up to 5,000/month; extra billed)',
+          '100 promotional SMS/WhatsApp credits/month; extra via topups',
+          'Prebuilt promo & reminder templates',
+        ],
+        account: [
+          'Up to 3 team members',
+        ],
+      },
+      cta: 'Upgrade',
+      ctaLink: '/auth/register-company',
     },
     {
-      name: 'Enterprise',
-      price: 'Custom',
-      period: '',
-      description: 'For large organizations with custom needs',
-      features: [
-        'Everything in Pro',
-        'Dedicated account manager',
-        'Custom integrations',
-        'SLA guarantees',
-        'White-label options',
-        'On-premise deployment',
-      ],
+      id: 'PROFESSIONAL',
+      name: 'Professional',
+      price: '£149',
+      period: '/month',
+      commission: '15%',
+      tagline: 'Scale your operations — advanced analytics + dedicated support',
       recommended: false,
+      features: {
+        operations: [
+          'Everything in Starter',
+          'Advanced slot rules (automation, bulk uploads, day-of-week pricing)',
+          'Priority search ranking above Free & Starter',
+          'Access to Scan and Warehouses modules',
+        ],
+        customers: [
+          'Featured placement and "Recommended Carrier" rotation',
+        ],
+        money: [
+          'Next-day payout options',
+          'Detailed reconciliation-ready reports',
+        ],
+        insights: [
+          'Full analytics suite (profitability, cohorts, funnel)',
+          'A/B testing dashboard',
+        ],
+        marketing: [
+          'Higher email limits (up to 20,000/month) with segmentation, scheduling & A/B tests',
+          '500 promotional SMS/WhatsApp credits/month with discounted extra packs',
+          'Premium templates and branding options',
+        ],
+        account: [
+          'Up to 10 team members with role-based permissions',
+          'Dedicated success contact',
+        ],
+      },
+      cta: 'Upgrade',
+      ctaLink: '/auth/register-company',
     },
+    {
+      id: 'ENTERPRISE',
+      name: 'Enterprise',
+      price: 'From £500',
+      period: '/month',
+      commission: '15% standard (12–14% negotiable)',
+      tagline: 'Partnership tier — custom solution for large logistics groups',
+      recommended: false,
+      features: {
+        partnership: [
+          'Dedicated account manager and joint business reviews',
+          'Custom SLAs on support, claims, and payouts',
+        ],
+        operations: [
+          'Everything in Professional',
+          'Multi-branch / multi-country structure with separate dashboards',
+          'Fully custom workflows and deep API integrations (bookings, labels, tracking, analytics)',
+        ],
+        data: [
+          'Custom reporting exports and data feeds into internal systems',
+          'Co-branded landing pages and exclusive corridor promotions',
+        ],
+        account: [
+          'Unlimited users with advanced role and access controls',
+        ],
+      },
+      cta: 'Contact sales',
+      ctaLink: '/contact',
+    },
+  ];
+
+  const comparisonData = [
+    { feature: 'Team members', free: '1', starter: '3', professional: '10', enterprise: 'Unlimited' },
+    { feature: 'Search ranking', free: 'Standard', starter: 'Priority', professional: 'Highest', enterprise: 'Custom' },
+    { feature: 'Payout speed', free: '48h', starter: '24–48h', professional: 'Next-day', enterprise: 'SLA' },
+    { feature: 'Email campaigns', free: 'Pay-as-you-go', starter: '5,000/month', professional: '20,000/month', enterprise: 'Custom' },
+    { feature: 'Promo credits', free: 'Pay-as-you-go', starter: '100/month', professional: '500/month', enterprise: 'Custom' },
   ];
 
   return (
@@ -148,60 +251,211 @@ export default function PricingPage() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                For Companies
+                For Companies & Carriers
               </h2>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-gray-600 mb-2">
                 Subscription plans to maximize your capacity
+              </p>
+              <p className="text-sm text-gray-500">
+                Commission: 15% per shipment on all plans (Enterprise negotiable)
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
               {plans.map((plan) => (
                 <Card
-                  key={plan.name}
-                  className={`border-2 hover:shadow-xl transition-all ${
+                  key={plan.id}
+                  className={`border-2 hover:shadow-xl transition-all flex flex-col ${
                     plan.recommended 
-                      ? 'border-orange-300 shadow-lg scale-105' 
+                      ? 'border-orange-300 shadow-lg md:scale-105' 
                       : 'border-gray-200 hover:border-orange-200'
                   } relative`}
                 >
                   {plan.recommended && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
                       <Badge className="bg-orange-600 text-white px-4 py-1">Most Popular</Badge>
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                    <CardDescription className="text-base">{plan.description}</CardDescription>
-                    <div className="mt-6 mb-2">
-                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                      <span className="text-gray-600 text-lg">{plan.period}</span>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl mb-1">{plan.name}</CardTitle>
+                    <CardDescription className="text-sm min-h-[2.5rem]">{plan.tagline}</CardDescription>
+                    <div className="mt-4 mb-2">
+                      <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-600 text-base">{plan.period}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-2">
+                      <span className="font-medium">Commission: </span>
+                      <span>{plan.commission} per shipment</span>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-gray-700">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href="/auth/register-company" className="block">
+                  <CardContent className="flex-1 flex flex-col">
+                    <div className="space-y-4 mb-6 flex-1">
+                      {plan.features.operations && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Operations</h4>
+                          <ul className="space-y-2">
+                            {plan.features.operations.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.customers && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Customers</h4>
+                          <ul className="space-y-2">
+                            {plan.features.customers.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.money && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Money & Payout</h4>
+                          <ul className="space-y-2">
+                            {plan.features.money.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.insights && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Insights</h4>
+                          <ul className="space-y-2">
+                            {plan.features.insights.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.marketing && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Marketing</h4>
+                          <ul className="space-y-2">
+                            {plan.features.marketing.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.partnership && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Partnership & Support</h4>
+                          <ul className="space-y-2">
+                            {plan.features.partnership.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.data && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Data & Marketing</h4>
+                          <ul className="space-y-2">
+                            {plan.features.data.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.account && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Account</h4>
+                          <ul className="space-y-2">
+                            {plan.features.account.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    <Link href={plan.ctaLink} className="block mt-auto">
                       <Button
                         size="lg"
                         className={`w-full ${
                           plan.recommended 
                             ? 'bg-orange-600 hover:bg-orange-700' 
+                            : plan.id === 'ENTERPRISE'
+                            ? 'bg-gray-900 hover:bg-gray-800'
                             : 'bg-gray-900 hover:bg-gray-800'
                         }`}
                       >
-                        {plan.name === 'Enterprise' ? 'Contact sales' : 'Get started'}
+                        {plan.cta}
+                        {plan.id !== 'ENTERPRISE' && <ArrowRight className="ml-2 h-4 w-4" />}
                       </Button>
                     </Link>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* Comparison Table */}
+            <div className="max-w-6xl mx-auto mt-12">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-2xl text-center">Plan Comparison</CardTitle>
+                  <CardDescription className="text-center">
+                    Compare key features across all plans
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[200px]">Feature</TableHead>
+                          <TableHead className="text-center">Free</TableHead>
+                          <TableHead className="text-center">Starter</TableHead>
+                          <TableHead className="text-center">Professional</TableHead>
+                          <TableHead className="text-center">Enterprise</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {comparisonData.map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{row.feature}</TableCell>
+                            <TableCell className="text-center">{row.free}</TableCell>
+                            <TableCell className="text-center">{row.starter}</TableCell>
+                            <TableCell className="text-center">{row.professional}</TableCell>
+                            <TableCell className="text-center">{row.enterprise}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <p className="text-sm text-gray-700">
+                      <strong>Note:</strong> Marketing campaign limits apply; top-ups available. Payout timing depends on delivery confirmation.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
@@ -216,12 +470,24 @@ export default function PricingPage() {
               <div className="space-y-6">
                 {[
                   {
+                    question: 'What is the commission rate?',
+                    answer: 'All plans charge 15% commission per shipment. Enterprise plans may negotiate rates between 12–14% based on volume and partnership terms.',
+                  },
+                  {
                     question: 'Can I switch plans later?',
                     answer: 'Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.',
                   },
                   {
+                    question: 'How do payouts work?',
+                    answer: 'Payout timing depends on your plan: Free (48 hours), Starter (24–48 hours), Professional (next-day options), Enterprise (custom SLA). Payouts are processed after delivery confirmation.',
+                  },
+                  {
+                    question: 'Are there limits on marketing campaigns?',
+                    answer: 'Yes, marketing campaign limits vary by plan. Free uses pay-as-you-go credits, Starter includes 5,000 emails/month and 100 SMS/WhatsApp credits, Professional includes 20,000 emails/month and 500 SMS/WhatsApp credits. Extra usage can be purchased via top-ups.',
+                  },
+                  {
                     question: 'Is there a setup fee?',
-                    answer: 'No, there are no setup fees. You only pay the monthly subscription for your chosen plan.',
+                    answer: 'No, there are no setup fees. You only pay the monthly subscription for your chosen plan (Free plan has no monthly fee).',
                   },
                   {
                     question: 'What payment methods do you accept?',

@@ -272,14 +272,24 @@ export default function CompanyDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600">Plan</span>
-                <span className="font-medium">{company.activePlan.name}</span>
+                <Badge variant="outline" className="font-medium">
+                  {company.activePlan.name}
+                </Badge>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Monthly Price</span>
-                <span className="font-medium">£{company.activePlan.priceMonthly}</span>
+                <span className="font-medium">£{company.activePlan.priceMonthly}/month</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Commission</span>
+                <span className="font-medium">
+                  {company.activePlan.name.toUpperCase() === 'ENTERPRISE' 
+                    ? '12–14% negotiable' 
+                    : '15%'} per shipment
+                </span>
               </div>
             </div>
           </CardContent>

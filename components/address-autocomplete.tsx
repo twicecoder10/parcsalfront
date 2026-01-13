@@ -4,6 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import countries from 'i18n-iso-countries';
+import enLocale from 'i18n-iso-countries/langs/en.json';
+
+// Register the locale
+countries.registerLocale(enLocale);
 
 interface AddressAutocompleteProps {
   value?: string;
@@ -67,66 +72,48 @@ export function AddressAutocomplete({
   }, []);
 
   const getCountryCode = (countryName: string): string | undefined => {
+    if (!countryName) return undefined;
+
+    // First, try to get the country code directly from the library
+    const countryCodes = countries.getAlpha2Codes();
+    for (const [code, name] of Object.entries(countries.getNames('en', { select: 'official' }))) {
+      if (name.toLowerCase() === countryName.toLowerCase()) {
+        return code.toLowerCase();
+      }
+    }
+
+    // Fallback: Handle common variations and aliases
     const countryCodeMap: Record<string, string> = {
-      'United States': 'us',
+      'UK': 'gb',
       'United Kingdom': 'gb',
-      'Canada': 'ca',
-      'Australia': 'au',
-      'Germany': 'de',
-      'France': 'fr',
-      'Italy': 'it',
-      'Spain': 'es',
-      'Netherlands': 'nl',
-      'Belgium': 'be',
-      'Switzerland': 'ch',
-      'Austria': 'at',
-      'Sweden': 'se',
-      'Norway': 'no',
-      'Denmark': 'dk',
-      'Finland': 'fi',
-      'Poland': 'pl',
-      'Ireland': 'ie',
-      'Portugal': 'pt',
-      'Greece': 'gr',
-      'Czech Republic': 'cz',
-      'Hungary': 'hu',
-      'Romania': 'ro',
-      'Bulgaria': 'bg',
-      'Croatia': 'hr',
-      'Slovakia': 'sk',
-      'Slovenia': 'si',
-      'Lithuania': 'lt',
-      'Latvia': 'lv',
-      'Estonia': 'ee',
-      'Mexico': 'mx',
-      'Brazil': 'br',
-      'Argentina': 'ar',
-      'Chile': 'cl',
-      'Colombia': 'co',
-      'Peru': 'pe',
-      'South Africa': 'za',
-      'Egypt': 'eg',
-      'Nigeria': 'ng',
-      'Kenya': 'ke',
-      'India': 'in',
-      'China': 'cn',
-      'Japan': 'jp',
-      'South Korea': 'kr',
-      'Singapore': 'sg',
-      'Malaysia': 'my',
-      'Thailand': 'th',
-      'Vietnam': 'vn',
-      'Philippines': 'ph',
-      'Indonesia': 'id',
-      'United Arab Emirates': 'ae',
-      'Saudi Arabia': 'sa',
-      'Israel': 'il',
-      'Turkey': 'tr',
-      'Russia': 'ru',
-      'Ukraine': 'ua',
-      'New Zealand': 'nz',
+      'United Kingdom of Great Britain and Northern Ireland': 'gb',
+      'USA': 'us',
+      'United States': 'us',
+      'United States of America': 'us',
+      'DRC': 'cd',
+      'Democratic Republic of the Congo': 'cd',
+      'Congo, Democratic Republic of the': 'cd',
+      'Congo': 'cg',
+      'Republic of the Congo': 'cg',
+      'Ivory Coast': 'ci',
+      "Côte d'Ivoire": 'ci',
+      'Cote d\'Ivoire': 'ci',
     };
-    return countryCodeMap[countryName]?.toLowerCase();
+
+    // Check the map first
+    if (countryCodeMap[countryName]) {
+      return countryCodeMap[countryName];
+    }
+
+    // Try case-insensitive match in the map
+    const normalizedName = countryName.toLowerCase();
+    for (const [key, code] of Object.entries(countryCodeMap)) {
+      if (key.toLowerCase() === normalizedName) {
+        return code;
+      }
+    }
+
+    return undefined;
   };
 
   const fetchPredictions = (input: string) => {

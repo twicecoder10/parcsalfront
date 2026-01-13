@@ -19,6 +19,37 @@ export default function NewShipmentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Allowed countries for the dropdown
+  const allowedCountries = [
+    'UK',
+    'Ireland',
+    'France',
+    'Spain',
+    'Italy',
+    'Germany',
+    'Netherlands',
+    'Belgium',
+    'Switzerland',
+    'USA',
+    'Senegal',
+    'Mali',
+    'Guinea',
+    'Togo',
+    'Burkina Faso',
+    'Congo',
+    'DRC',
+    'South Africa',
+    'Zimbabwe',
+    'Tanzania',
+    'Morocco',
+    'Algeria',
+    'Benin',
+    'Cameroon',
+    'Ghana',
+    'Ivory Coast',
+    'Nigeria',
+  ];
   const [formData, setFormData] = useState({
     originCountry: '',
     originCity: '',
@@ -243,6 +274,7 @@ export default function NewShipmentPage() {
                   }}
                   label="Origin Country"
                   placeholder="Select origin country"
+                  allowedCountries={allowedCountries}
                   required
                 />
                 <CitySelect
@@ -262,6 +294,7 @@ export default function NewShipmentPage() {
                   }}
                   label="Destination Country"
                   placeholder="Select destination country"
+                  allowedCountries={allowedCountries}
                   required
                 />
                 <CitySelect

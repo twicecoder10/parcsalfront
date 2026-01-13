@@ -61,7 +61,7 @@ export default function FAQPage() {
         },
         {
           q: 'What subscription plans are available?',
-          a: 'We offer Basic, Pro, and Enterprise plans with different features and limits. Visit our pricing page to see detailed comparisons and choose the plan that fits your business.',
+          a: 'We offer Free, Starter, Professional, and Enterprise plans with different features and limits. All plans charge 15% commission per shipment (Enterprise negotiable). Visit our pricing page to see detailed comparisons and choose the plan that fits your business.',
         },
         {
           q: 'How do I get paid?',

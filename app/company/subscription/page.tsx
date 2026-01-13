@@ -203,6 +203,9 @@ function SubscriptionContent() {
                 <p className="text-gray-600">
                   £{subscription.companyPlan.priceMonthly}/month
                 </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Commission: {subscription.companyPlan.name.toUpperCase() === 'ENTERPRISE' ? '12–14% negotiable' : '15%'} per shipment
+                </p>
                 {subscription.currentPeriodEnd && (
                   <p className="text-sm text-gray-500 mt-2">
                     Next billing date: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
@@ -229,9 +232,12 @@ function SubscriptionContent() {
           <CardHeader>
             <CardTitle>Available Plans</CardTitle>
             <CardDescription>Choose the plan that works best for your business</CardDescription>
+            <p className="text-sm text-gray-500 mt-2">
+              Commission: 15% per shipment on all plans (Enterprise negotiable)
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {plans.map((plan) => {
                 const isCurrentPlan = subscription?.companyPlan.id === plan.id;
                 const currentPlanPrice = subscription?.companyPlan.priceMonthly 
@@ -242,23 +248,75 @@ function SubscriptionContent() {
                 const isDowngrade = planPrice < currentPlanPrice && !isCurrentPlan;
                 
                 const features: string[] = [];
+                const planNameUpper = plan.name.toUpperCase();
+                const planIdUpper = (plan.id || '').toUpperCase();
                 
-                if (plan.maxActiveShipmentSlots !== null) {
-                  features.push(`Up to ${plan.maxActiveShipmentSlots} active shipments`);
+                // Plan-specific features based on new pricing structure
+                if (planNameUpper === 'FREE' || planIdUpper === 'FREE' || plan.name === 'Free') {
+                  features.push('List services on Parcsal (standard ranking)');
+                  features.push('Create/manage Slots & Bookings');
+                  features.push('View reviews/ratings');
+                  features.push('Standard payout (48 hours)');
+                  features.push('Basic analytics');
+                  if (plan.maxTeamMembers !== null) {
+                    features.push(`${plan.maxTeamMembers} admin user`);
+                  }
+                } else if (planNameUpper === 'STARTER' || planIdUpper === 'STARTER' || plan.name === 'Starter') {
+                  features.push('Everything in Free');
+                  features.push('"Verified Carrier" badge');
+                  features.push('Slot templates');
+                  features.push('Faster payouts (24–48 hours)');
+                  features.push('Enhanced analytics');
+                  features.push('Email campaigns (up to 5,000/month)');
+                  features.push('100 SMS/WhatsApp credits/month');
+                  if (plan.maxTeamMembers !== null) {
+                    features.push(`Up to ${plan.maxTeamMembers} team members`);
+                  }
+                } else if (planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL' || plan.name === 'Professional') {
+                  features.push('Everything in Starter');
+                  features.push('Priority search ranking');
+                  features.push('Advanced slot rules & automation');
+                  features.push('Next-day payout options');
+                  features.push('Full analytics suite with A/B testing');
+                  features.push('Email campaigns (up to 20,000/month)');
+                  features.push('500 SMS/WhatsApp credits/month');
+                  features.push('Scan and Warehouses modules');
+                  if (plan.maxTeamMembers !== null) {
+                    features.push(`Up to ${plan.maxTeamMembers} team members`);
+                  }
+                  features.push('Dedicated success contact');
+                } else if (planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' || plan.name === 'Enterprise') {
+                  features.push('Everything in Professional');
+                  features.push('Dedicated account manager');
+                  features.push('Custom SLAs');
+                  features.push('Multi-branch/multi-country structure');
+                  features.push('Deep API integrations');
+                  features.push('Custom reporting & data feeds');
+                  features.push('Co-branded landing pages');
+                  if (plan.maxTeamMembers === null) {
+                    features.push('Unlimited team members');
+                  } else {
+                    features.push(`Up to ${plan.maxTeamMembers} team members`);
+                  }
                 } else {
-                  features.push('Unlimited active shipments');
-                }
-                
-                if (plan.maxTeamMembers !== null) {
-                  features.push(`Up to ${plan.maxTeamMembers} team members`);
-                } else {
-                  features.push('Unlimited team members');
-                }
-                
-                features.push('Basic analytics');
-                if (!plan.isDefault) {
-                  features.push('Advanced analytics & reports');
-                  features.push('Priority support');
+                  // Fallback for backward compatibility
+                  if (plan.maxActiveShipmentSlots !== null) {
+                    features.push(`Up to ${plan.maxActiveShipmentSlots} active shipments`);
+                  } else {
+                    features.push('Unlimited active shipments');
+                  }
+                  
+                  if (plan.maxTeamMembers !== null) {
+                    features.push(`Up to ${plan.maxTeamMembers} team members`);
+                  } else {
+                    features.push('Unlimited team members');
+                  }
+                  
+                  features.push('Basic analytics');
+                  if (!plan.isDefault) {
+                    features.push('Advanced analytics & reports');
+                    features.push('Priority support');
+                  }
                 }
 
                 return (
@@ -292,6 +350,9 @@ function SubscriptionContent() {
                         </span>
                         <span className="text-gray-600">/month</span>
                       </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Commission: {planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? '12–14% negotiable' : '15%'} per shipment
+                      </p>
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-3 mb-6">

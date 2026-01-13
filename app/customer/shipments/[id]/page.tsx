@@ -16,7 +16,6 @@ import type { Shipment, ParcelType, PickupMethod, DeliveryMethod, WarehouseAddre
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AddressAutocomplete } from '@/components/address-autocomplete';
-import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { uploadParcelImages, createImagePreview, MAX_PARCEL_IMAGES, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, validateImageFile } from '@/lib/upload-api';
@@ -122,6 +121,14 @@ export default function ShipmentDetailPage() {
       fetchShipment();
     }
   }, [fetchShipment]);
+
+  // Set pickup and delivery countries from shipment when it loads
+  useEffect(() => {
+    if (shipment) {
+      setPickupCountry(shipment.originCountry);
+      setDeliveryCountry(shipment.destinationCountry);
+    }
+  }, [shipment]);
 
   // Filter warehouses for pickup (origin area)
   const getPickupWarehouses = useCallback((): { warehouses: WarehouseAddress[]; filterType: 'city' | 'country' | 'none' } => {
@@ -329,9 +336,7 @@ export default function ShipmentDetailPage() {
   // Handler for pickup address selection
   const handlePickupAddressSelect = (place: google.maps.places.PlaceResult) => {
     const components = extractAddressComponents(place);
-    if (components.country) {
-      setPickupCountry(components.country);
-    }
+    // Don't set country - it's fixed to origin country
     if (components.city) {
       setPickupCity(components.city);
     }
@@ -346,9 +351,7 @@ export default function ShipmentDetailPage() {
   // Handler for delivery address selection
   const handleDeliveryAddressSelect = (place: google.maps.places.PlaceResult) => {
     const components = extractAddressComponents(place);
-    if (components.country) {
-      setDeliveryCountry(components.country);
-    }
+    // Don't set country - it's fixed to destination country
     if (components.city) {
       setDeliveryCity(components.city);
     }
@@ -899,7 +902,7 @@ export default function ShipmentDetailPage() {
                         label="Pickup Address"
                         required
                         placeholder="Enter pickup address"
-                        country={pickupCountry}
+                        country={pickupCountry || shipment?.originCountry}
                       />
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -911,13 +914,16 @@ export default function ShipmentDetailPage() {
                           required
                           placeholder="Select city"
                         />
-                        <CountrySelect
-                          value={pickupCountry}
-                          onChange={setPickupCountry}
-                          label="Country"
-                          required
-                          placeholder="Select country"
-                        />
+                        <div className="space-y-2">
+                          <Label htmlFor="pickupCountry">Country</Label>
+                          <Input
+                            id="pickupCountry"
+                            type="text"
+                            value={pickupCountry}
+                            disabled
+                            className="bg-gray-50"
+                          />
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -1036,7 +1042,7 @@ export default function ShipmentDetailPage() {
                         label="Delivery Address"
                         required
                         placeholder="Enter delivery address"
-                        country={deliveryCountry}
+                        country={deliveryCountry || shipment?.destinationCountry}
                       />
                       
                       <div className="grid grid-cols-2 gap-2">
@@ -1048,13 +1054,16 @@ export default function ShipmentDetailPage() {
                           required
                           placeholder="Select city"
                         />
-                        <CountrySelect
-                          value={deliveryCountry}
-                          onChange={setDeliveryCountry}
-                          label="Country"
-                          required
-                          placeholder="Select country"
-                        />
+                        <div className="space-y-2">
+                          <Label htmlFor="deliveryCountry">Country</Label>
+                          <Input
+                            id="deliveryCountry"
+                            type="text"
+                            value={deliveryCountry}
+                            disabled
+                            className="bg-gray-50"
+                          />
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">

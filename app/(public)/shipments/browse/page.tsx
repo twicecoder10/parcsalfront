@@ -39,6 +39,37 @@ export default function BrowseShipmentsPage() {
 
   // Get today's date in YYYY-MM-DD format for min date constraints
   const today = new Date().toISOString().split('T')[0];
+
+  // Allowed countries for the dropdown
+  const allowedCountries = [
+    'UK',
+    'Ireland',
+    'France',
+    'Spain',
+    'Italy',
+    'Germany',
+    'Netherlands',
+    'Belgium',
+    'Switzerland',
+    'USA',
+    'Senegal',
+    'Mali',
+    'Guinea',
+    'Togo',
+    'Burkina Faso',
+    'Congo',
+    'DRC',
+    'South Africa',
+    'Zimbabwe',
+    'Tanzania',
+    'Morocco',
+    'Algeria',
+    'Benin',
+    'Cameroon',
+    'Ghana',
+    'Ivory Coast',
+    'Nigeria',
+  ];
   const [shipments, setShipments] = useState<ShipmentCardData[]>([]);
   const [allShipments, setAllShipments] = useState<ShipmentCardData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -302,6 +333,7 @@ export default function BrowseShipmentsPage() {
                       }}
                       label=""
                       placeholder="Country"
+                      allowedCountries={allowedCountries}
                       className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>
@@ -327,6 +359,7 @@ export default function BrowseShipmentsPage() {
                       }}
                       label=""
                       placeholder="Country"
+                      allowedCountries={allowedCountries}
                       className="[&_button]:h-9 [&_button]:text-xs"
                     />
                   </div>

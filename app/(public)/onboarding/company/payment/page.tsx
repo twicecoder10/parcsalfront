@@ -139,8 +139,45 @@ function PaymentOnboardingContent() {
       features.push(`Up to ${plan.maxTeamMembers} team members`);
     }
 
-    // Add plan-specific features
-    if (plan.name === 'Basic') {
+    // Add plan-specific features based on plan name or ID
+    const planNameUpper = plan.name.toUpperCase();
+    const planIdUpper = (plan.id || '').toUpperCase();
+    
+    if (planNameUpper === 'FREE' || planIdUpper === 'FREE' || plan.name === 'Free') {
+      features.push(
+        'List services on Parcsal (standard ranking)',
+        'Basic analytics (shipments, revenue, average rating)',
+        'Standard payout within 48 hours'
+      );
+    } else if (planNameUpper === 'STARTER' || planIdUpper === 'STARTER' || plan.name === 'Starter') {
+      features.push(
+        'Verified Carrier badge',
+        'Enhanced analytics with corridor breakdown',
+        'Faster payouts (24–48 hours)',
+        'Email campaigns (up to 5,000/month)',
+        '100 SMS/WhatsApp credits/month'
+      );
+    } else if (planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL' || plan.name === 'Professional') {
+      features.push(
+        'Priority search ranking',
+        'Full analytics suite with A/B testing',
+        'Next-day payout options',
+        'Email campaigns (up to 20,000/month)',
+        '500 SMS/WhatsApp credits/month',
+        'Access to Scan and Warehouses modules'
+      );
+    } else if (planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' || plan.name === 'Enterprise') {
+      features.push(
+        'Dedicated account manager',
+        'Custom SLAs on support and payouts',
+        'Multi-branch/multi-country structure',
+        'Deep API integrations',
+        'Custom reporting and data feeds',
+        'Co-branded landing pages'
+      );
+    }
+    // Backward compatibility with old plan names
+    else if (plan.name === 'Basic') {
       features.push('Basic analytics', 'Email support');
     } else if (plan.name === 'Pro') {
       features.push(
@@ -149,15 +186,6 @@ function PaymentOnboardingContent() {
         'Advanced booking management',
         'Team collaboration tools',
         'API access'
-      );
-    } else if (plan.name === 'Enterprise') {
-      features.push(
-        'Everything in Pro',
-        'Dedicated account manager',
-        'Custom integrations',
-        'SLA guarantees',
-        'White-label options',
-        'On-premise deployment'
       );
     }
 

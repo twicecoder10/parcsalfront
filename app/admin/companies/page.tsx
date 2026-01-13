@@ -162,9 +162,10 @@ export default function CompaniesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Plans</SelectItem>
-                <SelectItem value="Basic">Basic</SelectItem>
-                <SelectItem value="Pro">Pro</SelectItem>
-                <SelectItem value="Enterprise">Enterprise</SelectItem>
+                <SelectItem value="FREE">Free</SelectItem>
+                <SelectItem value="STARTER">Starter</SelectItem>
+                <SelectItem value="PROFESSIONAL">Professional</SelectItem>
+                <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -215,7 +216,23 @@ export default function CompaniesPage() {
                     </TableCell>
                     <TableCell>{company.country}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{company.activePlan?.name || 'N/A'}</Badge>
+                      {company.activePlan ? (
+                        <div className="space-y-1">
+                          <Badge variant="outline" className="font-medium">
+                            {company.activePlan.name}
+                          </Badge>
+                          <div className="text-xs text-gray-500">
+                            £{company.activePlan.priceMonthly}/mo
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {company.activePlan.name.toUpperCase() === 'ENTERPRISE' 
+                              ? '12–14% commission' 
+                              : '15% commission'}
+                          </div>
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-gray-400">No Plan</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge className={company.isVerified ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>

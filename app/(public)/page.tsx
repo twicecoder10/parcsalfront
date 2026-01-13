@@ -49,6 +49,37 @@ export default function LandingPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Allowed countries for the landing page dropdown
+  const allowedCountries = [
+    'UK',
+    'Ireland',
+    'France',
+    'Spain',
+    'Italy',
+    'Germany',
+    'Netherlands',
+    'Belgium',
+    'Switzerland',
+    'USA',
+    'Senegal',
+    'Mali',
+    'Guinea',
+    'Togo',
+    'Burkina Faso',
+    'Congo',
+    'DRC',
+    'South Africa',
+    'Zimbabwe',
+    'Tanzania',
+    'Morocco',
+    'Algeria',
+    'Benin',
+    'Cameroon',
+    'Ghana',
+    'Ivory Coast',
+    'Nigeria',
+  ];
+
   // Helper to convert date string to ISO 8601 datetime
   const dateToISO = (dateString: string, isEndDate = false): string => {
     if (!dateString) return '';
@@ -90,9 +121,9 @@ export default function LandingPage() {
     maxPrice,
   ].filter(Boolean).length;
 
-  // Popular routes data - West Africa to/from Europe
+  // Popular routes data - Using only allowed countries
   const popularRoutes = [
-    // West Africa to UK
+    // Africa to Europe
     { 
       origin: 'Lagos', 
       originCountry: 'Nigeria',
@@ -110,14 +141,54 @@ export default function LandingPage() {
       searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=United+Kingdom&destinationCity=London'
     },
     { 
+      origin: 'Dakar', 
+      originCountry: 'Senegal',
+      destination: 'Paris', 
+      destinationCountry: 'France',
+      image: '/images/categories/express-delivery.jpg',
+      searchUrl: '/shipments/browse?originCountry=Senegal&originCity=Dakar&destinationCountry=France&destinationCity=Paris'
+    },
+    { 
+      origin: 'Abidjan', 
+      originCountry: 'Ivory Coast',
+      destination: 'Paris', 
+      destinationCountry: 'France',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Ivory+Coast&originCity=Abidjan&destinationCountry=France&destinationCity=Paris'
+    },
+    { 
       origin: 'Lagos', 
       originCountry: 'Nigeria',
-      destination: 'Manchester', 
-      destinationCountry: 'United Kingdom',
+      destination: 'Berlin', 
+      destinationCountry: 'Germany',
       image: '/images/categories/road-transport.jpg',
-      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=United+Kingdom&destinationCity=Manchester'
+      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Germany&destinationCity=Berlin'
     },
-    // UK to West Africa (Return routes)
+    { 
+      origin: 'Casablanca', 
+      originCountry: 'Morocco',
+      destination: 'Madrid', 
+      destinationCountry: 'Spain',
+      image: '/images/categories/sea-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Morocco&originCity=Casablanca&destinationCountry=Spain&destinationCity=Madrid'
+    },
+    { 
+      origin: 'Lagos', 
+      originCountry: 'Nigeria',
+      destination: 'Amsterdam', 
+      destinationCountry: 'Netherlands',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Netherlands&destinationCity=Amsterdam'
+    },
+    { 
+      origin: 'Algiers', 
+      originCountry: 'Algeria',
+      destination: 'Paris', 
+      destinationCountry: 'France',
+      image: '/images/categories/express-delivery.jpg',
+      searchUrl: '/shipments/browse?originCountry=Algeria&originCity=Algiers&destinationCountry=France&destinationCity=Paris'
+    },
+    // Europe to Africa
     { 
       origin: 'London', 
       originCountry: 'United Kingdom',
@@ -135,32 +206,6 @@ export default function LandingPage() {
       searchUrl: '/shipments/browse?originCountry=United+Kingdom&originCity=London&destinationCountry=Ghana&destinationCity=Accra'
     },
     { 
-      origin: 'Birmingham', 
-      originCountry: 'United Kingdom',
-      destination: 'Lagos', 
-      destinationCountry: 'Nigeria',
-      image: '/images/categories/warehouse.jpg',
-      searchUrl: '/shipments/browse?originCountry=United+Kingdom&originCity=Birmingham&destinationCountry=Nigeria&destinationCity=Lagos'
-    },
-    // West Africa to France
-    { 
-      origin: 'Accra', 
-      originCountry: 'Ghana',
-      destination: 'Paris', 
-      destinationCountry: 'France',
-      image: '/images/categories/rail-freight.jpg',
-      searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=France&destinationCity=Paris'
-    },
-    { 
-      origin: 'Lagos', 
-      originCountry: 'Nigeria',
-      destination: 'Paris', 
-      destinationCountry: 'France',
-      image: '/images/categories/sea-freight.jpg',
-      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=France&destinationCity=Paris'
-    },
-    // France to West Africa
-    { 
       origin: 'Paris', 
       originCountry: 'France',
       destination: 'Dakar', 
@@ -176,24 +221,6 @@ export default function LandingPage() {
       image: '/images/categories/air-freight.jpg',
       searchUrl: '/shipments/browse?originCountry=France&originCity=Paris&destinationCountry=Ivory+Coast&destinationCity=Abidjan'
     },
-    // West Africa to Germany
-    { 
-      origin: 'Lagos', 
-      originCountry: 'Nigeria',
-      destination: 'Berlin', 
-      destinationCountry: 'Germany',
-      image: '/images/categories/road-transport.jpg',
-      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Germany&destinationCity=Berlin'
-    },
-    { 
-      origin: 'Accra', 
-      originCountry: 'Ghana',
-      destination: 'Frankfurt', 
-      destinationCountry: 'Germany',
-      image: '/images/categories/warehouse.jpg',
-      searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=Germany&destinationCity=Frankfurt'
-    },
-    // Germany to West Africa
     { 
       origin: 'Berlin', 
       originCountry: 'Germany',
@@ -202,66 +229,97 @@ export default function LandingPage() {
       image: '/images/categories/sea-freight.jpg',
       searchUrl: '/shipments/browse?originCountry=Germany&originCity=Berlin&destinationCountry=Nigeria&destinationCity=Lagos'
     },
-    // West Africa to Netherlands
-    { 
-      origin: 'Lagos', 
-      originCountry: 'Nigeria',
-      destination: 'Amsterdam', 
-      destinationCountry: 'Netherlands',
-      image: '/images/categories/air-freight.jpg',
-      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Netherlands&destinationCity=Amsterdam'
-    },
-    { 
-      origin: 'Accra', 
-      originCountry: 'Ghana',
-      destination: 'Rotterdam', 
-      destinationCountry: 'Netherlands',
-      image: '/images/categories/express-delivery.jpg',
-      searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=Netherlands&destinationCity=Rotterdam'
-    },
-    // Netherlands to West Africa
-    { 
-      origin: 'Amsterdam', 
-      originCountry: 'Netherlands',
-      destination: 'Lagos', 
-      destinationCountry: 'Nigeria',
-      image: '/images/categories/rail-freight.jpg',
-      searchUrl: '/shipments/browse?originCountry=Netherlands&originCity=Amsterdam&destinationCountry=Nigeria&destinationCity=Lagos'
-    },
-    // West Africa to Italy
-    { 
-      origin: 'Lagos', 
-      originCountry: 'Nigeria',
-      destination: 'Rome', 
-      destinationCountry: 'Italy',
-      image: '/images/categories/warehouse.jpg',
-      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Italy&destinationCity=Rome'
-    },
-    // West Africa to Spain
-    { 
-      origin: 'Dakar', 
-      originCountry: 'Senegal',
-      destination: 'Madrid', 
-      destinationCountry: 'Spain',
-      image: '/images/categories/road-transport.jpg',
-      searchUrl: '/shipments/browse?originCountry=Senegal&originCity=Dakar&destinationCountry=Spain&destinationCity=Madrid'
-    },
-    { 
-      origin: 'Accra', 
-      originCountry: 'Ghana',
-      destination: 'Barcelona', 
-      destinationCountry: 'Spain',
-      image: '/images/categories/sea-freight.jpg',
-      searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=Spain&destinationCity=Barcelona'
-    },
-    // Spain to West Africa
     { 
       origin: 'Madrid', 
       originCountry: 'Spain',
+      destination: 'Casablanca', 
+      destinationCountry: 'Morocco',
+      image: '/images/categories/express-delivery.jpg',
+      searchUrl: '/shipments/browse?originCountry=Spain&originCity=Madrid&destinationCountry=Morocco&destinationCity=Casablanca'
+    },
+    // USA to Africa
+    { 
+      origin: 'New York', 
+      originCountry: 'United States',
+      destination: 'Lagos', 
+      destinationCountry: 'Nigeria',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=United+States&originCity=New+York&destinationCountry=Nigeria&destinationCity=Lagos'
+    },
+    { 
+      origin: 'New York', 
+      originCountry: 'United States',
       destination: 'Accra', 
       destinationCountry: 'Ghana',
-      image: '/images/categories/express-delivery.jpg',
-      searchUrl: '/shipments/browse?originCountry=Spain&originCity=Madrid&destinationCountry=Ghana&destinationCity=Accra'
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=United+States&originCity=New+York&destinationCountry=Ghana&destinationCity=Accra'
+    },
+    // Africa to USA
+    { 
+      origin: 'Lagos', 
+      originCountry: 'Nigeria',
+      destination: 'New York', 
+      destinationCountry: 'United States',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=United+States&destinationCity=New+York'
+    },
+    { 
+      origin: 'Accra', 
+      originCountry: 'Ghana',
+      destination: 'New York', 
+      destinationCountry: 'United States',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Ghana&originCity=Accra&destinationCountry=United+States&destinationCity=New+York'
+    },
+    // Within Africa
+    { 
+      origin: 'Lagos', 
+      originCountry: 'Nigeria',
+      destination: 'Accra', 
+      destinationCountry: 'Ghana',
+      image: '/images/categories/road-transport.jpg',
+      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=Ghana&destinationCity=Accra'
+    },
+    { 
+      origin: 'Dakar', 
+      originCountry: 'Senegal',
+      destination: 'Casablanca', 
+      destinationCountry: 'Morocco',
+      image: '/images/categories/sea-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Senegal&originCity=Dakar&destinationCountry=Morocco&destinationCity=Casablanca'
+    },
+    { 
+      origin: 'Lagos', 
+      originCountry: 'Nigeria',
+      destination: 'Johannesburg', 
+      destinationCountry: 'South Africa',
+      image: '/images/categories/air-freight.jpg',
+      searchUrl: '/shipments/browse?originCountry=Nigeria&originCity=Lagos&destinationCountry=South+Africa&destinationCity=Johannesburg'
+    },
+    { 
+      origin: 'Yaoundé', 
+      originCountry: 'Cameroon',
+      destination: 'Lagos', 
+      destinationCountry: 'Nigeria',
+      image: '/images/categories/road-transport.jpg',
+      searchUrl: '/shipments/browse?originCountry=Cameroon&originCity=Yaoundé&destinationCountry=Nigeria&destinationCity=Lagos'
+    },
+    // Within Europe
+    { 
+      origin: 'London', 
+      originCountry: 'United Kingdom',
+      destination: 'Paris', 
+      destinationCountry: 'France',
+      image: '/images/categories/road-transport.jpg',
+      searchUrl: '/shipments/browse?originCountry=United+Kingdom&originCity=London&destinationCountry=France&destinationCity=Paris'
+    },
+    { 
+      origin: 'Berlin', 
+      originCountry: 'Germany',
+      destination: 'Amsterdam', 
+      destinationCountry: 'Netherlands',
+      image: '/images/categories/road-transport.jpg',
+      searchUrl: '/shipments/browse?originCountry=Germany&originCity=Berlin&destinationCountry=Netherlands&destinationCity=Amsterdam'
     },
   ];
 
@@ -392,6 +450,7 @@ export default function LandingPage() {
                             }}
                             label=""
                             placeholder="Country"
+                            allowedCountries={allowedCountries}
                             className="[&_button]:h-10 md:[&_button]:h-12 [&_button]:border-2 [&_button]:text-xs md:[&_button]:text-sm"
                           />
                         </div>
@@ -425,6 +484,7 @@ export default function LandingPage() {
                             }}
                             label=""
                             placeholder="Country"
+                            allowedCountries={allowedCountries}
                             className="[&_button]:h-10 md:[&_button]:h-12 [&_button]:border-2 [&_button]:text-xs md:[&_button]:text-sm"
                           />
                         </div>
@@ -1133,9 +1193,10 @@ export default function LandingPage() {
                     <CardContent>
                       <ul className="space-y-3 mb-6">
                         {[
-                          'Basic: £29/month',
-                          'Pro: £99/month (most popular)',
-                          'Enterprise: Custom pricing',
+                          'Free: £0/month (15% commission)',
+                          'Starter: £49/month (15% commission, most popular)',
+                          'Professional: £149/month (15% commission)',
+                          'Enterprise: From £500/month (12–14% negotiable)',
                         ].map((item, index) => (
                           <li key={index} className="flex items-start gap-3">
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
