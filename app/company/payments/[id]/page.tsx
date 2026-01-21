@@ -124,7 +124,7 @@ export default function PaymentDetailPage() {
             <AlertCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Payment Not Found</h2>
             <p className="text-gray-600 mb-4">The payment you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
-            <Button onClick={() => router.push('/company/payments')}>
+            <Button onClick={() => router.push('/company/payments')} className="w-full sm:w-auto">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Payments
             </Button>
@@ -136,27 +136,27 @@ export default function PaymentDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/company/payments')}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/company/payments')} className="w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Payment Details</h1>
-            <p className="text-gray-600 mt-2">View and manage payment transaction</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">Payment Details</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">View and manage payment transaction</p>
           </div>
         </div>
         {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') && 
          canPerformAction(permissions, 'processRefund') && (
-          <Button onClick={openRefundDialog} variant="outline">
+          <Button onClick={openRefundDialog} variant="outline" className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4 mr-2" />
             Process Refund
           </Button>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Payment Information */}
         <Card>
           <CardHeader>
@@ -284,7 +284,7 @@ export default function PaymentDetailPage() {
             {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') && 
              canPerformAction(permissions, 'processRefund') && (
               <div className="pt-4 border-t">
-                <Button onClick={openRefundDialog} className="w-full" variant="outline">
+                <Button onClick={openRefundDialog} className="w-full sm:w-auto" variant="outline">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Process Refund
                 </Button>
@@ -373,11 +373,11 @@ export default function PaymentDetailPage() {
       {payment.type === 'EXTRA_CHARGE' && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Extra Charge Details</CardTitle>
               {payment.bookingId && (
-                <Link href={`/company/bookings/${payment.bookingId}`}>
-                  <Button variant="outline" size="sm">
+                <Link href={`/company/bookings/${payment.bookingId}`} className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Package className="h-4 w-4 mr-2" />
                     View Booking
                   </Button>
@@ -473,7 +473,7 @@ export default function PaymentDetailPage() {
 
       {/* Refund Dialog */}
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Process Refund</DialogTitle>
             <DialogDescription>
@@ -520,11 +520,11 @@ export default function PaymentDetailPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={processingRefund}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={processingRefund} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleRefund} disabled={processingRefund}>
+            <Button onClick={handleRefund} disabled={processingRefund} className="w-full sm:w-auto">
               {processingRefund ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

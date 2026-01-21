@@ -300,10 +300,10 @@ export default function AnalyticsPage() {
           message="Analytics is not available on the Free plan. Upgrade to Starter or higher to access analytics."
         />
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Analytics</h1>
-              <p className="text-gray-600 mt-2">Insights and performance metrics</p>
+              <h1 className="text-2xl font-bold sm:text-3xl">Analytics</h1>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">Insights and performance metrics</p>
             </div>
           </div>
           <Card>
@@ -321,14 +321,14 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-          <p className="text-gray-600 mt-2">Insights and performance metrics</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Analytics</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Insights and performance metrics</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={period} onValueChange={handlePeriodChange}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -370,8 +370,8 @@ export default function AnalyticsPage() {
       )}
 
       {/* Period Label and Navigation */}
-      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-gray-50 dark:bg-gray-900 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-800">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -391,7 +391,7 @@ export default function AnalyticsPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Viewing:</span>
             <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {getPeriodLabel()}
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
       ) : analytics ? (
         <>
           {/* Key Metrics */}
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -556,7 +556,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             {/* Revenue Chart */}
             <Card>
               <CardHeader>
@@ -659,12 +659,15 @@ export default function AnalyticsPage() {
                 ) : (
                   <div className="space-y-4">
                     {analytics.topRoutes.map((route, index) => (
-                      <div key={index} className="flex items-center justify-between pb-4 border-b last:border-0">
+                      <div
+                        key={index}
+                        className="flex flex-col gap-2 pb-4 border-b last:border-0 sm:flex-row sm:items-center sm:justify-between"
+                      >
                         <div>
                           <p className="font-medium">{route.route}</p>
                           <p className="text-sm text-muted-foreground">{route.bookingsCount} bookings</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="font-medium">£{route.revenue.toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">Revenue</p>
                         </div>
@@ -677,7 +680,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Additional Metrics */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle>Shipment Performance</CardTitle>

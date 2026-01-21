@@ -398,14 +398,15 @@ export default function TeamPage() {
         plan={planFeatures.plan}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Team</h1>
-          <p className="text-gray-600 mt-2">Manage your team members</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Team</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your team members</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button
+              className="w-full sm:w-auto"
               disabled={
                 planFeatures.maxTeamMembers !== Infinity &&
                 teamMembers.length + invitations.filter(inv => inv.status === 'PENDING').length >= planFeatures.maxTeamMembers
@@ -421,7 +422,7 @@ export default function TeamPage() {
               Invite Team Member
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
             <DialogHeader>
               <DialogTitle>Invite Team Member</DialogTitle>
               <DialogDescription>
@@ -454,11 +455,11 @@ export default function TeamPage() {
                   </Select>
                 </div>
               </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={inviting}>
+              <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={inviting} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviting}>
+                <Button type="submit" disabled={inviting} className="w-full sm:w-auto">
                   {inviting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -475,7 +476,7 @@ export default function TeamPage() {
       </div>
 
       <Tabs defaultValue="members" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex w-full gap-2 overflow-x-auto sm:overflow-visible sm:w-fit sm:mx-auto">
           <TabsTrigger value="members">Team Members</TabsTrigger>
           <TabsTrigger value="invitations">
             Invitations
@@ -499,7 +500,67 @@ export default function TeamPage() {
               <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
             </div>
           ) : (
-            <Table>
+            <>
+            <div className="sm:hidden space-y-3">
+              {teamMembers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No team members found</div>
+              ) : (
+                teamMembers.map((member) => {
+                  const isCurrentUser = user?.id === member.id;
+                  const canEdit = !isCurrentUser;
+                  return (
+                    <div key={member.id} className="rounded-lg border p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">{member.name}</p>
+                          <p className="text-xs text-gray-600">{member.email}</p>
+                          {isCurrentUser && <p className="text-xs text-gray-500 mt-1">(You)</p>}
+                        </div>
+                        <Badge variant="outline">
+                          {member.role === 'COMPANY_ADMIN' ? 'Admin' : 'Staff'}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {member.role === 'COMPANY_STAFF' && canEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3"
+                            onClick={() => handleOpenRestrictions(member)}
+                          >
+                            <Settings className="h-4 w-4 mr-1" />
+                            Restrictions
+                          </Button>
+                        )}
+                        {canEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleRemoveMember(member.id)}
+                            disabled={deletingMember === member.id}
+                          >
+                            {deletingMember === member.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin text-orange-600" />
+                                Removing...
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Remove
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="hidden sm:block w-full overflow-x-auto">
+              <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -580,6 +641,8 @@ export default function TeamPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -588,13 +651,13 @@ export default function TeamPage() {
         <TabsContent value="invitations">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Team Invitations</CardTitle>
                   <CardDescription>Manage invitations sent to team members</CardDescription>
                 </div>
                 <Select value={invitationStatusFilter} onValueChange={handleStatusFilterChange}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -613,7 +676,78 @@ export default function TeamPage() {
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
                 </div>
               ) : (
-                <Table>
+                <>
+                <div className="sm:hidden space-y-3">
+                  {invitations.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No invitations found</div>
+                  ) : (
+                    invitations.map((invitation) => (
+                      <div key={invitation.id} className="rounded-lg border p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium">{invitation.email}</p>
+                            <p className="text-xs text-gray-600">
+                              {invitation.role === 'COMPANY_ADMIN' ? 'Admin' : 'Staff'}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              invitation.status === 'PENDING'
+                                ? 'default'
+                                : invitation.status === 'ACCEPTED'
+                                ? 'default'
+                                : invitation.status === 'EXPIRED'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            className={invitation.status === 'ACCEPTED' ? 'bg-green-500' : ''}
+                          >
+                            {invitation.status}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div>
+                            <span className="font-medium text-gray-900">Invited:</span>{' '}
+                            {new Date(invitation.invitedAt).toLocaleDateString()}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-900">Expires:</span>{' '}
+                            {new Date(invitation.expiresAt).toLocaleDateString()}
+                          </div>
+                          {invitation.invitedBy && (
+                            <div>
+                              <span className="font-medium text-gray-900">Invited by:</span>{' '}
+                              {invitation.invitedBy.name}
+                            </div>
+                          )}
+                        </div>
+                        {invitation.status !== 'ACCEPTED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleRevokeInvitation(invitation.id)}
+                            disabled={revokingInvitation === invitation.id}
+                          >
+                            {revokingInvitation === invitation.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin text-orange-600" />
+                                Revoking...
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-4 w-4 mr-1" />
+                                Revoke
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="hidden sm:block w-full overflow-x-auto">
+                  <Table className="min-w-[900px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Email</TableHead>
@@ -721,6 +855,8 @@ export default function TeamPage() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -729,67 +865,69 @@ export default function TeamPage() {
 
       {/* Restrictions Dialog */}
       <Dialog open={restrictionsDialogOpen} onOpenChange={setRestrictionsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Manage Restrictions for {selectedMember?.name}</DialogTitle>
             <DialogDescription>
               Control what actions this staff member can perform. Toggle off any action to restrict it. Admins are never restricted.
             </DialogDescription>
           </DialogHeader>
-          
-          {loadingRestrictions ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
-            </div>
-          ) : (
-            <div className="space-y-6 py-4">
-              {/* Preset Buttons */}
-              <div className="space-y-3 pb-4 border-b">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Quick Presets:</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={selectedPreset === 'driver' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => applyPreset('driver')}
-                    className={selectedPreset === 'driver' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-                  >
-                    <Truck className="h-4 w-4 mr-2" />
-                    Driver
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={selectedPreset === 'staff' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => applyPreset('staff')}
-                    className={selectedPreset === 'staff' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Staff
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={selectedPreset === 'customized' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => applyPreset('customized')}
-                    className={selectedPreset === 'customized' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Customized
-                  </Button>
-                </div>
-                {selectedPreset && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    {selectedPreset === 'driver' && 'Driver preset: Limited to tracking and delivery tasks'}
-                    {selectedPreset === 'staff' && 'Staff preset: Full access with some restrictions'}
-                    {selectedPreset === 'customized' && 'Customized preset: All permissions enabled, customize as needed'}
-                  </p>
-                )}
+
+          <div className="flex-1 overflow-hidden">
+            {loadingRestrictions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
               </div>
-              {/* Shipment Actions */}
-              <div className="space-y-3">
+            ) : (
+              <div className="py-4 space-y-6">
+                {/* Preset Buttons */}
+                <div className="space-y-3 pb-4 border-b">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Quick Presets:</span>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant={selectedPreset === 'driver' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => applyPreset('driver')}
+                      className={selectedPreset === 'driver' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                    >
+                      <Truck className="h-4 w-4 mr-2" />
+                      Driver
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={selectedPreset === 'staff' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => applyPreset('staff')}
+                      className={selectedPreset === 'staff' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Staff
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={selectedPreset === 'customized' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => applyPreset('customized')}
+                      className={selectedPreset === 'customized' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Customized
+                    </Button>
+                  </div>
+                  {selectedPreset && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {selectedPreset === 'driver' && 'Driver preset: Limited to tracking and delivery tasks'}
+                      {selectedPreset === 'staff' && 'Staff preset: Full access with some restrictions'}
+                      {selectedPreset === 'customized' && 'Customized preset: All permissions enabled, customize as needed'}
+                    </p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto pr-1 space-y-6 max-h-[50vh] sm:max-h-[55vh]">
+                {/* Shipment Actions */}
+                <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900">Shipment Management</h3>
                 <div className="space-y-3 pl-4 border-l-2 border-gray-200">
                   <RestrictionToggle
@@ -931,8 +1069,8 @@ export default function TeamPage() {
                 </div>
               </div>
 
-              {/* Payment Management */}
-              <div className="space-y-3">
+                {/* Payment Management */}
+                <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900">Payment Management</h3>
                 <div className="space-y-3 pl-4 border-l-2 border-gray-200">
                   <RestrictionToggle
@@ -942,16 +1080,19 @@ export default function TeamPage() {
                     onChange={() => toggleRestriction('processRefund')}
                   />
                 </div>
+                </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setRestrictionsDialogOpen(false)}
               disabled={savingRestrictions}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -959,6 +1100,7 @@ export default function TeamPage() {
               type="button"
               onClick={handleSaveRestrictions}
               disabled={savingRestrictions || loadingRestrictions}
+              className="w-full sm:w-auto"
             >
               {savingRestrictions ? (
                 <>
@@ -991,7 +1133,7 @@ function RestrictionToggle({
   onChange: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors">
+    <div className="flex flex-col gap-3 p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors sm:flex-row sm:items-start sm:justify-between">
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <Label htmlFor={label} className="text-base font-medium cursor-pointer">
@@ -1005,7 +1147,7 @@ function RestrictionToggle({
         </div>
         <p className="text-sm text-gray-600 mt-1">{description}</p>
       </div>
-      <div className="ml-4">
+      <div className="sm:ml-4">
         <label className="relative inline-flex items-center cursor-pointer">
           <input
             type="checkbox"

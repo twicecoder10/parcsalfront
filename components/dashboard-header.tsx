@@ -12,10 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getStoredUser, removeStoredUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu, X } from 'lucide-react';
 import { NotificationDropdown } from '@/components/notification-dropdown';
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onMenuClick?: () => void;
+  isSidebarOpen?: boolean;
+}
+
+export function DashboardHeader({ onMenuClick, isSidebarOpen }: DashboardHeaderProps) {
   const router = useRouter();
   const user = getStoredUser();
 
@@ -24,9 +29,33 @@ export function DashboardHeader() {
     router.push('/auth/login');
   };
 
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onMenuClick?.();
+  };
+
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-6">
-      <div className="flex-1"></div>
+    <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+      {/* Mobile menu button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="lg:hidden"
+        onClick={handleMenuClick}
+        type="button"
+        aria-label="Toggle menu"
+      >
+        {isSidebarOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <Menu className="h-5 w-5" />
+        )}
+      </Button>
+
+      {/* Spacer for desktop */}
+      <div className="hidden lg:flex flex-1"></div>
+
       <div className="flex items-center gap-2">
         {user?.role && (
           <NotificationDropdown

@@ -223,12 +223,12 @@ export default function CompanyMarketingPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Marketing Campaigns</h1>
-          <p className="text-gray-600 mt-2">Create and manage campaigns for your past customers</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Marketing Campaigns</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Create and manage campaigns for your past customers</p>
         </div>
-        <Button onClick={() => router.push('/company/marketing/new')}>
+        <Button onClick={() => router.push('/company/marketing/new')} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Create Campaign
         </Button>
@@ -251,17 +251,17 @@ export default function CompanyMarketingPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium">Filters:</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label className="text-sm text-gray-600">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as CampaignStatus | 'all')}
-                className="px-3 py-1.5 border rounded-md text-sm"
+                className="w-full sm:w-auto px-3 py-1.5 border rounded-md text-sm"
               >
                 <option value="all">All</option>
                 <option value="DRAFT">Draft</option>
@@ -272,12 +272,12 @@ export default function CompanyMarketingPage() {
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label className="text-sm text-gray-600">Channel</label>
               <select
                 value={channelFilter}
                 onChange={(e) => setChannelFilter(e.target.value as CampaignChannel | 'all')}
-                className="px-3 py-1.5 border rounded-md text-sm"
+                className="w-full sm:w-auto px-3 py-1.5 border rounded-md text-sm"
               >
                 <option value="all">All</option>
                 <option value="EMAIL">Email</option>
@@ -297,7 +297,7 @@ export default function CompanyMarketingPage() {
               <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No campaigns found</h3>
               <p className="text-gray-600 mb-4">Get started by creating your first marketing campaign</p>
-              <Button onClick={() => router.push('/company/marketing/new')}>
+              <Button onClick={() => router.push('/company/marketing/new')} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Campaign
               </Button>
@@ -308,10 +308,10 @@ export default function CompanyMarketingPage() {
         <div className="grid gap-4">
           {campaigns.map((campaign) => (
             <Card key={campaign.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
+              <CardContent className="pt-6 relative">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pr-10">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold">
                         {campaign.subject || campaign.title || 'Untitled Campaign'}
                       </h3>
@@ -323,7 +323,7 @@ export default function CompanyMarketingPage() {
                         {campaign.channel}
                       </Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-2">
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mt-2">
                       <span>Recipients: {campaign.totalRecipients.toLocaleString()}</span>
                       {campaign.status === 'SENT' && (
                         <>
@@ -351,7 +351,11 @@ export default function CompanyMarketingPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-4 top-4"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -396,7 +400,7 @@ export default function CompanyMarketingPage() {
 
       {/* Pagination */}
       {pagination && pagination.total > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-600">
             Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of{' '}
             {pagination.total} campaigns
@@ -424,18 +428,18 @@ export default function CompanyMarketingPage() {
 
       {/* Cancel Confirmation Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Cancel Campaign</DialogTitle>
             <DialogDescription>
               Are you sure you want to cancel this campaign? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)} className="w-full sm:w-auto">
               No, Keep Campaign
             </Button>
-            <Button variant="destructive" onClick={confirmCancel} disabled={cancelMutation.isPending}>
+            <Button variant="destructive" onClick={confirmCancel} disabled={cancelMutation.isPending} className="w-full sm:w-auto">
               {cancelMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -451,18 +455,18 @@ export default function CompanyMarketingPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Delete Campaign</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this campaign? This action cannot be undone. Only DRAFT, SCHEDULED, or CANCELLED campaigns can be deleted.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending} className="w-full sm:w-auto">
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -70,12 +70,15 @@ export default function ScanPage() {
       
       const html5QrCode = new Html5Qrcode(scanElementId);
       scannerRef.current = html5QrCode;
+      const qrBoxSize = typeof window !== 'undefined'
+        ? Math.min(300, Math.max(200, window.innerWidth - 120))
+        : 300;
 
       await html5QrCode.start(
         { facingMode: 'environment' }, // Use back camera
         {
           fps: 10,
-          qrbox: { width: 300, height: 300 },
+          qrbox: { width: qrBoxSize, height: qrBoxSize },
         },
         async (decodedText) => {
           // Only process if not already processing
@@ -124,10 +127,12 @@ export default function ScanPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Scan Barcode</h1>
-          <p className="text-gray-600 mt-1">Scan shipping label barcodes to quickly retrieve booking information</p>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Scan Barcode</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
+            Scan shipping label barcodes to quickly retrieve booking information
+          </p>
         </div>
       </div>
 
@@ -172,8 +177,7 @@ export default function ScanPage() {
               <div className="space-y-4">
                 <div
                   id={scanElementId}
-                  className="w-full rounded-lg overflow-hidden bg-gray-100"
-                  style={{ minHeight: '300px' }}
+                  className="w-full rounded-lg overflow-hidden bg-gray-100 min-h-[240px] sm:min-h-[300px]"
                 />
 
                 {!isScanning ? (

@@ -345,12 +345,12 @@ export default function WarehousesPage() {
   return (
     <GoogleMapsLoader>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Warehouse Addresses</h1>
-            <p className="text-gray-600 mt-2">Manage your company&apos;s warehouse locations</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">Warehouse Addresses</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your company&apos;s warehouse locations</p>
           </div>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Add Warehouse
           </Button>
@@ -371,7 +371,7 @@ export default function WarehousesPage() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Warehouses</CardTitle>
@@ -421,13 +421,74 @@ export default function WarehousesPage() {
                 <Warehouse className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                 <p className="text-lg font-medium">No warehouses found</p>
                 <p className="text-sm mb-4">Get started by adding your first warehouse address</p>
-                <Button onClick={handleCreate}>
+                <Button onClick={handleCreate} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Warehouse
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              <div className="sm:hidden space-y-3">
+                {warehouses.map((warehouse) => (
+                  <div key={warehouse.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Warehouse className="h-4 w-4 text-orange-600" />
+                          <p className="text-sm font-medium">{warehouse.name}</p>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">{warehouse.address}</p>
+                        {warehouse.postalCode && (
+                          <p className="text-xs text-gray-500">{warehouse.postalCode}</p>
+                        )}
+                      </div>
+                      {warehouse.isDefault ? (
+                        <Badge className="bg-green-100 text-green-800">Default</Badge>
+                      ) : (
+                        <Badge variant="outline">Standard</Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>
+                        <span className="font-medium text-gray-900">City:</span> {warehouse.city}
+                      </div>
+                      {warehouse.state && (
+                        <div>
+                          <span className="font-medium text-gray-900">State:</span> {warehouse.state}
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-medium text-gray-900">Country:</span> {warehouse.country}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-900">Created:</span>{' '}
+                        {new Date(warehouse.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3"
+                        onClick={() => handleEdit(warehouse)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDelete(warehouse)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -501,13 +562,14 @@ export default function WarehousesPage() {
                   </TableBody>
                 </Table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
 
         {/* Create Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Warehouse</DialogTitle>
               <DialogDescription>
@@ -543,7 +605,7 @@ export default function WarehousesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="city">
                       City <span className="text-red-500">*</span>
@@ -569,7 +631,7 @@ export default function WarehousesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="state">State/Province</Label>
                     <Input
@@ -591,29 +653,30 @@ export default function WarehousesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     id="isDefault"
                     checked={formData.isDefault}
                     onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="mt-0.5 rounded border-gray-300"
                   />
                   <Label htmlFor="isDefault" className="font-normal cursor-pointer">
                     Set as default warehouse
                   </Label>
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setCreateDialogOpen(false)}
                   disabled={saving}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -630,7 +693,7 @@ export default function WarehousesPage() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Warehouse</DialogTitle>
               <DialogDescription>
@@ -666,7 +729,7 @@ export default function WarehousesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="edit-city">
                       City <span className="text-red-500">*</span>
@@ -692,7 +755,7 @@ export default function WarehousesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="edit-state">State/Province</Label>
                     <Input
@@ -727,7 +790,7 @@ export default function WarehousesPage() {
                   </Label>
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -736,10 +799,11 @@ export default function WarehousesPage() {
                     setSelectedWarehouse(null);
                   }}
                   disabled={saving}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="w-full sm:w-auto">
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -756,14 +820,14 @@ export default function WarehousesPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
             <DialogHeader>
               <DialogTitle>Delete Warehouse</DialogTitle>
               <DialogDescription>
                 Are you sure you want to delete &quot;{selectedWarehouse?.name}&quot;? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -772,6 +836,7 @@ export default function WarehousesPage() {
                   setSelectedWarehouse(null);
                 }}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -780,6 +845,7 @@ export default function WarehousesPage() {
                 variant="destructive"
                 onClick={handleConfirmDelete}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 {saving ? (
                   <>

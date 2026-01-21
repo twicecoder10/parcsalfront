@@ -1177,6 +1177,11 @@ export const companyApi = {
     return extractData(response);
   },
 
+  createDashboardLoginLink: async (): Promise<{ url: string }> => {
+    const response = await api.post<ApiResponse<{ url: string }>>('/connect/dashboard-link', {});
+    return extractData(response);
+  },
+
   getConnectStatus: async (): Promise<{
     stripeAccountId: string | null;
     stripeOnboardingStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETE';

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Package, ShoppingCart, Settings, Truck, Users, CreditCard, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Settings, Truck, Users, CreditCard, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export interface NavItem {
   title: string;
@@ -15,11 +16,28 @@ export interface NavItem {
 
 interface DashboardSidebarProps {
   navItems: NavItem[];
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function DashboardSidebar({ navItems }: DashboardSidebarProps) {
+export function DashboardSidebar({ navItems, isOpen = false, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
+  // Close sidebar on mobile only after an actual route change
+  const prevPathname = useRef(pathname);
+  useEffect(() => {
+    if (!isOpen || !onClose) {
+      prevPathname.current = pathname;
+      return;
+    }
+
+    if (prevPathname.current !== pathname && window.innerWidth < 1024) {
+      onClose();
+    }
+
+    prevPathname.current = pathname;
+  }, [pathname, isOpen, onClose]);
 
   // Auto-expand parent item if any child is active (only one at a time)
   useEffect(() => {
@@ -97,6 +115,12 @@ export function DashboardSidebar({ navItems }: DashboardSidebarProps) {
       <Link
         key={item.href || item.title}
         href={item.href || '#'}
+        onClick={() => {
+          // Close sidebar on mobile when a link is clicked
+          if (onClose && window.innerWidth < 1024) {
+            onClose();
+          }
+        }}
         className={cn(
           'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
           isActive
@@ -111,17 +135,53 @@ export function DashboardSidebar({ navItems }: DashboardSidebarProps) {
     );
   };
 
+  // On desktop (lg and up), sidebar is always visible
+  // On mobile, sidebar visibility is controlled by isOpen prop
+  const isMobile = typeof onClose !== 'undefined';
+
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-white">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/" className="text-xl font-bold text-orange-600">
-          Parcsal
-        </Link>
-      </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-        {navItems.map((item) => renderNavItem(item))}
-      </nav>
-    </div>
+    <>
+      {/* Mobile overlay - only show when sidebar is open on mobile */}
+      {isOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed lg:static inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r bg-white transform transition-transform duration-300 ease-in-out',
+          // On mobile: control visibility with isOpen state
+          // On desktop (lg+): always visible via lg:translate-x-0 (overrides mobile state)
+          !isMobile || isOpen ? 'translate-x-0' : '-translate-x-full',
+          // Always show on desktop regardless of isOpen state
+          'lg:translate-x-0'
+        )}
+      >
+        <div className="flex h-16 items-center justify-between border-b px-4 md:px-6">
+          <Link href="/" className="text-xl font-bold text-orange-600">
+            Parcsal
+          </Link>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={onClose}
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          {navItems.map((item) => renderNavItem(item))}
+        </nav>
+      </aside>
+    </>
   );
 }
 

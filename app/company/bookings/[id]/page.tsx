@@ -184,7 +184,7 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-center h-96">
           <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
         </div>
@@ -194,7 +194,7 @@ export default function BookingDetailPage() {
 
   if (!booking) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">Booking not found</p>
@@ -242,24 +242,24 @@ export default function BookingDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href="/company/bookings">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Booking Details</h1>
-          <p className="text-gray-600 mt-2">Booking #{booking.id}</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Booking Details</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Booking #{booking.id}</p>
         </div>
       </div>
 
       {/* Status & Actions */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Status</CardTitle>
             <Badge className={statusColors[booking.status] || ''}>
               {booking.status.replace('_', ' ')}
@@ -268,8 +268,8 @@ export default function BookingDetailPage() {
         </CardHeader>
         <CardContent>
           {canAccept && (
-            <div className="flex gap-2">
-              <Button onClick={handleAccept} disabled={processing}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={handleAccept} disabled={processing} className="w-full sm:w-auto">
                 {processing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -284,7 +284,7 @@ export default function BookingDetailPage() {
               </Button>
               <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="destructive" disabled={processing}>
+                  <Button variant="destructive" disabled={processing} className="w-full sm:w-auto">
                     <XCircle className="h-4 w-4 mr-2" />
                     Reject Booking
                   </Button>
@@ -332,12 +332,12 @@ export default function BookingDetailPage() {
             </div>
           )}
           {canMarkInTransit && (
-            <Button onClick={() => handleUpdateStatus('IN_TRANSIT')} disabled={processing}>
+            <Button onClick={() => handleUpdateStatus('IN_TRANSIT')} disabled={processing} className="w-full sm:w-auto">
               Mark as In Transit
             </Button>
           )}
           {canMarkDelivered && (
-            <Button onClick={() => handleUpdateStatus('DELIVERED')} disabled={processing}>
+            <Button onClick={() => handleUpdateStatus('DELIVERED')} disabled={processing} className="w-full sm:w-auto">
               Mark as Delivered
             </Button>
           )}
@@ -364,7 +364,7 @@ export default function BookingDetailPage() {
               </div>
             )}
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">Label Status</p>
                 <p className="text-sm text-gray-600">
@@ -375,7 +375,7 @@ export default function BookingDetailPage() {
                   )}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 {booking.labelUrl && (
                   <Button
                     onClick={handlePrintLabel}
@@ -445,7 +445,7 @@ export default function BookingDetailPage() {
                 <div className="border rounded-lg overflow-hidden">
                   <iframe
                     src={booking.labelUrl}
-                    className="w-full h-96"
+                    className="w-full h-80 sm:h-96"
                     title="Shipping Label Preview"
                   />
                 </div>
@@ -462,14 +462,14 @@ export default function BookingDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="rounded-full bg-orange-100 p-2">
                 <User className="h-5 w-5 text-orange-600" />
               </div>
                       <div className="flex-1">
                         <p className="font-medium">{getCustomerName(booking.customer)}</p>
                         {getCustomerEmail(booking.customer) && (
-                          <div className="flex items-center gap-4 mt-1">
+                          <div className="flex flex-col gap-2 mt-1 sm:flex-row sm:items-center sm:gap-4">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <Mail className="h-4 w-4" />
                               <a href={`mailto:${getCustomerEmail(booking.customer)}`} className="hover:text-orange-600">
@@ -483,6 +483,7 @@ export default function BookingDetailPage() {
                             onClick={handleMessageCustomer}
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                           >
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Message Customer
@@ -533,7 +534,7 @@ export default function BookingDetailPage() {
               )}
               <div className="pt-4 border-t">
                 <Link href={`/company/shipments/${booking.shipmentSlot.id}`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     View Shipment Details
                   </Button>
                 </Link>
@@ -717,7 +718,7 @@ export default function BookingDetailPage() {
                 <Package className="h-5 w-5 text-purple-600 mt-0.5" />
                 <div className="flex-1">
                   <p className="font-medium mb-2">Images</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {booking.images.map((image: string, index: number) => (
                       <div key={index} className="relative w-full h-32 rounded-lg border overflow-hidden">
                         <Image
@@ -748,7 +749,7 @@ export default function BookingDetailPage() {
       {/* Payment Information */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Payment Information</CardTitle>
             <Badge className={booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' : booking.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : booking.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}>
               {booking.paymentStatus || 'PENDING'}
@@ -757,7 +758,7 @@ export default function BookingDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">Total Amount</p>
                 <p className="text-2xl font-bold text-orange-600 mt-1">
@@ -840,7 +841,7 @@ export default function BookingDetailPage() {
                 {booking.pickupProofImages && booking.pickupProofImages.length > 0 && (
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Pickup Proof Images</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {booking.pickupProofImages.map((image: string, index: number) => (
                         <div key={index} className="relative aspect-square rounded-lg border overflow-hidden">
                           <Image
@@ -858,7 +859,7 @@ export default function BookingDetailPage() {
                 {booking.deliveryProofImages && booking.deliveryProofImages.length > 0 && (
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Delivery Proof Images</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {booking.deliveryProofImages.map((image: string, index: number) => (
                         <div key={index} className="relative aspect-square rounded-lg border overflow-hidden">
                           <Image
@@ -881,7 +882,7 @@ export default function BookingDetailPage() {
               <div className="space-y-3">
                 <Label>Pickup Proof Images (Optional)</Label>
                 {pickupProofPreviews.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {pickupProofPreviews.map((preview, index) => (
                       <div key={index} className="relative aspect-square rounded-lg border overflow-hidden group">
                         <Image
@@ -958,7 +959,7 @@ export default function BookingDetailPage() {
               <div className="space-y-3">
                 <Label>Delivery Proof Images (Optional)</Label>
                 {deliveryProofPreviews.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {deliveryProofPreviews.map((preview, index) => (
                       <div key={index} className="relative aspect-square rounded-lg border overflow-hidden group">
                         <Image
@@ -1077,6 +1078,7 @@ export default function BookingDetailPage() {
                     }
                   }}
                   disabled={uploadingProofImages || (pickupProofFiles.length === 0 && deliveryProofFiles.length === 0)}
+                  className="w-full sm:w-auto"
                 >
                   {uploadingProofImages ? (
                     <>
@@ -1106,7 +1108,7 @@ export default function BookingDetailPage() {
               { status: 'IN_TRANSIT', completed: ['IN_TRANSIT', 'DELIVERED'].includes(booking.status), date: booking.status === 'IN_TRANSIT' || booking.status === 'DELIVERED' ? booking.updatedAt : null },
               { status: 'DELIVERED', completed: booking.status === 'DELIVERED', date: booking.status === 'DELIVERED' ? booking.updatedAt : null },
             ].map((item, index) => (
-              <div key={index} className="flex items-center gap-4">
+              <div key={index} className="flex items-start gap-4">
                 <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                   item.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
                 }`}>
@@ -1136,7 +1138,7 @@ export default function BookingDetailPage() {
           <CardTitle>Booking Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div className="grid gap-4 text-sm md:grid-cols-2">
             <div>
               <p className="text-muted-foreground">Created At</p>
               <p className="font-medium">

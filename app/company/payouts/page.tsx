@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Loader2, AlertCircle, CheckCircle2, Wallet, Banknote, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, Wallet, Banknote, RefreshCw, ExternalLink } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -37,6 +37,7 @@ export default function PayoutsPage() {
   const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [processingPayout, setProcessingPayout] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -116,6 +117,18 @@ export default function PayoutsPage() {
       toast.error(getErrorMessage(error) || 'Failed to request payout');
     } finally {
       setProcessingPayout(false);
+    }
+  };
+
+  const handleOpenDashboard = async () => {
+    setDashboardLoading(true);
+    try {
+      const { url } = await companyApi.createDashboardLoginLink();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to open Stripe Connect dashboard:', error);
+      toast.error(getErrorMessage(error) || 'Failed to open Stripe dashboard');
+      setDashboardLoading(false);
     }
   };
 
@@ -212,6 +225,26 @@ export default function PayoutsPage() {
               <Button onClick={handleEnablePayouts} variant="outline" className="w-full">
                 <Banknote className="h-4 w-4 mr-2" />
                 Add Bank Details
+              </Button>
+            )}
+            {status?.stripeAccountId && (
+              <Button
+                onClick={handleOpenDashboard}
+                variant="outline"
+                className="w-full"
+                disabled={dashboardLoading}
+              >
+                {dashboardLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Opening Stripe Connect Dashboard...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Stripe Connect Dashboard
+                  </>
+                )}
               </Button>
             )}
           </div>

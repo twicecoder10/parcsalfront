@@ -231,17 +231,18 @@ export default function CompanyNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Notifications</h1>
-          <p className="text-gray-600 mt-2">Manage your notifications and stay updated</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Notifications</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your notifications and stay updated</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           {unreadCount > 0 && (
             <Button
               variant="outline"
               onClick={handleMarkAllAsRead}
               disabled={processing === 'all'}
+              className="w-full sm:w-auto"
             >
               {processing === 'all' ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -255,6 +256,7 @@ export default function CompanyNotificationsPage() {
             variant="outline"
             onClick={handleDeleteAllRead}
             disabled={processing === 'delete-all'}
+            className="w-full sm:w-auto"
           >
             {processing === 'delete-all' ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -275,7 +277,7 @@ export default function CompanyNotificationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -292,7 +294,7 @@ export default function CompanyNotificationsPage() {
               </label>
             </div>
             <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value); setPage(1); }}>
-              <SelectTrigger className="max-w-md">
+              <SelectTrigger className="w-full sm:max-w-md">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
@@ -337,7 +339,7 @@ export default function CompanyNotificationsPage() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
+                  className={`flex flex-col gap-3 p-4 rounded-lg border transition-colors sm:flex-row sm:items-start sm:gap-4 ${
                     !notification.isRead
                       ? 'bg-orange-50 border-orange-200 cursor-pointer hover:bg-orange-100'
                       : 'bg-white border-gray-200 cursor-pointer hover:bg-gray-50'
@@ -345,7 +347,7 @@ export default function CompanyNotificationsPage() {
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3
                         className={`text-sm font-medium ${
                           !notification.isRead ? 'text-gray-900' : 'text-gray-600'
@@ -363,7 +365,7 @@ export default function CompanyNotificationsPage() {
                     <p className="text-sm text-gray-600 mb-2">{notification.body}</p>
                     <p className="text-xs text-gray-400">{formatTime(notification.createdAt)}</p>
                   </div>
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-2 sm:self-start" onClick={(e) => e.stopPropagation()}>
                     {!notification.isRead && (
                       <Button
                         variant="ghost"
@@ -400,7 +402,7 @@ export default function CompanyNotificationsPage() {
 
           {/* Pagination */}
           {!loading && notifications.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex flex-col gap-3 mt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-gray-600">
                 Page {page} of {totalPages}
               </p>

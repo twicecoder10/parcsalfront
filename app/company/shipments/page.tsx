@@ -159,14 +159,14 @@ export default function ShipmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Shipments</h1>
-          <p className="text-gray-600 mt-2">Manage your shipment slots</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Shipments</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your shipment slots</p>
         </div>
         {canPerformAction(permissions, 'createShipment') && (
           <Link href="/company/shipments/new">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               New Shipment Slot
             </Button>
@@ -180,7 +180,7 @@ export default function ShipmentsPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -194,7 +194,7 @@ export default function ShipmentsPage() {
               setStatusFilter(value);
               setCurrentPage(0);
             }}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -208,7 +208,7 @@ export default function ShipmentsPage() {
               setModeFilter(value);
               setCurrentPage(0);
             }}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Mode" />
               </SelectTrigger>
               <SelectContent>
@@ -233,39 +233,22 @@ export default function ShipmentsPage() {
           <CardDescription>View and manage your shipment slots</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Route</TableHead>
-                <TableHead>Departure Time</TableHead>
-                <TableHead>Mode</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Bookings</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (!shipments || shipments.length === 0) ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
-                  </TableCell>
-                </TableRow>
-              ) : !shipments || shipments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No shipments found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                shipments.map((shipment) => (
-                  <TableRow key={shipment.id}>
-                    <TableCell className="font-medium">
-                      {shipment.originCity}, {shipment.originCountry} → {shipment.destinationCity}, {shipment.destinationCountry}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+          <div className="sm:hidden space-y-3">
+            {loading && (!shipments || shipments.length === 0) ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+              </div>
+            ) : !shipments || shipments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No shipments found</div>
+            ) : (
+              shipments.map((shipment) => (
+                <div key={shipment.id} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">
+                        {shipment.originCity}, {shipment.originCountry} → {shipment.destinationCity}, {shipment.destinationCountry}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
                         <Calendar className="h-4 w-4 text-gray-400" />
                         <span>
                           {new Date(shipment.departureTime).toLocaleDateString()} at{' '}
@@ -275,81 +258,204 @@ export default function ShipmentsPage() {
                           })}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell>{modeLabels[shipment.mode] || shipment.mode}</TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[shipment.status] || ''}>
-                        {shipment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    <Badge className={statusColors[shipment.status] || ''}>
+                      {shipment.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <div>
+                      <span className="font-medium text-gray-900">Mode:</span>{' '}
+                      {modeLabels[shipment.mode] || shipment.mode}
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Capacity:</span>{' '}
                       {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{shipment._count?.bookings ?? 0}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link href={`/company/shipments/${shipment.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        {shipment.status !== 'CLOSED' && canPerformAction(permissions, 'updateShipment') && (
-                          <Link href={`/company/shipments/${shipment.id}/edit`}>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        )}
-                        {shipment.status === 'PUBLISHED' && canPerformAction(permissions, 'updateShipmentStatus') && (
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Bookings:</span>{' '}
+                      {shipment._count?.bookings ?? 0}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Link href={`/company/shipments/${shipment.id}`}>
+                      <Button variant="outline" size="sm" className="h-8 px-3">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </Link>
+                    {shipment.status !== 'CLOSED' && canPerformAction(permissions, 'updateShipment') && (
+                      <Link href={`/company/shipments/${shipment.id}/edit`}>
+                        <Button variant="outline" size="sm" className="h-8 px-3">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </Link>
+                    )}
+                    {shipment.status === 'PUBLISHED' && canPerformAction(permissions, 'updateShipmentStatus') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCloseShipment(shipment.id)}
+                        className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Close
+                      </Button>
+                    )}
+                    {shipment.status === 'DRAFT' && (
+                      <>
+                        {canPerformAction(permissions, 'updateShipmentStatus') && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleCloseShipment(shipment.id)}
+                            onClick={() => handlePublishShipment(shipment.id)}
+                            className="h-8 px-3 text-green-600 hover:text-green-700 hover:bg-green-50"
                           >
-                            <X className="h-4 w-4 text-red-600" />
+                            <Send className="h-4 w-4 mr-1" />
+                            Publish
                           </Button>
                         )}
-                        {shipment.status === 'DRAFT' && (
-                          <>
-                            {canPerformAction(permissions, 'updateShipmentStatus') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePublishShipment(shipment.id)}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                title="Publish"
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canPerformAction(permissions, 'deleteShipment') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setShipmentToDelete(shipment.id);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Delete"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </>
+                        {canPerformAction(permissions, 'deleteShipment') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShipmentToDelete(shipment.id);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
                         )}
-                      </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden sm:block w-full overflow-x-auto">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Departure Time</TableHead>
+                  <TableHead>Mode</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Capacity</TableHead>
+                  <TableHead>Bookings</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && (!shipments || shipments.length === 0) ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-600" />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : !shipments || shipments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      No shipments found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  shipments.map((shipment) => (
+                    <TableRow key={shipment.id}>
+                      <TableCell className="font-medium">
+                        {shipment.originCity}, {shipment.originCountry} → {shipment.destinationCity}, {shipment.destinationCountry}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>
+                            {new Date(shipment.departureTime).toLocaleDateString()} at{' '}
+                            {new Date(shipment.departureTime).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{modeLabels[shipment.mode] || shipment.mode}</TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[shipment.status] || ''}>
+                          {shipment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {shipment.remainingCapacityKg} / {shipment.totalCapacityKg} kg
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{shipment._count?.bookings ?? 0}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link href={`/company/shipments/${shipment.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          {shipment.status !== 'CLOSED' && canPerformAction(permissions, 'updateShipment') && (
+                            <Link href={`/company/shipments/${shipment.id}/edit`}>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          {shipment.status === 'PUBLISHED' && canPerformAction(permissions, 'updateShipmentStatus') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCloseShipment(shipment.id)}
+                            >
+                              <X className="h-4 w-4 text-red-600" />
+                            </Button>
+                          )}
+                          {shipment.status === 'DRAFT' && (
+                            <>
+                              {canPerformAction(permissions, 'updateShipmentStatus') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handlePublishShipment(shipment.id)}
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  title="Publish"
+                                >
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canPerformAction(permissions, 'deleteShipment') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setShipmentToDelete(shipment.id);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  title="Delete"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
         {pagination && pagination.total > pagination.limit && (
-          <div className="flex items-center justify-between px-6 py-4 border-t">
+          <div className="flex flex-col gap-3 px-6 py-4 border-t sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
               Showing {currentPage * pagination.limit + 1} to{' '}
               {Math.min((currentPage + 1) * pagination.limit, pagination.total)} of{' '}

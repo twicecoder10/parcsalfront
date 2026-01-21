@@ -244,8 +244,8 @@ export default function CompanySettingsPage() {
     <GoogleMapsLoader>
       <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Company Settings</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-2xl font-bold sm:text-3xl">Company Settings</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">
           {isCompanyStaff 
             ? 'View company information and manage your notification preferences'
             : 'Manage your company profile and information'}
@@ -277,7 +277,7 @@ export default function CompanySettingsPage() {
       )}
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex w-full gap-2 overflow-x-auto sm:overflow-visible sm:w-fit sm:mx-auto">
           <TabsTrigger value="profile">Company Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           {!isCompanyStaff && (
@@ -536,7 +536,7 @@ export default function CompanySettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
                     <Label htmlFor="name">Company Name</Label>
               <Input
@@ -569,7 +569,7 @@ export default function CompanySettingsPage() {
               />
             </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="contactEmail">Contact Email</Label>
               <Input
@@ -599,7 +599,7 @@ export default function CompanySettingsPage() {
                   country={formData.country}
                 />
 
-                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <CountrySelect
                     value={formData.country}
                     onChange={(value) => setFormData({ ...formData, country: value, city: '' })}
@@ -656,7 +656,7 @@ export default function CompanySettingsPage() {
                 <CardDescription>Additional company details</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Country</p>
                     <p className="font-medium">{profile.country}</p>
@@ -693,7 +693,7 @@ export default function CompanySettingsPage() {
             <CardContent>
               <form onSubmit={handleSubmitSettings} className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-orange-50 border-orange-200">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-orange-50 border-orange-200">
                     <div>
                       <Label htmlFor="email-notifications" className="text-base font-medium">
                         Email Notifications
@@ -716,7 +716,7 @@ export default function CompanySettingsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <Label htmlFor="sms-notifications">SMS Notifications</Label>
                       <p className="text-sm text-muted-foreground">
@@ -737,7 +737,7 @@ export default function CompanySettingsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <Label htmlFor="booking-updates">Booking Updates</Label>
                       <p className="text-sm text-muted-foreground">
@@ -758,7 +758,7 @@ export default function CompanySettingsPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <Label htmlFor="shipment-updates">Shipment Updates</Label>
                       <p className="text-sm text-muted-foreground">
@@ -786,7 +786,7 @@ export default function CompanySettingsPage() {
                   
                   <div className="space-y-4">
                     {/* Email Marketing */}
-                    <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50 border-blue-200">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-blue-50 border-blue-200">
                       <div>
                         <Label htmlFor="email-marketing-opt-in" className="text-base font-medium">
                           Email Marketing
@@ -810,7 +810,7 @@ export default function CompanySettingsPage() {
                     </div>
 
                     {/* WhatsApp Marketing */}
-                    <div className="flex items-center justify-between p-4 rounded-lg border bg-green-50 border-green-200">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-green-50 border-green-200">
                       <div>
                         <Label htmlFor="whatsapp-marketing-opt-in" className="text-base font-medium">
                           WhatsApp Marketing
@@ -834,7 +834,7 @@ export default function CompanySettingsPage() {
                     </div>
 
                     {/* Carrier Marketing */}
-                    <div className="flex items-center justify-between p-4 rounded-lg border bg-purple-50 border-purple-200">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-purple-50 border-purple-200">
                       <div>
                         <Label htmlFor="carrier-marketing-opt-in" className="text-base font-medium">
                           Platform Marketing
@@ -860,7 +860,7 @@ export default function CompanySettingsPage() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" disabled={savingSettings}>
+                  <Button type="submit" disabled={savingSettings} className="w-full sm:w-auto">
                     {savingSettings ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -888,7 +888,7 @@ export default function CompanySettingsPage() {
                   Permanently delete your account and all associated data
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+            <CardContent className="space-y-4">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
                   <h4 className="font-semibold text-red-900">Warning: This action cannot be undone</h4>
                   <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
@@ -925,7 +925,7 @@ export default function CompanySettingsPage() {
           setError(null);
         }
       }}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="text-red-600">Delete Account</DialogTitle>
             <DialogDescription>
@@ -971,7 +971,7 @@ export default function CompanySettingsPage() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
@@ -982,6 +982,7 @@ export default function CompanySettingsPage() {
                 setError(null);
               }}
               disabled={deleting}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -994,6 +995,7 @@ export default function CompanySettingsPage() {
                 deleteConfirmEmail !== storedUser?.email ||
                 !deletePassword
               }
+              className="w-full sm:w-auto"
             >
               {deleting ? (
                 <>

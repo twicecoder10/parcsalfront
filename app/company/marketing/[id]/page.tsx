@@ -316,13 +316,13 @@ export default function CompanyCampaignDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/company/marketing')}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/company/marketing')} className="w-fit">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{campaign.subject || campaign.title || 'Untitled Campaign'}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold sm:text-3xl">{campaign.subject || campaign.title || 'Untitled Campaign'}</h1>
             <Badge variant={getStatusBadgeVariant(campaign.status)} className={getStatusColor(campaign.status)}>
               {campaign.status}
             </Badge>
@@ -331,14 +331,14 @@ export default function CompanyCampaignDetailPage() {
               {campaign.channel}
             </Badge>
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Created {format(new Date(campaign.createdAt), 'MMM d, yyyy h:mm a')}
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -385,7 +385,7 @@ export default function CompanyCampaignDetailPage() {
       </div>
 
       {/* Campaign Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Campaign Details</CardTitle>
@@ -607,7 +607,7 @@ export default function CompanyCampaignDetailPage() {
 
       {/* Schedule Dialog */}
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Schedule Campaign</DialogTitle>
             <DialogDescription>Select when to send this campaign</DialogDescription>
@@ -624,11 +624,11 @@ export default function CompanyCampaignDetailPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setScheduleDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSchedule} disabled={scheduleMutation.isPending || !scheduledAt}>
+            <Button onClick={handleSchedule} disabled={scheduleMutation.isPending || !scheduledAt} className="w-full sm:w-auto">
               {scheduleMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -644,21 +644,22 @@ export default function CompanyCampaignDetailPage() {
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Cancel Campaign</DialogTitle>
             <DialogDescription>
               Are you sure you want to cancel this campaign? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)} className="w-full sm:w-auto">
               No, Keep Campaign
             </Button>
             <Button
               variant="destructive"
               onClick={() => cancelMutation.mutate(campaignId)}
               disabled={cancelMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {cancelMutation.isPending ? (
                 <>
@@ -675,18 +676,18 @@ export default function CompanyCampaignDetailPage() {
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Delete Campaign</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this campaign? This action cannot be undone. Only DRAFT, SCHEDULED, or CANCELLED campaigns can be deleted.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending} className="w-full sm:w-auto">
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -705,7 +706,7 @@ export default function CompanyCampaignDetailPage() {
 
       {/* Edit Campaign Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Campaign</DialogTitle>
             <DialogDescription>
@@ -806,11 +807,11 @@ export default function CompanyCampaignDetailPage() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending} className="w-full sm:w-auto">
               {updateMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

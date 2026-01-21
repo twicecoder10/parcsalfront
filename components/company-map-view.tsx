@@ -316,7 +316,7 @@ function MapContent() {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [geocodeAddress]);
+  }, [canAccessWarehouses, geocodeAddress, handleError]);
 
   // Helper function to create icon URL from SVG
   const createIconUrl = (iconSvg: string, color: string): string => {

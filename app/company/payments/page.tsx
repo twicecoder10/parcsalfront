@@ -218,8 +218,8 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Payments</h1>
-        <p className="text-gray-600 mt-2">Manage and track all payment transactions</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Payments</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage and track all payment transactions</p>
       </div>
 
       {/* Stats Cards */}
@@ -243,7 +243,7 @@ export default function PaymentsPage() {
               </CardContent>
             </Card>
           )}
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -290,7 +290,7 @@ export default function PaymentsPage() {
 
       {/* Breakdown */}
       {canPerformAction(permissions, 'viewPaymentStats') && !statsLoading && stats && stats.breakdown && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium">Booking Payments</CardTitle>
@@ -356,7 +356,7 @@ export default function PaymentsPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -373,7 +373,7 @@ export default function PaymentsPage() {
               setStatusFilter(value);
               setCurrentPage(0);
             }}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -385,7 +385,7 @@ export default function PaymentsPage() {
                 <SelectItem value="PARTIALLY_REFUNDED">Partially Refunded</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Input
                 type="date"
                 placeholder="From"
@@ -400,9 +400,9 @@ export default function PaymentsPage() {
                   setCurrentPage(0);
                 }}
                 max={dateTo || new Date().toISOString().split('T')[0]}
-                className="w-40"
+                className="w-full sm:w-40"
               />
-              <span className="text-gray-500">to</span>
+              <span className="text-gray-500 text-sm sm:text-base">to</span>
               <Input
                 type="date"
                 placeholder="To"
@@ -418,12 +418,13 @@ export default function PaymentsPage() {
                 }}
                 min={dateFrom || undefined}
                 max={new Date().toISOString().split('T')[0]}
-                className="w-40"
+                className="w-full sm:w-40"
               />
               {(dateFrom || dateTo) && (
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     setDateFrom('');
                     setDateTo('');
@@ -445,7 +446,114 @@ export default function PaymentsPage() {
           <CardDescription>View and manage payment transactions</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="sm:hidden space-y-3">
+            {loading && (!payments || payments.length === 0) ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+              </div>
+            ) : !payments || payments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No payments found</div>
+            ) : (
+              payments.map((payment) => (
+                <div key={payment.id} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <button
+                        onClick={() => copyPaymentId(payment.id)}
+                        className="font-mono text-xs text-left hover:text-orange-600 transition-colors flex items-center gap-1.5 group max-w-full"
+                      >
+                        <span className="truncate">{payment.id}</span>
+                        {copiedPaymentId === payment.id ? (
+                          <Check className="h-3 w-3 text-green-600" />
+                        ) : (
+                          <Copy className="h-3 w-3 opacity-60" />
+                        )}
+                      </button>
+                      <div className="mt-2">
+                        {payment.type ? (
+                          <Badge className="bg-gray-50 text-gray-700 border-gray-200">
+                            {payment.type === 'EXTRA_CHARGE' ? 'Extra Charge' : 'Booking Payment'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                            Payment
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Badge className={statusColors[payment.status] || ''}>
+                      {payment.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>
+                      <span className="font-medium text-gray-900">Amount:</span>{' '}
+                      £{payment.amount.toFixed(2)}
+                    </div>
+                    {payment.refundedAmount != null && Number(payment.refundedAmount) > 0 && (
+                      <div className="text-red-600">
+                        Refunded: £{Number(payment.refundedAmount).toFixed(2)}
+                      </div>
+                    )}
+                    {payment.booking ? (
+                      <div>
+                        <span className="font-medium text-gray-900">Booking:</span>{' '}
+                        <Link href={`/company/bookings/${payment.bookingId}`} className="text-orange-600 hover:underline">
+                          #{payment.bookingId}
+                        </Link>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-medium text-gray-900">Booking:</span> N/A
+                      </div>
+                    )}
+                    {payment.booking?.customer ? (
+                      <div>
+                        <span className="font-medium text-gray-900">Customer:</span>{' '}
+                        {getCustomerName(payment.booking.customer)}
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-medium text-gray-900">Customer:</span> N/A
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium text-gray-900">Method:</span>{' '}
+                      {payment.paymentMethod ? payment.paymentMethod.toLowerCase() : '-'}
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900">Date:</span>{' '}
+                      {payment.paidAt
+                        ? new Date(payment.paidAt).toLocaleDateString()
+                        : new Date(payment.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/company/payments/${payment.id}`}>
+                      <Button variant="outline" size="sm" className="h-8 px-3">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </Link>
+                    {(payment.status === 'SUCCEEDED' || payment.status === 'PARTIALLY_REFUNDED') &&
+                      canPerformAction(permissions, 'processRefund') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          onClick={() => openRefundDialog(payment)}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Refund
+                        </Button>
+                      )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden sm:block w-full overflow-x-auto">
+          <Table className="min-w-[1100px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px]">Payment ID</TableHead>
@@ -604,9 +712,10 @@ export default function PaymentsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
         {pagination && pagination.total > pagination.limit && (
-          <div className="flex items-center justify-between px-6 py-4 border-t">
+          <div className="flex flex-col gap-3 px-6 py-4 border-t sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
               Showing {currentPage * pagination.limit + 1} to{' '}
               {Math.min((currentPage + 1) * pagination.limit, pagination.total)} of{' '}
@@ -636,7 +745,7 @@ export default function PaymentsPage() {
 
       {/* Refund Dialog */}
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>Process Refund</DialogTitle>
             <DialogDescription>
@@ -683,11 +792,11 @@ export default function PaymentsPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={processingRefund}>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={processingRefund} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleRefund} disabled={processingRefund}>
+            <Button onClick={handleRefund} disabled={processingRefund} className="w-full sm:w-auto">
               {processingRefund ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

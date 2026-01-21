@@ -224,7 +224,7 @@ export default function ShipmentDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center justify-center h-96">
           <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
         </div>
@@ -234,7 +234,7 @@ export default function ShipmentDetailPage() {
 
   if (!shipment) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">Shipment not found</p>
@@ -257,21 +257,21 @@ export default function ShipmentDetailPage() {
   const capacityPercentage = shipment ? (shipment.remainingCapacityKg / shipment.totalCapacityKg) * 100 : 0;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <Link href="/company/shipments">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="w-fit">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Shipment Details</h1>
-            <p className="text-gray-600 mt-2">Shipment #{shipment.id}</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">Shipment Details</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Shipment #{shipment.id}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canEdit && (
             <Link href={`/company/shipments/${shipment.id}/edit`}>
               <Button variant="outline">
@@ -379,9 +379,9 @@ export default function ShipmentDetailPage() {
       {/* Overview */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Overview</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className={statusColors[shipment.status] || ''}>
                 {shipment.status}
               </Badge>
@@ -394,7 +394,7 @@ export default function ShipmentDetailPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-orange-600 flex-shrink-0" />
               <div>
@@ -433,7 +433,7 @@ export default function ShipmentDetailPage() {
             )}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 pt-4 border-t">
+          <div className="grid gap-6 pt-4 border-t md:grid-cols-2">
             <div className="flex items-center gap-3">
               <Package className="h-5 w-5 text-orange-600 flex-shrink-0" />
               <div className="flex-1">
@@ -464,7 +464,7 @@ export default function ShipmentDetailPage() {
 
           <div className="pt-4 border-t">
             <p className="font-medium mb-2">Pricing</p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <span className="text-sm text-gray-600">
                 Model: {pricingModelLabels[shipment.pricingModel] || shipment.pricingModel}
               </span>
@@ -492,7 +492,7 @@ export default function ShipmentDetailPage() {
           {/* Tracking Status Update */}
           {shipment.status === 'PUBLISHED' && canUpdateTracking && (
             <div className="pt-4 border-t">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-3">
                   <PackageCheck className="h-5 w-5 text-indigo-600 flex-shrink-0" />
                   <div>
@@ -502,7 +502,7 @@ export default function ShipmentDetailPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                   {shipment.trackingStatus && (
                     <Badge className={trackingStatusColors[shipment.trackingStatus] || ''}>
                       {trackingStatusLabels[shipment.trackingStatus]}
@@ -513,7 +513,7 @@ export default function ShipmentDetailPage() {
                     onValueChange={(value) => handleTrackingStatusUpdate(value as SlotTrackingStatus)}
                     disabled={updatingTrackingStatus || shipment.trackingStatus === 'DELIVERED'}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -563,32 +563,17 @@ export default function ShipmentDetailPage() {
           ) : bookings.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No bookings yet</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Weight/Items</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="sm:hidden space-y-3">
                 {bookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell>
+                  <div key={booking.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-medium">{getCustomerName(booking.customer)}</p>
+                        <p className="text-sm font-medium">{getCustomerName(booking.customer)}</p>
                         {getCustomerEmail(booking.customer) && (
                           <p className="text-xs text-muted-foreground">{getCustomerEmail(booking.customer)}</p>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {booking.requestedWeightKg ? `${booking.requestedWeightKg} kg` : booking.requestedItemsCount ? `${booking.requestedItemsCount} items` : 'N/A'}
-                    </TableCell>
-                    <TableCell className="font-medium">£{getBookingPrice(booking)}</TableCell>
-                    <TableCell>
                       <Badge className={
                         booking.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
                         booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -600,16 +585,80 @@ export default function ShipmentDetailPage() {
                       }>
                         {booking.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-900">Weight/Items:</span>{' '}
+                        {booking.requestedWeightKg
+                          ? `${booking.requestedWeightKg} kg`
+                          : booking.requestedItemsCount
+                            ? `${booking.requestedItemsCount} items`
+                            : 'N/A'}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-900">Price:</span> £{getBookingPrice(booking)}
+                      </div>
+                    </div>
+                    <div>
                       <Link href={`/company/bookings/${booking.id}`}>
-                        <Button variant="ghost" size="sm">View</Button>
+                        <Button variant="outline" size="sm" className="h-8 px-3">
+                          View
+                        </Button>
                       </Link>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+              <div className="hidden sm:block w-full overflow-x-auto">
+                <Table className="min-w-[720px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Weight/Items</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{getCustomerName(booking.customer)}</p>
+                            {getCustomerEmail(booking.customer) && (
+                              <p className="text-xs text-muted-foreground">{getCustomerEmail(booking.customer)}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {booking.requestedWeightKg ? `${booking.requestedWeightKg} kg` : booking.requestedItemsCount ? `${booking.requestedItemsCount} items` : 'N/A'}
+                        </TableCell>
+                        <TableCell className="font-medium">£{getBookingPrice(booking)}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            booking.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            booking.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                            booking.status === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-800' :
+                            booking.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/company/bookings/${booking.id}`}>
+                            <Button variant="ghost" size="sm">View</Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

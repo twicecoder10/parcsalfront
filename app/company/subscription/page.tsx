@@ -106,8 +106,8 @@ function SubscriptionContent() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Subscription</h1>
-        <p className="text-gray-600 mt-2">Manage your subscription plan</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Subscription</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage your subscription plan</p>
       </div>
 
       {/* Success Message */}
@@ -187,7 +187,7 @@ function SubscriptionContent() {
       ) : subscription ? (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Current Plan</CardTitle>
                 <CardDescription>Your active subscription details</CardDescription>
@@ -198,7 +198,7 @@ function SubscriptionContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-2xl font-bold">{subscription.companyPlan.name} Plan</p>
                 <p className="text-gray-600">
@@ -213,7 +213,7 @@ function SubscriptionContent() {
                   </p>
                 )}
               </div>
-              <Button variant="outline" onClick={handleUpdatePaymentMethod}>
+              <Button variant="outline" onClick={handleUpdatePaymentMethod} className="w-full sm:w-auto">
                 Manage Billing
               </Button>
             </div>
@@ -231,7 +231,7 @@ function SubscriptionContent() {
       {plans.length > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Available Plans</CardTitle>
                 <CardDescription>Choose the plan that works best for your business</CardDescription>
@@ -243,8 +243,12 @@ function SubscriptionContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {plans.map((plan) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {plans.filter((plan) => {
+                const planNameUpper = plan.name.toUpperCase();
+                const planIdUpper = (plan.id || '').toUpperCase();
+                return planNameUpper !== 'ENTERPRISE' && planIdUpper !== 'ENTERPRISE' && plan.name !== 'Enterprise';
+              }).map((plan) => {
                 const isCurrentPlan = subscription?.companyPlan.id === plan.id;
                 const currentPlanPrice = subscription?.companyPlan.priceMonthly 
                   ? parseFloat(String(subscription.companyPlan.priceMonthly)) 

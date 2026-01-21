@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { RouteGuard } from '@/lib/route-guards';
@@ -21,6 +22,16 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <RouteGuard
       options={{
@@ -31,10 +42,17 @@ export default function AdminLayout({
       }}
     >
       <div className="flex h-screen overflow-hidden">
-        <DashboardSidebar navItems={navItems} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <DashboardHeader />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <DashboardSidebar 
+          navItems={navItems}
+          isOpen={isSidebarOpen}
+          onClose={closeSidebar}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden lg:ml-0">
+          <DashboardHeader 
+            onMenuClick={toggleSidebar}
+            isSidebarOpen={isSidebarOpen}
+          />
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
             {children}
           </main>
           <AppFooter />

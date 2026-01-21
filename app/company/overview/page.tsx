@@ -138,14 +138,16 @@ export default function CompanyOverviewPage() {
         </Card>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Overview</h1>
-          <p className="text-gray-600 mt-2">Monitor your shipment operations at a glance</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Overview</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
+            Monitor your shipment operations at a glance
+          </p>
         </div>
         {canPerformAction(permissions, 'createShipment') && (
           <Link href="/company/shipments/new">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               New Shipment Slot
             </Button>
@@ -156,7 +158,7 @@ export default function CompanyOverviewPage() {
       {/* KPI Cards - Only show if user has analytics permission */}
       {canPerformAction(permissions, 'viewAnalytics') ? (
         statsLoading ? (
-          <div className={`grid gap-4 ${stats?.revenue == null ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+          <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${stats?.revenue == null ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
             {(stats?.revenue == null ? [1, 2, 3] : [1, 2, 3, 4]).map((i) => (
               <Card key={i}>
                 <CardContent className="pt-6">
@@ -168,7 +170,7 @@ export default function CompanyOverviewPage() {
             ))}
           </div>
         ) : (
-          <div className={`grid gap-4 ${stats?.revenue == null ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+          <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${stats?.revenue == null ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
@@ -247,7 +249,7 @@ export default function CompanyOverviewPage() {
         )
       ) : (
         // Simplified view for staff without analytics permission
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
@@ -273,7 +275,7 @@ export default function CompanyOverviewPage() {
 
       {/* Additional Stats - Only show if user has analytics permission */}
       {canPerformAction(permissions, 'viewAnalytics') && !statsLoading && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Bookings</CardTitle>
@@ -319,7 +321,7 @@ export default function CompanyOverviewPage() {
       </Card>
 
       {/* Recent Activity */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Recent Bookings</CardTitle>
@@ -332,7 +334,10 @@ export default function CompanyOverviewPage() {
               <>
                 <div className="space-y-4">
                   {recentBookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
+                    <div
+                      key={booking.id}
+                      className="flex flex-col gap-2 pb-4 border-b last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                    >
                       <div>
                         <p className="text-sm font-medium">Booking #{booking.id}</p>
                         <p className="text-xs text-muted-foreground">
@@ -377,7 +382,10 @@ export default function CompanyOverviewPage() {
                     const departureDate = new Date(shipment.departureTime);
                     const daysUntil = Math.ceil((departureDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                     return (
-                      <div key={shipment.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
+                      <div
+                        key={shipment.id}
+                        className="flex flex-col gap-2 pb-4 border-b last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                      >
                         <div>
                           <p className="text-sm font-medium">
                             {shipment.route.origin} → {shipment.route.destination}

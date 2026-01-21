@@ -25,6 +25,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Map<string, Message[]>>(new Map());
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
   const socketRef = useRef<Socket | null>(null);
+  const currentChatRoomRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    currentChatRoomRef.current = currentChatRoom;
+  }, [currentChatRoom]);
 
   useEffect(() => {
     // Only connect if we have a token
@@ -68,7 +73,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     socketInstance.on('left:chatRoom', (data: { chatRoomId: string }) => {
       console.log('Left chat room:', data.chatRoomId);
-      if (currentChatRoom === data.chatRoomId) {
+      if (currentChatRoomRef.current === data.chatRoomId) {
         setCurrentChatRoom(null);
       }
     });
@@ -87,7 +92,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       });
 
       // Update unread count if not in this chat room
-      if (currentChatRoom !== message.chatRoomId) {
+      if (currentChatRoomRef.current !== message.chatRoomId) {
         setUnreadCounts((prev) => {
           const newCounts = new Map(prev);
           const current = newCounts.get(message.chatRoomId) || 0;

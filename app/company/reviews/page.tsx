@@ -200,12 +200,12 @@ export default function ReviewsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Reviews</h1>
-        <p className="text-gray-600 mt-2">View and respond to customer reviews</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Reviews</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">View and respond to customer reviews</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
@@ -263,14 +263,14 @@ export default function ReviewsPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <div className="flex-1 min-w-[200px]">
               <Label htmlFor="rating-filter">Filter by Rating</Label>
               <Select value={ratingFilter} onValueChange={(value) => {
                 setRatingFilter(value);
                 setCurrentPage(0);
               }}>
-                <SelectTrigger id="rating-filter">
+                <SelectTrigger id="rating-filter" className="w-full sm:w-64">
                   <SelectValue placeholder="All ratings" />
                 </SelectTrigger>
                 <SelectContent>
@@ -312,9 +312,9 @@ export default function ReviewsPage() {
                   key={review.id}
                   className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-3 mb-2">
                         <div className="flex items-center gap-2">
                           <User className="h-5 w-5 text-gray-400" />
                           <span className="font-medium">{review.customer.fullName}</span>
@@ -357,6 +357,7 @@ export default function ReviewsPage() {
                           <Button
                             variant={review.companyReply ? 'outline' : 'default'}
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => {
                               setReplyingTo(review.id);
                               setReplyText(review.companyReply || '');
@@ -366,7 +367,7 @@ export default function ReviewsPage() {
                             {review.companyReply ? 'Edit Reply' : 'Reply'}
                           </Button>
                         </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
                         <DialogHeader>
                           <DialogTitle>
                             {review.companyReply ? 'Edit Reply' : 'Reply to Review'}
@@ -396,19 +397,21 @@ export default function ReviewsPage() {
                             />
                           </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                           <Button
                             variant="outline"
                             onClick={() => {
                               setReplyingTo(null);
                               setReplyText('');
                             }}
+                            className="w-full sm:w-auto"
                           >
                             Cancel
                           </Button>
                           <Button
                             onClick={() => handleReply(review)}
                             disabled={!replyText.trim() || submittingReply}
+                            className="w-full sm:w-auto"
                           >
                             {submittingReply ? (
                               <>
@@ -436,7 +439,7 @@ export default function ReviewsPage() {
 
       {/* Pagination */}
       {!loading && reviews && reviews.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-gray-600">
             Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total} reviews
           </div>

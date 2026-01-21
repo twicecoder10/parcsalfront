@@ -79,12 +79,12 @@ export default function BookingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Bookings</h1>
-        <p className="text-gray-600 mt-2">Manage booking requests from customers</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Bookings</h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage booking requests from customers</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -120,7 +120,7 @@ export default function BookingsPage() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -134,7 +134,7 @@ export default function BookingsPage() {
               setStatusFilter(value);
               setCurrentPage(0);
             }}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -158,7 +158,68 @@ export default function BookingsPage() {
           <CardDescription>Review and manage customer bookings</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="sm:hidden space-y-3">
+            {loading && bookings.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+              </div>
+            ) : bookings.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No bookings found</div>
+            ) : (
+              bookings.map((booking) => (
+                <div key={booking.id} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">{getCustomerName(booking.customer)}</p>
+                      {getCustomerEmail(booking.customer) && (
+                        <p className="text-xs text-muted-foreground">{getCustomerEmail(booking.customer)}</p>
+                      )}
+                    </div>
+                    <Badge className={statusColors[booking.status] || ''}>
+                      {booking.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>
+                      <span className="font-medium text-gray-900">Route:</span>{' '}
+                      {booking.shipmentSlot
+                        ? `${booking.shipmentSlot.originCity}, ${booking.shipmentSlot.originCountry} → ${booking.shipmentSlot.destinationCity}, ${booking.shipmentSlot.destinationCountry}`
+                        : 'N/A'}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="font-medium text-gray-900">Weight/Items:</span>{' '}
+                        {booking.requestedWeightKg
+                          ? `${booking.requestedWeightKg} kg`
+                          : booking.requestedItemsCount
+                            ? `${booking.requestedItemsCount} items`
+                            : 'N/A'}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-900">Price:</span> £{getBookingPrice(booking)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">
+                          {new Date(booking.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Link href={`/company/bookings/${booking.id}`}>
+                      <Button variant="outline" size="sm" className="h-8 px-3">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden sm:block w-full overflow-x-auto">
+            <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
@@ -231,10 +292,11 @@ export default function BookingsPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
         {pagination.total > pagination.limit && (
-          <div className="flex items-center justify-between px-6 py-4 border-t">
+          <div className="flex flex-col gap-3 px-6 py-4 border-t sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-600">
               Showing {currentPage * pagination.limit + 1} to{' '}
               {Math.min((currentPage + 1) * pagination.limit, pagination.total)} of{' '}

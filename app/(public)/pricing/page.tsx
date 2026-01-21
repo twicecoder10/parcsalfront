@@ -157,10 +157,10 @@ export default function PricingPage() {
 
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-4">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6">
                 Simple, transparent pricing
               </h1>
-              <p className="text-xl text-gray-600">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600">
                 Choose the plan that works best for your business
               </p>
             </div>
@@ -231,10 +231,10 @@ export default function PricingPage() {
         <section className="py-12 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 For Companies & Carriers
               </h2>
-              <p className="text-lg text-gray-600 mb-2">
+              <p className="text-base sm:text-lg text-gray-600 mb-2">
                 Subscription plans to maximize your capacity
               </p>
               <p className="text-sm text-gray-500">
@@ -242,7 +242,7 @@ export default function PricingPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
               {plans.map((plan) => (
                 <Card
                   key={plan.id}
@@ -413,13 +413,34 @@ export default function PricingPage() {
             <div className="max-w-6xl mx-auto mt-12">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-2xl text-center">Plan Comparison</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl text-center">Plan Comparison</CardTitle>
                   <CardDescription className="text-center">
                     Compare key features across all plans
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
+                  <div className="space-y-4 sm:hidden">
+                    {comparisonData.map((row, index) => (
+                      <div key={index} className="rounded-lg border p-4 space-y-3">
+                        <div className="text-sm font-semibold text-gray-900">{row.feature}</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                          <div>
+                            <span className="font-medium text-gray-900">Free:</span> {row.free}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-900">Starter:</span> {row.starter}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-900">Professional:</span> {row.professional}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-900">Enterprise:</span> {row.enterprise}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden sm:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -458,7 +479,7 @@ export default function PricingPage() {
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 text-center">
                 Frequently asked questions
               </h2>
               <div className="space-y-6">

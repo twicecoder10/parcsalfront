@@ -108,12 +108,12 @@ export function CreateExtraChargeForm({ bookingId, onSuccess }: CreateExtraCharg
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Request Additional Charge
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Request Additional Charge</DialogTitle>
           <DialogDescription>
@@ -132,7 +132,7 @@ export function CreateExtraChargeForm({ bookingId, onSuccess }: CreateExtraCharg
                 setFormData({ ...formData, reason: value })
               }
             >
-              <SelectTrigger id="reason">
+              <SelectTrigger id="reason" className="w-full">
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
@@ -240,16 +240,17 @@ export function CreateExtraChargeForm({ bookingId, onSuccess }: CreateExtraCharg
             </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -87,12 +87,16 @@ export function CompanyExtraChargesList({
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Additional Charges</CardTitle>
               <CardDescription>Extra charges requested for this booking</CardDescription>
             </div>
-            {canCreate && <CreateExtraChargeForm bookingId={bookingId} onSuccess={fetchExtraCharges} />}
+          {canCreate && (
+            <div className="w-full sm:w-auto">
+              <CreateExtraChargeForm bookingId={bookingId} onSuccess={fetchExtraCharges} />
+            </div>
+          )}
           </div>
         </CardHeader>
         <CardContent>
@@ -107,7 +111,7 @@ export function CompanyExtraChargesList({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Additional Charges</CardTitle>
             <CardDescription>
@@ -116,7 +120,11 @@ export function CompanyExtraChargesList({
                 : `${extraCharges.length} charge${extraCharges.length > 1 ? 's' : ''} for this booking`}
             </CardDescription>
           </div>
-          {canCreate && <CreateExtraChargeForm bookingId={bookingId} onSuccess={fetchExtraCharges} />}
+          {canCreate && (
+            <div className="w-full sm:w-auto">
+              <CreateExtraChargeForm bookingId={bookingId} onSuccess={fetchExtraCharges} />
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -224,7 +224,7 @@ export default function EditShipmentPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-center h-96">
           <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
         </div>
@@ -234,17 +234,17 @@ export default function EditShipmentPage() {
 
   return (
     <GoogleMapsLoader>
-      <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <Link href={`/company/shipments/${shipmentId}`}>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Edit Shipment Slot</h1>
-          <p className="text-gray-600 mt-2">Update shipment slot details</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Edit Shipment Slot</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Update shipment slot details</p>
         </div>
       </div>
 
@@ -257,7 +257,7 @@ export default function EditShipmentPage() {
               <CardDescription>Origin and destination details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <CountrySelect
                   value={formData.originCountry}
                   onChange={(value) => {
@@ -307,7 +307,7 @@ export default function EditShipmentPage() {
               <CardDescription>Departure and arrival times</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="departureDate">Departure Date</Label>
                   <Input
@@ -356,7 +356,7 @@ export default function EditShipmentPage() {
               <CardTitle>Capacity & Mode</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="mode">Mode</Label>
                   <Select value={formData.mode} onValueChange={(value) => handleChange('mode', value)}>
@@ -448,7 +448,7 @@ export default function EditShipmentPage() {
               <div className="space-y-2">
                 <Label htmlFor="pricingModel">Pricing Model</Label>
                 <Select value={formData.pricingModel} onValueChange={(value) => handleChange('pricingModel', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select pricing model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -529,13 +529,14 @@ export default function EditShipmentPage() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-4">
-            <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               type="submit"
               disabled={saving}
+              className="w-full sm:w-auto"
             >
               {saving ? (
                 <>

@@ -208,26 +208,35 @@ export default function NewCompanyCampaignPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/company/marketing')}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/company/marketing')} className="w-fit">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Create Campaign</h1>
-          <p className="text-gray-600 mt-2">Step {step} of 3</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Create Campaign</h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">Step {step} of 3</p>
         </div>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center justify-between">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center flex-1">
-            <div
-              className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                step >= s ? 'bg-orange-600 border-orange-600 text-white' : 'border-gray-300 text-gray-500'
-              }`}
-            >
-              {s}
+      <div className="flex items-center justify-center gap-4 sm:gap-6">
+        {[
+          { step: 1, label: 'Basic' },
+          { step: 2, label: 'Content' },
+          { step: 3, label: 'Review' },
+        ].map(({ step: s, label }) => (
+          <div key={s} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 text-xs sm:text-sm ${
+                  step >= s ? 'bg-orange-600 border-orange-600 text-white' : 'border-gray-300 text-gray-500'
+                }`}
+              >
+                {s}
+              </div>
+              <span className="mt-1 text-[10px] text-gray-500 sm:text-xs sm:text-gray-600">
+                {label}
+              </span>
             </div>
             {s < 3 && (
               <div
@@ -260,7 +269,7 @@ export default function NewCompanyCampaignPage() {
 
             <div className="space-y-2">
               <Label htmlFor="channel">Channel</Label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {(['EMAIL', 'IN_APP', 'WHATSAPP'] as CampaignChannel[]).map((channel) => (
                   <button
                     key={channel}
@@ -422,13 +431,14 @@ export default function NewCompanyCampaignPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <Label>Preview Recipients</Label>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePreviewRecipients}
                   disabled={loadingPreview}
+                  className="w-full sm:w-auto"
                 >
                   {loadingPreview ? (
                     <>
@@ -477,18 +487,19 @@ export default function NewCompanyCampaignPage() {
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={prevStep} disabled={step === 1}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="outline" onClick={prevStep} disabled={step === 1} className="w-full sm:w-auto">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Previous
         </Button>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {step === 3 && (
             <>
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={createMutation.isPending}
+                className="w-full sm:w-auto"
               >
                 {createMutation.isPending ? (
                   <>
@@ -506,6 +517,7 @@ export default function NewCompanyCampaignPage() {
                 <Button
                   onClick={handleSchedule}
                   disabled={scheduleMutation.isPending || createMutation.isPending}
+                  className="w-full sm:w-auto"
                 >
                   {scheduleMutation.isPending || createMutation.isPending ? (
                     <>
@@ -523,6 +535,7 @@ export default function NewCompanyCampaignPage() {
                 <Button
                   onClick={handleSendNow}
                   disabled={sendMutation.isPending || createMutation.isPending}
+                  className="w-full sm:w-auto"
                 >
                   {sendMutation.isPending || createMutation.isPending ? (
                     <>
@@ -540,7 +553,7 @@ export default function NewCompanyCampaignPage() {
             </>
           )}
           {step < 3 && (
-            <Button onClick={nextStep}>
+            <Button onClick={nextStep} className="w-full sm:w-auto">
               Next
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
