@@ -156,6 +156,7 @@ export default function RegisterCompanyPage() {
                     label="Country"
                     placeholder="Select country"
                     required
+                    allowedCountries={['UK', 'Ireland', 'France', 'Spain', 'Italy', 'Germany', 'Netherlands', 'Belgium', 'Switzerland', 'USA']}
                   />
                   <CitySelect
                     value={city}

@@ -61,7 +61,7 @@ export default function FAQPage() {
         },
         {
           q: 'What subscription plans are available?',
-          a: 'We offer Free, Starter, Professional, and Enterprise plans with different features and limits. All plans charge 15% commission per shipment (Enterprise negotiable). Visit our pricing page to see detailed comparisons and choose the plan that fits your business.',
+          a: 'We offer Free, Starter, Professional, and Enterprise plans with different features and limits. Free plan charges 15% commission per shipment, while Starter and Professional plans have 0% commission. Enterprise plans have custom rates - contact support for details. Visit our pricing page to see detailed comparisons and choose the plan that fits your business.',
         },
         {
           q: 'How do I get paid?',

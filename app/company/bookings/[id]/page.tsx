@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Package, PoundSterling, User, Mail, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw, MessageSquare } from 'lucide-react';
+import { MapPin, Clock, Package, PoundSterling, User, Mail, CheckCircle2, XCircle, Loader2, ArrowLeft, CreditCard, Truck, Printer, RefreshCw, MessageSquare, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -559,6 +559,71 @@ export default function BookingDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Warehouse Information */}
+      {(booking.pickupWarehouse || booking.deliveryWarehouse) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Warehouse Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {booking.pickupWarehouse && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  <p className="font-medium">Pickup Warehouse</p>
+                </div>
+                <div className="pl-7 space-y-1">
+                  <p className="font-semibold text-gray-900">{booking.pickupWarehouse.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupWarehouse.address}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupWarehouse.city}, {booking.pickupWarehouse.state} {booking.pickupWarehouse.postalCode}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {booking.pickupWarehouse.country}
+                  </p>
+                  {booking.pickupMethod && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Method: {booking.pickupMethod === 'DROP_OFF_AT_COMPANY'
+                        ? 'Customer drops off at warehouse'
+                        : 'Company picks up from customer'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {booking.deliveryWarehouse && (
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-green-600" />
+                  <p className="font-medium">Delivery Warehouse</p>
+                </div>
+                <div className="pl-7 space-y-1">
+                  <p className="font-semibold text-gray-900">{booking.deliveryWarehouse.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryWarehouse.address}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryWarehouse.city}, {booking.deliveryWarehouse.state} {booking.deliveryWarehouse.postalCode}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {booking.deliveryWarehouse.country}
+                  </p>
+                  {booking.deliveryMethod && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Method: {booking.deliveryMethod === 'RECEIVER_PICKS_UP'
+                        ? 'Receiver picks up from warehouse'
+                        : 'Company delivers to receiver'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Parcel Information */}
       {(booking.parcelType || booking.weight || booking.value || booking.length || booking.width || booking.height || booking.description || booking.pickupMethod || booking.deliveryMethod) && (
         <Card>
@@ -720,55 +785,29 @@ export default function BookingDetailPage() {
               </div>
             </div>
             
-            {/* Payment Details */}
-            {booking.payment && booking.paymentStatus === 'PAID' && (
-              <div className="pt-4 border-t space-y-2">
-                <p className="text-sm font-medium text-gray-700">Payment Details</p>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {booking.payment.id && (
-                    <p>
-                      Transaction ID: <span className="font-mono text-xs">{booking.payment.id}</span>
-                    </p>
-                  )}
-                  {booking.payment.stripePaymentIntentId && (
-                    <p>
-                      Stripe Payment Intent: <span className="font-mono text-xs">{booking.payment.stripePaymentIntentId}</span>
-                    </p>
-                  )}
-                  {booking.payment.amount && (
-                    <p>Amount: £{parseFloat(String(booking.payment.amount)).toFixed(2)}</p>
-                  )}
-                  {booking.payment.currency && (
-                    <p>Currency: {String(booking.payment.currency).toUpperCase()}</p>
-                  )}
-                  {booking.payment.status && (
-                    <p>
-                      Status: <span className="capitalize">{String(booking.payment.status).toLowerCase()}</span>
-                    </p>
-                  )}
-                  {booking.payment.createdAt && (
-                    <p>Paid on: {new Date(booking.payment.createdAt).toLocaleString()}</p>
-                  )}
-                  {booking.payment.paymentMethod && (
-                    <p>
-                      Payment Method: <span className="capitalize">{String(booking.payment.paymentMethod).toLowerCase()}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
             {booking.paymentStatus === 'PENDING' && (
-              <div className="pt-4 border-t">
+              <div className="pt-2 border-t">
                 <p className="text-sm text-yellow-700">
                   Payment is pending. The customer will need to complete payment to confirm this booking.
                 </p>
               </div>
             )}
             {booking.paymentStatus === 'FAILED' && (
-              <div className="pt-4 border-t">
+              <div className="pt-2 border-t">
                 <p className="text-sm text-red-700">
                   Payment failed. The customer will need to retry payment.
                 </p>
+              </div>
+            )}
+            
+            {booking.payment?.id && (
+              <div className="pt-4 border-t">
+                <Link href={`/company/payments/${booking.payment.id}`}>
+                  <Button variant="outline" className="w-full">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Full Payment Details
+                  </Button>
+                </Link>
               </div>
             )}
           </div>

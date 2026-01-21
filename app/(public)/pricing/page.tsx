@@ -20,24 +20,24 @@ export default function PricingPage() {
       recommended: false,
       features: {
         operations: [
-          'List services on Parcsal (standard ranking)',
-          'Create/manage Slots & Bookings with simple label printing',
+          'Up to 3 shipments per month List services on Parcsal (standard ranking).',
+          'Create/manage Slots & Bookings',
         ],
         customers: [
           'View reviews/ratings',
-          'Reply to messages one-to-one',
+          'Reply to messages one-to-one.',
         ],
         money: [
-          'View Payments & Payouts',
-          'Standard payout within 48 hours of delivery',
+          'View Payments &',
+          'Manage Payouts',
         ],
         marketing: [
-          'Basic analytics (shipments, revenue, average rating)',
-          'Email + SMS/WhatsApp system notifications only',
-          'Promo campaigns via pay-as-you-go credits',
+          'Basic analytics (shipments, revenue, average rating).',
+          'Email & InApp notifications',
+          'Promo campaigns via pay-as-you-go credits.',
         ],
         account: [
-          '1 admin user',
+          '1 admin user.',
         ],
       },
       cta: 'Get started',
@@ -48,32 +48,31 @@ export default function PricingPage() {
       name: 'Starter',
       price: '£49',
       period: '/month',
-      commission: '15%',
+      commission: '0%',
       tagline: 'Grow your volume — priority visibility + marketing tools',
       recommended: true,
       features: {
         operations: [
           'Everything in Free',
-          'Slot templates to reuse offers',
+          'up to 20 shipments per month List services on Parcsal (Starter ranking)',
+          'Access to Scan and Warehouses modules.',
         ],
         customers: [
-          '"Verified Carrier" badge on listings',
-        ],
-        money: [
-          'Faster payouts (24–48 hours)',
-          'Simple CSV exports',
+          '"Verified Carrier" badge on listings.',
         ],
         insights: [
-          'Enhanced analytics: corridor/service breakdown',
-          'New vs repeat customers, basic conversion metrics',
+          'Enhanced analytics',
         ],
         marketing: [
-          'Email campaigns to past customers (up to 5,000/month; extra billed)',
-          '100 promotional SMS/WhatsApp credits/month; extra via topups',
-          'Prebuilt promo & reminder templates',
+          'Email campaigns to past customers (e.g., up to 1,000 / month; extra billed).',
+          '20 post on WhatsApp storis',
+          '100 promotional WhatsApp messages per month; extra billed via top-ups.',
         ],
         account: [
-          'Up to 3 team members',
+          'Up to 3 team members.',
+        ],
+        support: [
+          'Via Email / InApp / Live chat success contact.',
         ],
       },
       cta: 'Upgrade',
@@ -84,35 +83,28 @@ export default function PricingPage() {
       name: 'Professional',
       price: '£149',
       period: '/month',
-      commission: '15%',
+      commission: '0%',
       tagline: 'Scale your operations — advanced analytics + dedicated support',
       recommended: false,
       features: {
         operations: [
           'Everything in Starter',
-          'Advanced slot rules (automation, bulk uploads, day-of-week pricing)',
-          'Priority search ranking above Free & Starter',
-          'Access to Scan and Warehouses modules',
+          'Unlimited Listing per month.',
+          'Priority search ranking above Free & Starter.',
         ],
         customers: [
-          'Featured placement and "Recommended Carrier" rotation',
-        ],
-        money: [
-          'Next-day payout options',
-          'Detailed reconciliation-ready reports',
-        ],
-        insights: [
-          'Full analytics suite (profitability, cohorts, funnel)',
-          'A/B testing dashboard',
+          'Featured placement and "Recommended Carrier" rotation.',
         ],
         marketing: [
-          'Higher email limits (up to 20,000/month) with segmentation, scheduling & A/B tests',
-          '500 promotional SMS/WhatsApp credits/month with discounted extra packs',
-          'Premium templates and branding options',
+          'Higher email limits (e.g., up to 5,000 / month) extra billed.',
+          '50 post on WhatsApp stories + Billed extra',
+          '250 promotional WhatsApp messages per month; extra billed via top-ups.',
         ],
         account: [
-          'Up to 10 team members with role-based permissions',
-          'Dedicated success contact',
+          'Unlimited',
+        ],
+        support: [
+          'Phone + Dedicated success contact.',
         ],
       },
       cta: 'Upgrade',
@@ -121,27 +113,14 @@ export default function PricingPage() {
     {
       id: 'ENTERPRISE',
       name: 'Enterprise',
-      price: 'From £500',
-      period: '/month',
-      commission: '15% standard (12–14% negotiable)',
-      tagline: 'Partnership tier — custom solution for large logistics groups',
+      price: 'Contact',
+      period: '',
+      commission: 'Contact support',
+      tagline: 'Dedicated plan for large logistics groups',
       recommended: false,
       features: {
         partnership: [
-          'Dedicated account manager and joint business reviews',
-          'Custom SLAs on support, claims, and payouts',
-        ],
-        operations: [
-          'Everything in Professional',
-          'Multi-branch / multi-country structure with separate dashboards',
-          'Fully custom workflows and deep API integrations (bookings, labels, tracking, analytics)',
-        ],
-        data: [
-          'Custom reporting exports and data feeds into internal systems',
-          'Co-branded landing pages and exclusive corridor promotions',
-        ],
-        account: [
-          'Unlimited users with advanced role and access controls',
+          'Contact support for dedicated plan details',
         ],
       },
       cta: 'Contact sales',
@@ -150,11 +129,13 @@ export default function PricingPage() {
   ];
 
   const comparisonData = [
-    { feature: 'Team members', free: '1', starter: '3', professional: '10', enterprise: 'Unlimited' },
-    { feature: 'Search ranking', free: 'Standard', starter: 'Priority', professional: 'Highest', enterprise: 'Custom' },
-    { feature: 'Payout speed', free: '48h', starter: '24–48h', professional: 'Next-day', enterprise: 'SLA' },
-    { feature: 'Email campaigns', free: 'Pay-as-you-go', starter: '5,000/month', professional: '20,000/month', enterprise: 'Custom' },
-    { feature: 'Promo credits', free: 'Pay-as-you-go', starter: '100/month', professional: '500/month', enterprise: 'Custom' },
+    { feature: 'Commission rate', free: '15%', starter: '0%', professional: '0%', enterprise: 'Contact' },
+    { feature: 'Shipments per month', free: '3', starter: '20', professional: 'Unlimited', enterprise: 'Contact' },
+    { feature: 'Team members', free: '1', starter: '3', professional: 'Unlimited', enterprise: 'Contact' },
+    { feature: 'Search ranking', free: 'Standard', starter: 'Starter', professional: 'Priority', enterprise: 'Contact' },
+    { feature: 'Email campaigns', free: 'None', starter: '1,000/month', professional: '5,000/month', enterprise: 'Contact' },
+    { feature: 'WhatsApp stories', free: 'None', starter: '20/month', professional: '50/month', enterprise: 'Contact' },
+    { feature: 'WhatsApp promos', free: 'PAYG only', starter: '100/month', professional: '250/month', enterprise: 'Contact' },
   ];
 
   return (
@@ -257,7 +238,7 @@ export default function PricingPage() {
                 Subscription plans to maximize your capacity
               </p>
               <p className="text-sm text-gray-500">
-                Commission: 15% per shipment on all plans (Enterprise negotiable)
+                Free plan: 15% commission. Starter & Professional: 0% commission. Enterprise: Contact for details.
               </p>
             </div>
 
@@ -368,11 +349,11 @@ export default function PricingPage() {
                           </ul>
                         </div>
                       )}
-                      {plan.features.data && (
+                      {('data' in plan.features && Array.isArray(plan.features.data) && plan.features.data.length > 0) && (
                         <div>
                           <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Data & Marketing</h4>
                           <ul className="space-y-2">
-                            {plan.features.data.map((feature, index) => (
+                            {(plan.features as any).data.map((feature: string, index: number) => (
                               <li key={index} className="flex items-start gap-2">
                                 <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                                 <span className="text-xs text-gray-700">{feature}</span>
@@ -386,6 +367,19 @@ export default function PricingPage() {
                           <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Account</h4>
                           <ul className="space-y-2">
                             {plan.features.account.map((feature, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-700">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {plan.features.support && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Support Team</h4>
+                          <ul className="space-y-2">
+                            {plan.features.support.map((feature, index) => (
                               <li key={index} className="flex items-start gap-2">
                                 <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
                                 <span className="text-xs text-gray-700">{feature}</span>
@@ -451,7 +445,7 @@ export default function PricingPage() {
                   </div>
                   <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
                     <p className="text-sm text-gray-700">
-                      <strong>Note:</strong> Marketing campaign limits apply; top-ups available. Payout timing depends on delivery confirmation.
+                      <strong>Note:</strong> Marketing campaign limits apply; top-ups available.
                     </p>
                   </div>
                 </CardContent>
@@ -471,7 +465,7 @@ export default function PricingPage() {
                 {[
                   {
                     question: 'What is the commission rate?',
-                    answer: 'All plans charge 15% commission per shipment. Enterprise plans may negotiate rates between 12–14% based on volume and partnership terms.',
+                    answer: 'The Free plan charges 15% commission per shipment. Starter and Professional plans have 0% commission. Enterprise plans have custom rates - contact support for details.',
                   },
                   {
                     question: 'Can I switch plans later?',
@@ -479,11 +473,11 @@ export default function PricingPage() {
                   },
                   {
                     question: 'How do payouts work?',
-                    answer: 'Payout timing depends on your plan: Free (48 hours), Starter (24–48 hours), Professional (next-day options), Enterprise (custom SLA). Payouts are processed after delivery confirmation.',
+                    answer: 'All plans include the ability to view Payments & Manage Payouts.',
                   },
                   {
                     question: 'Are there limits on marketing campaigns?',
-                    answer: 'Yes, marketing campaign limits vary by plan. Free uses pay-as-you-go credits, Starter includes 5,000 emails/month and 100 SMS/WhatsApp credits, Professional includes 20,000 emails/month and 500 SMS/WhatsApp credits. Extra usage can be purchased via top-ups.',
+                    answer: 'Yes, marketing campaign limits vary by plan. Free plan has no email campaigns or WhatsApp credits (PAYG only). Starter includes 1,000 emails/month, 20 WhatsApp stories/month, and 100 WhatsApp promos/month. Professional includes 5,000 emails/month, 50 WhatsApp stories/month, and 250 WhatsApp promos/month. Enterprise plans have custom limits - contact support for details.',
                   },
                   {
                     question: 'Is there a setup fee?',

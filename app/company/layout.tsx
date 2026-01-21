@@ -12,9 +12,17 @@ import type { NavItem } from '@/components/dashboard-sidebar';
 import { AppFooter } from '@/components/AppFooter';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { RouteGuard } from '@/lib/route-guards';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
 
-// Helper function to get navigation items based on permissions
-function getNavItems(permissions: ReturnType<typeof usePermissions>): NavItem[] {
+// Helper function to get navigation items based on permissions and plan
+function getNavItems(
+  permissions: ReturnType<typeof usePermissions>,
+  planFeatures: {
+    canAccessScanModule: boolean;
+    canAccessWarehouses: boolean;
+    canAccessAnalytics: boolean;
+  }
+): NavItem[] {
   const user = getStoredUser();
   const isCompanyStaff = user?.role === 'COMPANY_STAFF';
   
@@ -25,8 +33,8 @@ function getNavItems(permissions: ReturnType<typeof usePermissions>): NavItem[] 
     { title: 'Overview', href: '/company/overview', icon: LayoutDashboard },
   ];
 
-  // Only show Analytics if user can view analytics
-  if (canPerformAction(permissions, 'viewAnalytics')) {
+  // Only show Analytics if user can view analytics (permissions check) AND has plan access (plan check)
+  if (canPerformAction(permissions, 'viewAnalytics') && planFeatures.canAccessAnalytics) {
     dashboardChildren.push({ title: 'Analytics', href: '/company/analytics', icon: BarChart3 });
   }
 
@@ -49,11 +57,15 @@ function getNavItems(permissions: ReturnType<typeof usePermissions>): NavItem[] 
     operationsChildren.push({ title: 'Bookings', href: '/company/bookings', icon: ShoppingCart });
   }
 
-  // Scan - always visible for company users (scanning barcodes)
-  operationsChildren.push({ title: 'Scan', href: '/company/scan', icon: ScanLine });
+  // Scan - only visible if plan supports it (Professional+)
+  if (planFeatures.canAccessScanModule) {
+    operationsChildren.push({ title: 'Scan', href: '/company/scan', icon: ScanLine });
+  }
 
-  // Warehouses - typically always visible for company users
-  operationsChildren.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
+  // Warehouses - only visible if plan supports it (Professional+)
+  if (planFeatures.canAccessWarehouses) {
+    operationsChildren.push({ title: 'Warehouses', href: '/company/warehouses', icon: Warehouse });
+  }
 
   if (operationsChildren.length > 0) {
     items.push({
@@ -134,9 +146,14 @@ export default function CompanyLayout({
   const pathname = usePathname();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const permissions = usePermissions();
+  const planFeatures = useCompanyPlan();
   
-  // Get navigation items based on permissions
-  const navItems = getNavItems(permissions);
+  // Get navigation items based on permissions and plan
+  const navItems = getNavItems(permissions, {
+    canAccessScanModule: planFeatures.canAccessScanModule,
+    canAccessWarehouses: planFeatures.canAccessWarehouses,
+    canAccessAnalytics: planFeatures.canAccessAnalytics,
+  });
 
   // Additional onboarding check for company users (more complex than customer)
   useEffect(() => {
@@ -171,8 +188,9 @@ export default function CompanyLayout({
           return;
         }
         
-        // Redirect to onboarding if not completed (but allow access to onboarding pages)
-        if (!pathname?.startsWith('/onboarding') && pathname !== '/auth/verify-email') {
+        // Redirect to onboarding if not completed (but allow access to onboarding pages and payout setup)
+        // Payout setup is part of onboarding, so allow access to /company/payouts
+        if (!pathname?.startsWith('/onboarding') && pathname !== '/auth/verify-email' && pathname !== '/company/payouts') {
           router.push('/onboarding/company');
           return;
         }
@@ -180,7 +198,8 @@ export default function CompanyLayout({
         console.warn('Failed to check onboarding status:', error);
         // On error, check stored user as fallback
         if (user.onboardingCompleted !== true) {
-          if (!pathname?.startsWith('/onboarding') && pathname !== '/auth/verify-email') {
+          // Allow access to onboarding pages, verify email, and payout setup
+          if (!pathname?.startsWith('/onboarding') && pathname !== '/auth/verify-email' && pathname !== '/company/payouts') {
             router.push('/onboarding/company');
             return;
           }

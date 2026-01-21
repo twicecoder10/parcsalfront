@@ -201,8 +201,8 @@ export const getCompanyOnboardingStepPath = async (
     return '/onboarding/company/payment'; // Payment/subscription setup
   }
   
-  // Note: first_shipment_slot is optional and doesn't block completion
-  // Users can create shipments anytime after onboarding is complete
+  // Note: payout_setup is optional and doesn't block completion
+  // Users can set up payout account anytime after onboarding is complete
   
   return null; // All required steps complete
 };

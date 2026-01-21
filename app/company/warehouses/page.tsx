@@ -42,6 +42,39 @@ import { CitySelect } from '@/components/city-select';
 import { AddressAutocomplete } from '@/components/address-autocomplete';
 
 export default function WarehousesPage() {
+  // Allowed countries for warehouses
+  // Note: Google Maps API only supports max 5 countries in componentRestrictions
+  // Since we have 26 countries, we'll validate client-side instead
+  const allowedCountries = [
+    'Senegal',
+    'Mali',
+    'Guinea',
+    'Togo',
+    'Burkina Faso',
+    'Congo',
+    'DRC',
+    'South Africa',
+    'Zimbabwe',
+    'Tanzania',
+    'Morocco',
+    'Algeria',
+    'Ireland',
+    'France',
+    'Spain',
+    'Italy',
+    'Germany',
+    'Netherlands',
+    'Belgium',
+    'Switzerland',
+    'USA',
+    'Benin',
+    'Cameroon',
+    'Ghana',
+    'Ivory Coast',
+    'UK',
+    'Nigeria',
+  ];
+
   const [warehouses, setWarehouses] = useState<WarehouseAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +113,105 @@ export default function WarehousesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to extract address components from Google Places result
+  const extractAddressComponents = (place: google.maps.places.PlaceResult) => {
+    const components = place.address_components || [];
+    let city = '';
+    let country = '';
+    let state = '';
+    let postalCode = '';
+
+    for (const component of components) {
+      const types = component.types;
+
+      // Try multiple city-level types in priority order
+      if (!city) {
+        if (types.includes('locality')) {
+          city = component.long_name;
+        } else if (types.includes('sublocality_level_1')) {
+          city = component.long_name;
+        } else if (types.includes('sublocality')) {
+          city = component.long_name;
+        } else if (types.includes('administrative_area_level_2')) {
+          city = component.long_name;
+        } else if (types.includes('administrative_area_level_3')) {
+          city = component.long_name;
+        }
+      }
+
+      if (types.includes('country')) {
+        country = component.long_name;
+      }
+
+      if (types.includes('administrative_area_level_1')) {
+        state = component.long_name;
+      }
+
+      if (types.includes('postal_code')) {
+        postalCode = component.long_name;
+      }
+    }
+
+    // Map Google Places country names to our allowed country names
+    const countryNameMap: Record<string, string> = {
+      'United Kingdom': 'UK',
+      'United Kingdom of Great Britain and Northern Ireland': 'UK',
+      "Côte d'Ivoire": 'Ivory Coast',
+      "Cote d'Ivoire": 'Ivory Coast',
+      'Ivory Coast': 'Ivory Coast',
+      'United States': 'USA',
+      'United States of America': 'USA',
+      'Democratic Republic of the Congo': 'DRC',
+      'Congo, Democratic Republic of the': 'DRC',
+      'Republic of the Congo': 'Congo',
+      'United Republic of Tanzania': 'Tanzania',
+    };
+
+    // Normalize country name to match our allowed countries
+    let normalizedCountry = countryNameMap[country] || country;
+
+    // Ensure the country is one of our allowed countries
+    if (!allowedCountries.includes(normalizedCountry)) {
+      // Try case-insensitive match
+      const found = allowedCountries.find(
+        (allowed) => allowed.toLowerCase() === normalizedCountry.toLowerCase()
+      );
+      if (found) {
+        normalizedCountry = found;
+      }
+    }
+
+    return { city, country: normalizedCountry, state, postalCode };
+  };
+
+  // Handle place selection from address autocomplete
+  const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
+    const { city, country, state, postalCode } = extractAddressComponents(place);
+
+    // Update form data with extracted values
+    // Set country first, then city, so CitySelect can load cities for that country
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        address: place.formatted_address || prev.address,
+        state: state || prev.state,
+        postalCode: postalCode || prev.postalCode,
+      };
+      
+      // Set country first if we have it
+      if (country) {
+        updated.country = country;
+      }
+      
+      // Then set city after country is set
+      if (city) {
+        updated.city = city;
+      }
+      
+      return updated;
+    });
   };
 
   const handleCreate = () => {
@@ -404,7 +536,8 @@ export default function WarehousesPage() {
                   <AddressAutocomplete
                     value={formData.address}
                     onChange={(value) => setFormData({ ...formData, address: value })}
-                    country={formData.country}
+                    onPlaceSelect={handlePlaceSelect}
+                    allowedCountries={allowedCountries}
                     placeholder="Enter street address"
                     required
                   />
@@ -430,6 +563,7 @@ export default function WarehousesPage() {
                     <CountrySelect
                       value={formData.country}
                       onChange={(value) => setFormData({ ...formData, country: value, city: '' })}
+                      allowedCountries={allowedCountries}
                       required
                     />
                   </div>
@@ -525,7 +659,8 @@ export default function WarehousesPage() {
                   <AddressAutocomplete
                     value={formData.address}
                     onChange={(value) => setFormData({ ...formData, address: value })}
-                    country={formData.country}
+                    onPlaceSelect={handlePlaceSelect}
+                    allowedCountries={allowedCountries}
                     placeholder="Enter street address"
                     required
                   />
@@ -551,6 +686,7 @@ export default function WarehousesPage() {
                     <CountrySelect
                       value={formData.country}
                       onChange={(value) => setFormData({ ...formData, country: value, city: '' })}
+                      allowedCountries={allowedCountries}
                       required
                     />
                   </div>

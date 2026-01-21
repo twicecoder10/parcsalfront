@@ -13,10 +13,12 @@ import type { User } from '@/lib/api';
 import type { OverviewStats, RecentBooking, UpcomingShipment } from '@/lib/company-api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { CompanyMapView } from '@/components/company-map-view';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
 
 export default function CompanyOverviewPage() {
   const permissions = usePermissions();
   const permissionsRef = useRef(permissions);
+  const { plan, canAccessAnalytics } = useCompanyPlan();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<OverviewStats | null>(null);
@@ -154,8 +156,8 @@ export default function CompanyOverviewPage() {
       {/* KPI Cards - Only show if user has analytics permission */}
       {canPerformAction(permissions, 'viewAnalytics') ? (
         statsLoading ? (
-          <div className="grid gap-4 md:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
+          <div className={`grid gap-4 ${stats?.revenue == null ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+            {(stats?.revenue == null ? [1, 2, 3] : [1, 2, 3, 4]).map((i) => (
               <Card key={i}>
                 <CardContent className="pt-6">
                   <div className="h-24 flex items-center justify-center">
@@ -166,7 +168,7 @@ export default function CompanyOverviewPage() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className={`grid gap-4 ${stats?.revenue == null ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
@@ -197,7 +199,7 @@ export default function CompanyOverviewPage() {
             <CardContent>
               <div className="flex items-baseline gap-2">
                 <div className="text-2xl font-bold">{stats?.totalBookings ?? 0}</div>
-                {stats?.bookingsChangePercentage !== undefined && (
+                {stats?.bookingsChangePercentage !== null && stats?.bookingsChangePercentage !== undefined && (
                   <div className={`flex items-center gap-1 text-xs ${
                     stats.bookingsChangePercentage >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
@@ -214,30 +216,33 @@ export default function CompanyOverviewPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <PoundSterling className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-baseline gap-2">
-                <div className="text-2xl font-bold">£{(stats?.revenue ?? 0).toLocaleString()}</div>
-                {stats?.revenueChangePercentage !== undefined && (
-                  <div className={`flex items-center gap-1 text-xs ${
-                    stats.revenueChangePercentage >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {stats.revenueChangePercentage >= 0 ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    {Math.abs(stats.revenueChangePercentage)}%
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">This month</p>
-            </CardContent>
-          </Card>
+          {/* Only show Revenue card if revenue data is available (STARTER+ plans) */}
+          {stats?.revenue !== null && stats?.revenue !== undefined && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+                <PoundSterling className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-bold">£{stats.revenue.toLocaleString()}</div>
+                  {stats.revenueChangePercentage !== null && stats.revenueChangePercentage !== undefined && (
+                    <div className={`flex items-center gap-1 text-xs ${
+                      stats.revenueChangePercentage >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {stats.revenueChangePercentage >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {Math.abs(stats.revenueChangePercentage)}%
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">This month</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
         )
       ) : (

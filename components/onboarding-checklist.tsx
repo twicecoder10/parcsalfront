@@ -61,9 +61,9 @@ const COMPANY_STEPS: StepDefinition[] = [
     description: 'Set up subscription',
   },
   {
-    key: 'first_shipment_slot',
-    label: 'First Shipment',
-    description: 'Create your first shipment slot',
+    key: 'payout_setup',
+    label: 'Setup Payout',
+    description: 'Set up payout account (optional)',
   },
 ];
 

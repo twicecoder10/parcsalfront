@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, CheckCircle2, XCircle, AlertCircle, Loader2, ArrowRight, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { companyApi } from '@/lib/company-api';
 import type { Subscription, Plan } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
@@ -204,7 +205,7 @@ function SubscriptionContent() {
                   £{subscription.companyPlan.priceMonthly}/month
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Commission: {subscription.companyPlan.name.toUpperCase() === 'ENTERPRISE' ? '12–14% negotiable' : '15%'} per shipment
+                  Commission: {subscription.companyPlan.name.toUpperCase() === 'FREE' ? '15%' : subscription.companyPlan.name.toUpperCase() === 'ENTERPRISE' ? 'Contact support' : '0%'} per shipment
                 </p>
                 {subscription.currentPeriodEnd && (
                   <p className="text-sm text-gray-500 mt-2">
@@ -226,18 +227,23 @@ function SubscriptionContent() {
         </Card>
       )}
 
-      {/* Plans Comparison */}
+      {/* Available Plans */}
       {plans.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Available Plans</CardTitle>
-            <CardDescription>Choose the plan that works best for your business</CardDescription>
-            <p className="text-sm text-gray-500 mt-2">
-              Commission: 15% per shipment on all plans (Enterprise negotiable)
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Available Plans</CardTitle>
+                <CardDescription>Choose the plan that works best for your business</CardDescription>
+              </div>
+              <Link href="/pricing" className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                View full details
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {plans.map((plan) => {
                 const isCurrentPlan = subscription?.companyPlan.id === plan.id;
                 const currentPlanPrice = subscription?.companyPlan.priceMonthly 
@@ -246,150 +252,132 @@ function SubscriptionContent() {
                 const planPrice = parseFloat(String(plan.priceMonthly));
                 const isUpgrade = planPrice > currentPlanPrice;
                 const isDowngrade = planPrice < currentPlanPrice && !isCurrentPlan;
+                const isFreePlan = subscription?.companyPlan.name?.toUpperCase() === 'FREE' || 
+                                  subscription?.companyPlan.name === 'Free' ||
+                                  currentPlanPrice === 0;
+                const isUpgradingFromFree = isFreePlan && isUpgrade;
                 
-                const features: string[] = [];
                 const planNameUpper = plan.name.toUpperCase();
                 const planIdUpper = (plan.id || '').toUpperCase();
                 
-                // Plan-specific features based on new pricing structure
+                // Key highlights - only 2-3 main features
+                const keyHighlights: string[] = [];
                 if (planNameUpper === 'FREE' || planIdUpper === 'FREE' || plan.name === 'Free') {
-                  features.push('List services on Parcsal (standard ranking)');
-                  features.push('Create/manage Slots & Bookings');
-                  features.push('View reviews/ratings');
-                  features.push('Standard payout (48 hours)');
-                  features.push('Basic analytics');
-                  if (plan.maxTeamMembers !== null) {
-                    features.push(`${plan.maxTeamMembers} admin user`);
-                  }
+                  keyHighlights.push('Up to 3 shipments/month');
+                  keyHighlights.push('Standard ranking');
+                  keyHighlights.push('1 admin user');
                 } else if (planNameUpper === 'STARTER' || planIdUpper === 'STARTER' || plan.name === 'Starter') {
-                  features.push('Everything in Free');
-                  features.push('"Verified Carrier" badge');
-                  features.push('Slot templates');
-                  features.push('Faster payouts (24–48 hours)');
-                  features.push('Enhanced analytics');
-                  features.push('Email campaigns (up to 5,000/month)');
-                  features.push('100 SMS/WhatsApp credits/month');
-                  if (plan.maxTeamMembers !== null) {
-                    features.push(`Up to ${plan.maxTeamMembers} team members`);
-                  }
+                  keyHighlights.push('Up to 20 shipments/month');
+                  keyHighlights.push('Priority ranking');
+                  keyHighlights.push('Up to 3 team members');
                 } else if (planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL' || plan.name === 'Professional') {
-                  features.push('Everything in Starter');
-                  features.push('Priority search ranking');
-                  features.push('Advanced slot rules & automation');
-                  features.push('Next-day payout options');
-                  features.push('Full analytics suite with A/B testing');
-                  features.push('Email campaigns (up to 20,000/month)');
-                  features.push('500 SMS/WhatsApp credits/month');
-                  features.push('Scan and Warehouses modules');
-                  if (plan.maxTeamMembers !== null) {
-                    features.push(`Up to ${plan.maxTeamMembers} team members`);
-                  }
-                  features.push('Dedicated success contact');
+                  keyHighlights.push('Unlimited shipments');
+                  keyHighlights.push('Highest priority ranking');
+                  keyHighlights.push('Unlimited team members');
                 } else if (planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' || plan.name === 'Enterprise') {
-                  features.push('Everything in Professional');
-                  features.push('Dedicated account manager');
-                  features.push('Custom SLAs');
-                  features.push('Multi-branch/multi-country structure');
-                  features.push('Deep API integrations');
-                  features.push('Custom reporting & data feeds');
-                  features.push('Co-branded landing pages');
-                  if (plan.maxTeamMembers === null) {
-                    features.push('Unlimited team members');
-                  } else {
-                    features.push(`Up to ${plan.maxTeamMembers} team members`);
-                  }
+                  keyHighlights.push('Custom plan');
+                  keyHighlights.push('Dedicated support');
                 } else {
-                  // Fallback for backward compatibility
+                  // Fallback
                   if (plan.maxActiveShipmentSlots !== null) {
-                    features.push(`Up to ${plan.maxActiveShipmentSlots} active shipments`);
+                    keyHighlights.push(`Up to ${plan.maxActiveShipmentSlots} shipments`);
                   } else {
-                    features.push('Unlimited active shipments');
+                    keyHighlights.push('Unlimited shipments');
                   }
-                  
                   if (plan.maxTeamMembers !== null) {
-                    features.push(`Up to ${plan.maxTeamMembers} team members`);
+                    keyHighlights.push(`Up to ${plan.maxTeamMembers} team members`);
                   } else {
-                    features.push('Unlimited team members');
-                  }
-                  
-                  features.push('Basic analytics');
-                  if (!plan.isDefault) {
-                    features.push('Advanced analytics & reports');
-                    features.push('Priority support');
+                    keyHighlights.push('Unlimited team members');
                   }
                 }
 
                 return (
-                  <Card key={plan.id} className={plan.isDefault ? 'border-orange-600 border-2' : ''}>
-                    <div className="p-4 pb-0 flex items-center justify-between">
-                      {plan.isDefault && (
-                        <Badge className="bg-orange-600">Recommended</Badge>
-                      )}
-                      {isCurrentPlan && (
-                        <Badge className="bg-green-100 text-green-800">Current Plan</Badge>
-                      )}
-                      {!isCurrentPlan && subscription && (
-                        <>
-                          {isUpgrade && (
-                            <Badge className="bg-blue-100 text-blue-800">Upgrade</Badge>
-                          )}
-                          {isDowngrade && (
-                            <Badge className="bg-gray-100 text-gray-800">Downgrade</Badge>
-                          )}
-                        </>
-                      )}
-                      {!plan.isDefault && !isCurrentPlan && !subscription && (
-                        <div></div>
-                      )}
-                    </div>
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <div className="mt-4">
-                        <span className="text-3xl font-bold">
-                          £{plan.priceMonthly}
-                        </span>
-                        <span className="text-gray-600">/month</span>
+                  <Card 
+                    key={plan.id} 
+                    className={`relative transition-all hover:shadow-lg ${
+                      plan.isDefault ? 'border-orange-300 border-2 shadow-md' : 'border-gray-200'
+                    } ${isCurrentPlan ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
+                  >
+                    {plan.isDefault && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-orange-600 text-white px-3 py-0.5">Most Popular</Badge>
                       </div>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Commission: {planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? '12–14% negotiable' : '15%'} per shipment
+                    )}
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <CardTitle className="text-xl">{plan.name}</CardTitle>
+                        {isCurrentPlan && (
+                          <Badge className="bg-green-100 text-green-800 text-xs">Current</Badge>
+                        )}
+                        {/* {!isCurrentPlan && subscription && (
+                          <>
+                            {isUpgrade && (
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">Upgrade</Badge>
+                            )}
+                            {isDowngrade && (
+                              <Badge className="bg-gray-100 text-gray-800 text-xs">Downgrade</Badge>
+                            )}
+                          </>
+                        )} */}
+                      </div>
+                      <div className="mt-4">
+                        <span className="text-3xl font-bold text-gray-900">
+                          {planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? 'Custom' : `£${plan.priceMonthly}`}
+                        </span>
+                        {planNameUpper !== 'ENTERPRISE' && planIdUpper !== 'ENTERPRISE' && (
+                          <span className="text-gray-600 text-base ml-1">/month</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Commission: {planNameUpper === 'FREE' || planIdUpper === 'FREE' ? '15%' : planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? 'Custom' : '0%'}
                       </p>
                     </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-3 mb-6">
-                        {features.map((feature, index) => (
+                    <CardContent className="pt-0">
+                      <ul className="space-y-2 mb-6 min-h-[80px]">
+                        {keyHighlights.slice(0, 3).map((highlight, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <Check className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">{feature}</span>
+                            <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm text-gray-700">{highlight}</span>
                           </li>
                         ))}
                       </ul>
-                      <Button
-                        className="w-full"
-                        variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : isUpgrade ? 'default' : 'outline'}
-                        disabled={isCurrentPlan || processingPlan === plan.id}
-                        onClick={() => {
-                          if (isUpgrade || isDowngrade) {
-                            handleUpdatePaymentMethod();
-                          } else {
-                            handlePlanSelect(plan.id);
-                          }
-                        }}
-                      >
-                        {processingPlan === plan.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : isCurrentPlan ? (
-                          'Current Plan'
-                        ) : isUpgrade ? (
-                          'Upgrade Plan'
-                        ) : isDowngrade ? (
-                          'Downgrade Plan'
-                        ) : (
-                          'Select Plan'
-                        )}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          className="w-full"
+                          variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : 'outline'}
+                          disabled={isCurrentPlan || processingPlan === plan.id}
+                          onClick={() => {
+                            if (isUpgradingFromFree) {
+                              handlePlanSelect(plan.id);
+                            } else if (isUpgrade || isDowngrade) {
+                              handleUpdatePaymentMethod();
+                            } else {
+                              handlePlanSelect(plan.id);
+                            }
+                          }}
+                        >
+                          {processingPlan === plan.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : isCurrentPlan ? (
+                            'Current Plan'
+                          ) : isUpgrade ? (
+                            'Upgrade'
+                          ) : isDowngrade ? (
+                            'Downgrade'
+                          ) : (
+                            'Select Plan'
+                          )}
+                        </Button>
+                        <Link 
+                          href="/pricing" 
+                          className="block text-center text-xs text-gray-500 hover:text-orange-600 transition-colors"
+                        >
+                          View all features →
+                        </Link>
+                      </div>
                     </CardContent>
                   </Card>
                 );

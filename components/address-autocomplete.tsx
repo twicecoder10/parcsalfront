@@ -18,7 +18,8 @@ interface AddressAutocompleteProps {
   required?: boolean;
   placeholder?: string;
   className?: string;
-  country?: string; // Optional country restriction
+  country?: string; // Optional single country restriction (deprecated, use allowedCountries)
+  allowedCountries?: string[]; // Optional array of allowed country names
 }
 
 export function AddressAutocomplete({
@@ -30,6 +31,7 @@ export function AddressAutocomplete({
   placeholder = 'Enter address',
   className,
   country,
+  allowedCountries,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value || '');
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
@@ -74,19 +76,21 @@ export function AddressAutocomplete({
   const getCountryCode = (countryName: string): string | undefined => {
     if (!countryName) return undefined;
 
-    // First, try to get the country code directly from the library
-    const countryCodes = countries.getAlpha2Codes();
-    for (const [code, name] of Object.entries(countries.getNames('en', { select: 'official' }))) {
-      if (name.toLowerCase() === countryName.toLowerCase()) {
-        return code.toLowerCase();
-      }
-    }
-
-    // Fallback: Handle common variations and aliases
+    // Handle common variations and aliases first (fast path)
     const countryCodeMap: Record<string, string> = {
       'UK': 'gb',
       'United Kingdom': 'gb',
       'United Kingdom of Great Britain and Northern Ireland': 'gb',
+      'Ireland': 'ie',
+      'France': 'fr',
+      'Spain': 'es',
+      'Italy': 'it',
+      'Germany': 'de',
+      'Netherlands': 'nl',
+      'Netherland': 'nl',
+      'Belgium': 'be',
+      'Beligium': 'be',
+      'Switzerland': 'ch',
       'USA': 'us',
       'United States': 'us',
       'United States of America': 'us',
@@ -98,9 +102,24 @@ export function AddressAutocomplete({
       'Ivory Coast': 'ci',
       "Côte d'Ivoire": 'ci',
       'Cote d\'Ivoire': 'ci',
+      'Nigeria': 'ng',
+      'Benin': 'bj',
+      'Cameroon': 'cm',
+      'Ghana': 'gh',
+      'Senegal': 'sn',
+      'Mali': 'ml',
+      'Guinea': 'gn',
+      'Togo': 'tg',
+      'Burkina Faso': 'bf',
+      'South Africa': 'za',
+      'Zimbabwe': 'zw',
+      'Tanzania': 'tz',
+      'United Republic of Tanzania': 'tz',
+      'Morocco': 'ma',
+      'Algeria': 'dz',
     };
 
-    // Check the map first
+    // Check the map first (case-sensitive)
     if (countryCodeMap[countryName]) {
       return countryCodeMap[countryName];
     }
@@ -113,6 +132,31 @@ export function AddressAutocomplete({
       }
     }
 
+    // Fallback: try to get the country code from the library
+    for (const [code, name] of Object.entries(countries.getNames('en', { select: 'official' }))) {
+      if (name.toLowerCase() === countryName.toLowerCase()) {
+        return code.toLowerCase();
+      }
+    }
+
+    return undefined;
+  };
+
+  const getAllowedCountryCodes = (): string[] | undefined => {
+    // If allowedCountries is provided, use it
+    if (allowedCountries && allowedCountries.length > 0) {
+      const codes = allowedCountries
+        .map((countryName) => getCountryCode(countryName))
+        .filter((code): code is string => code !== undefined);
+      return codes.length > 0 ? codes : undefined;
+    }
+    
+    // Fallback to single country prop for backward compatibility
+    if (country) {
+      const code = getCountryCode(country);
+      return code ? [code] : undefined;
+    }
+    
     return undefined;
   };
 
@@ -124,11 +168,15 @@ export function AddressAutocomplete({
     }
 
     setLoading(true);
-    const countryCode = country ? getCountryCode(country) : undefined;
+    const countryCodes = getAllowedCountryCodes();
 
+    // Google Maps API only supports max 5 countries in componentRestrictions
+    // If we have more than 5 countries, don't restrict via API and validate client-side instead
     const request: google.maps.places.AutocompletionRequest = {
       input: input,
-      ...(countryCode && { componentRestrictions: { country: countryCode } }),
+      ...(countryCodes && countryCodes.length > 0 && countryCodes.length <= 5 && { 
+        componentRestrictions: { country: countryCodes.length === 1 ? countryCodes[0] : countryCodes } 
+      }),
     };
 
     autocompleteServiceRef.current.getPlacePredictions(
@@ -167,8 +215,50 @@ export function AddressAutocomplete({
       };
 
       placesServiceRef.current.getDetails(request, (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place && onPlaceSelect) {
-          onPlaceSelect(place);
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          // Validate that the selected place is in one of the allowed countries
+          if (allowedCountries && allowedCountries.length > 0) {
+            const placeCountry = place.address_components?.find(
+              (component) => component.types.includes('country')
+            )?.long_name;
+            
+            if (placeCountry) {
+              // Normalize country names for comparison
+              const countryNameMap: Record<string, string> = {
+                'United Kingdom': 'UK',
+                'United Kingdom of Great Britain and Northern Ireland': 'UK',
+                "Côte d'Ivoire": 'Ivory Coast',
+                "Cote d'Ivoire": 'Ivory Coast',
+                'United States': 'USA',
+                'United States of America': 'USA',
+                'Democratic Republic of the Congo': 'DRC',
+                'Congo, Democratic Republic of the': 'DRC',
+                'Republic of the Congo': 'Congo',
+                'United Republic of Tanzania': 'Tanzania',
+              };
+              
+              const normalizedPlaceCountry = countryNameMap[placeCountry] || placeCountry;
+              
+              // Check if the place's country is in the allowed list
+              const isAllowed = allowedCountries.some((allowed) => {
+                const normalized = allowed.toLowerCase().trim();
+                const placeNormalized = normalizedPlaceCountry.toLowerCase().trim();
+                return normalized === placeNormalized;
+              });
+              
+              if (!isAllowed) {
+                // Place is not in allowed countries, show error
+                setInputValue('');
+                onChange('');
+                alert(`Address must be in one of the allowed countries. Selected country: ${placeCountry}`);
+                return;
+              }
+            }
+          }
+          
+          if (onPlaceSelect) {
+            onPlaceSelect(place);
+          }
         }
       });
     }

@@ -127,9 +127,6 @@ export default function PaymentsPage() {
   }, [currentPage, statusFilter, searchQuery, dateFrom, dateTo]);
 
   const fetchPaymentStats = useCallback(async () => {
-    if (!canPerformAction(permissions, 'viewPaymentStats')) {
-      return;
-    }
     setStatsLoading(true);
     try {
       const statsData = await companyApi.getPaymentStats({
@@ -142,7 +139,7 @@ export default function PaymentsPage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [dateFrom, dateTo, permissions]);
+  }, [dateFrom, dateTo]);
 
   useEffect(() => {
     if (permissions.loading) return;
@@ -153,6 +150,7 @@ export default function PaymentsPage() {
     if (canViewPaymentStats) {
       fetchPaymentStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentPage,
     statusFilter,
@@ -162,8 +160,6 @@ export default function PaymentsPage() {
     canViewPayments,
     canViewPaymentStats,
     permissions.loading,
-    fetchPayments,
-    fetchPaymentStats,
   ]);
 
   const handleRefund = async () => {

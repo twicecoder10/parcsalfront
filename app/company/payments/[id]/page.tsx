@@ -17,12 +17,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Eye, Loader2, RefreshCw, AlertCircle, CreditCard, Calendar, User, Package } from 'lucide-react';
+import { ArrowLeft, Eye, Loader2, RefreshCw, AlertCircle, CreditCard, Calendar, User, Package, Info } from 'lucide-react';
 import { companyApi, getCustomerName, getCustomerEmail } from '@/lib/company-api';
 import type { Payment } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { toast } from '@/lib/toast';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
 
 const statusColors: Record<string, string> = {
   SUCCEEDED: 'bg-green-100 text-green-800',
@@ -37,6 +38,7 @@ export default function PaymentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const permissions = usePermissions();
+  const { plan } = useCompanyPlan();
   const paymentId = params.id as string;
   
   const [payment, setPayment] = useState<Payment | null>(null);
@@ -45,6 +47,14 @@ export default function PaymentDetailPage() {
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
+  
+  // Calculate company payout (baseAmount - commissionAmount)
+  const companyPayout = payment && payment.baseAmount != null && payment.commissionAmount != null
+    ? Number(payment.baseAmount) - Number(payment.commissionAmount)
+    : null;
+  
+  // Check if company has paid subscription (not FREE plan)
+  const hasPaidSubscription = plan && plan !== 'FREE';
 
   const fetchPayment = useCallback(async () => {
     setLoading(true);
@@ -181,35 +191,63 @@ export default function PaymentDetailPage() {
             </div>
             
             {/* Fee Breakdown */}
-            {(payment.baseAmount != null || payment.adminFeeAmount != null || payment.processingFeeAmount != null || payment.totalAmount != null) && (
+            {(payment.baseAmount != null || payment.adminFeeAmount != null || payment.processingFeeAmount != null || payment.commissionAmount != null || payment.totalAmount != null) && (
               <div className="pt-2 border-t">
                 <Label className="text-sm text-gray-500 mb-2 block">Fee Breakdown</Label>
                 <div className="space-y-1 text-sm">
                   {payment.baseAmount != null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Base Amount:</span>
+                      <span className="text-gray-600">Base Amount</span>
                       <span className="font-medium">£{Number(payment.baseAmount).toFixed(2)}</span>
                     </div>
                   )}
                   {payment.adminFeeAmount != null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Admin Fee:</span>
+                      <span className="text-gray-600">Admin Fee</span>
                       <span className="font-medium">£{Number(payment.adminFeeAmount).toFixed(2)}</span>
                     </div>
                   )}
                   {payment.processingFeeAmount != null && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Processing Fee:</span>
+                      <span className="text-gray-600">Processing Fee</span>
                       <span className="font-medium">£{Number(payment.processingFeeAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {payment.commissionAmount != null && payment.commissionAmount !== 0 && (
+                    <div className="flex justify-between pt-1 border-t">
+                      <span className="text-gray-600">Commission</span>
+                      <span className="font-medium text-red-600">-£{Number(payment.commissionAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {companyPayout != null && payment.commissionAmount != null && payment.commissionAmount !== 0 && (
+                    <div className="flex justify-between pt-1 border-t">
+                      <span className="text-gray-600">Your Payout</span>
+                      <span className="font-semibold text-green-600">£{companyPayout.toFixed(2)}</span>
                     </div>
                   )}
                   {payment.totalAmount != null && (
                     <div className="flex justify-between pt-1 border-t font-semibold">
-                      <span>Total:</span>
-                      <span>£{Number(payment.totalAmount).toFixed(2)}</span>
+                      <span className="text-gray-900">Total Amount (Customer Paid)</span>
+                      <span className="text-orange-600">£{Number(payment.totalAmount).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
+                {payment.commissionAmount != null && payment.commissionAmount !== 0 && !hasPaidSubscription && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 text-sm">
+                        <p className="text-blue-900 font-medium mb-1">Upgrade to eliminate commission fees</p>
+                        <p className="text-blue-700">
+                          With a paid subscription, you&apos;ll receive 0% commission on your income. 
+                          <Link href="/company/subscription" className="underline font-medium ml-1">
+                            Upgrade now
+                          </Link>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
@@ -270,6 +308,14 @@ export default function PaymentDetailPage() {
                 {new Date(payment.createdAt).toLocaleDateString()} {new Date(payment.createdAt).toLocaleTimeString()}
               </p>
             </div>
+            {payment.updatedAt && (
+              <div>
+                <Label className="text-sm text-gray-500">Last Updated</Label>
+                <p className="mt-1">
+                  {new Date(payment.updatedAt).toLocaleDateString()} {new Date(payment.updatedAt).toLocaleTimeString()}
+                </p>
+              </div>
+            )}
             {payment.paidAt && (
               <div>
                 <Label className="text-sm text-gray-500">Paid At</Label>
@@ -324,18 +370,34 @@ export default function PaymentDetailPage() {
       </div>
 
       {/* Extra Charge Information */}
-      {payment.type === 'EXTRA_CHARGE' && (payment.extraChargeReason || payment.extraChargeDescription) && (
+      {payment.type === 'EXTRA_CHARGE' && (
         <Card>
           <CardHeader>
-            <CardTitle>Extra Charge Details</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Extra Charge Details</CardTitle>
+              {payment.bookingId && (
+                <Link href={`/company/bookings/${payment.bookingId}`}>
+                  <Button variant="outline" size="sm">
+                    <Package className="h-4 w-4 mr-2" />
+                    View Booking
+                  </Button>
+                </Link>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {payment.extraChargeReason && (
                 <div>
                   <Label className="text-sm text-gray-500">Reason</Label>
-                  <p className="mt-1 font-medium">
-                    {payment.extraChargeReason.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  <p className="mt-1 font-medium text-lg">
+                    {payment.extraChargeReason === 'EXCESS_WEIGHT' ? 'Excess Weight' :
+                     payment.extraChargeReason === 'EXTRA_ITEMS' ? 'Extra Items' :
+                     payment.extraChargeReason === 'OVERSIZE' ? 'Oversize' :
+                     payment.extraChargeReason === 'REPACKING' ? 'Repacking' :
+                     payment.extraChargeReason === 'LATE_DROP_OFF' ? 'Late Drop-off' :
+                     payment.extraChargeReason === 'OTHER' ? 'Other' :
+                     payment.extraChargeReason.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </p>
                 </div>
               )}
@@ -343,6 +405,42 @@ export default function PaymentDetailPage() {
                 <div>
                   <Label className="text-sm text-gray-500">Description</Label>
                   <p className="mt-1">{payment.extraChargeDescription}</p>
+                </div>
+              )}
+              {!payment.extraChargeDescription && (
+                <div>
+                  <Label className="text-sm text-gray-500">Description</Label>
+                  <p className="mt-1 text-gray-400 italic">No description provided</p>
+                </div>
+              )}
+              {payment.booking && (
+                <div className="pt-4 border-t">
+                  <Label className="text-sm text-gray-500 mb-2 block">Related Booking</Label>
+                  <div className="space-y-2">
+                    <div>
+                      <Link 
+                        href={`/company/bookings/${payment.bookingId}`}
+                        className="text-orange-600 hover:underline flex items-center gap-1"
+                      >
+                        <Package className="h-4 w-4" />
+                        Booking #{payment.bookingId}
+                      </Link>
+                    </div>
+                    {payment.booking.customer && (
+                      <div>
+                        <span className="text-sm text-gray-600">Customer: </span>
+                        <span className="text-sm font-medium">{getCustomerName(payment.booking.customer)}</span>
+                      </div>
+                    )}
+                    {payment.booking.shipmentSlot && (
+                      <div>
+                        <span className="text-sm text-gray-600">Route: </span>
+                        <span className="text-sm">
+                          {payment.booking.shipmentSlot.originCity}, {payment.booking.shipmentSlot.originCountry} → {payment.booking.shipmentSlot.destinationCity}, {payment.booking.shipmentSlot.destinationCountry}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

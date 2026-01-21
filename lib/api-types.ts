@@ -180,6 +180,7 @@ export interface ExtraCharge {
   baseAmount: number; // minor units (pence)
   adminFeeAmount: number; // minor units (pence)
   processingFeeAmount: number; // minor units (pence)
+  commissionAmount?: number | null; // minor units (pence)
   totalAmount: number; // minor units (pence)
   status: ExtraChargeStatus;
   stripeSessionId?: string | null;

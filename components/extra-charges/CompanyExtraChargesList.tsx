@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle2, XCircle, Loader2, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Loader2, Trash2, Eye, User, Info } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
 import type { ExtraCharge, ExtraChargeStatus } from '@/lib/api-types';
 import { companyApi } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
@@ -144,7 +145,7 @@ export function CompanyExtraChargesList({
                     : 'border-gray-200 bg-gray-50'
                 }`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge className={statusColors[charge.status]}>
@@ -162,112 +163,55 @@ export function CompanyExtraChargesList({
                     {charge.description && (
                       <p className="text-sm text-gray-600 mt-1">{charge.description}</p>
                     )}
+                    {charge.paidAt && (
+                      <div className="flex items-center gap-2 text-sm text-green-600 mt-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Paid on {format(new Date(charge.paidAt), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
+                    {charge.status === 'PENDING' && !isExpired && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Expires {format(new Date(charge.expiresAt), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-4">
                     <div className="text-2xl font-bold text-orange-600">
                       £{(charge.totalAmount / 100).toFixed(2)}
                     </div>
                   </div>
                 </div>
 
-                {/* Breakdown */}
-                <div className="bg-white rounded p-3 mb-3 text-sm">
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Base Amount:</span>
-                    <span className="font-medium">£{(charge.baseAmount / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Admin Fee:</span>
-                    <span className="font-medium">£{(charge.adminFeeAmount / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Processing Fee:</span>
-                    <span className="font-medium">£{(charge.processingFeeAmount / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t font-semibold">
-                    <span>Total:</span>
-                    <span>£{(charge.totalAmount / 100).toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Evidence URLs */}
-                {charge.evidenceUrls && charge.evidenceUrls.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-700 mb-1">Evidence:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {charge.evidenceUrls.map((url, index) => (
-                        <a
-                          key={index}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-orange-600 hover:text-orange-700 underline"
-                        >
-                          Evidence {index + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dates */}
-                <div className="space-y-1 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {isExpired && charge.status === 'PENDING' ? (
-                        <span className="text-red-600">
-                          Expired on {format(new Date(charge.expiresAt), 'MMM dd, yyyy HH:mm')}
-                        </span>
-                      ) : charge.status === 'PENDING' ? (
-                        <span>Expires on {format(new Date(charge.expiresAt), 'MMM dd, yyyy HH:mm')}</span>
-                      ) : null}
-                    </span>
-                  </div>
-                  {charge.paidAt && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Paid on {format(new Date(charge.paidAt), 'MMM dd, yyyy HH:mm')}</span>
-                    </div>
-                  )}
-                  {charge.declinedAt && (
-                    <div className="flex items-center gap-2 text-red-600">
-                      <XCircle className="h-4 w-4" />
-                      <span>Declined on {format(new Date(charge.declinedAt), 'MMM dd, yyyy HH:mm')}</span>
-                    </div>
-                  )}
-                  {charge.cancelledAt && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <XCircle className="h-4 w-4" />
-                      <span>Cancelled on {format(new Date(charge.cancelledAt), 'MMM dd, yyyy HH:mm')}</span>
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-500">
-                    Created on {format(new Date(charge.createdAt), 'MMM dd, yyyy HH:mm')}
-                  </div>
-                </div>
-
                 {/* Actions */}
-                {canCancelThis && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCancel(charge)}
-                    disabled={cancelling === charge.id}
-                  >
-                    {cancelling === charge.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Cancelling...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Cancel Request
-                      </>
-                    )}
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 mt-4">
+                  <Link href={`/company/payments/${charge.id}`}>
+                    <Button variant="outline" size="sm">
+                      <Info className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </Link>
+                  {canCancelThis && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCancel(charge)}
+                      disabled={cancelling === charge.id}
+                    >
+                      {cancelling === charge.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Cancel Request
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })

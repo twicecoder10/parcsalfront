@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
-  Truck,
   Globe,
   Phone,
   CreditCard,
@@ -44,7 +43,7 @@ import { AddressAutocomplete } from '@/components/address-autocomplete';
  * 4. Complete ✅
  * 
  * Optional Step:
- * - First Shipment (doesn't block completion)
+ * - Setup Payout (doesn't block completion)
  */
 export default function CompanyOnboardingPage() {
   const router = useRouter();
@@ -101,7 +100,7 @@ export default function CompanyOnboardingPage() {
   const isProfileComplete = userOnboardingStatus?.steps?.profile_completion?.completed === true;
   const isCompanyProfileComplete = companyOnboardingStatus?.steps?.company_profile?.completed === true;
   const isPaymentSetupComplete = companyOnboardingStatus?.steps?.payment_setup?.completed === true;
-  const isFirstShipmentComplete = companyOnboardingStatus?.steps?.first_shipment_slot?.completed === true;
+  const isPayoutSetupComplete = companyOnboardingStatus?.steps?.payout_setup?.completed === true;
   // For company staff, they only need to complete user steps (email verification and profile)
   // Company profile and payment are handled by company admins
   const isAllComplete = user?.onboardingCompleted === true ||
@@ -181,8 +180,66 @@ export default function CompanyOnboardingPage() {
     },
   });
 
+  // Allowed countries for address validation
+  const allowedCountries = ['UK', 'Ireland', 'France', 'Spain', 'Italy', 'Germany', 'Netherlands', 'Belgium', 'Switzerland', 'USA'];
+
+  const getCountryCode = (countryName: string): string | undefined => {
+    const countryCodeMap: Record<string, string> = {
+      'UK': 'gb',
+      'United Kingdom': 'gb',
+      'United Kingdom of Great Britain and Northern Ireland': 'gb',
+      'Ireland': 'ie',
+      'France': 'fr',
+      'Spain': 'es',
+      'Italy': 'it',
+      'Germany': 'de',
+      'Netherlands': 'nl',
+      'Netherland': 'nl',
+      'Belgium': 'be',
+      'Beligium': 'be',
+      'Switzerland': 'ch',
+      'USA': 'us',
+      'United States': 'us',
+      'United States of America': 'us',
+    };
+
+    if (countryCodeMap[countryName]) {
+      return countryCodeMap[countryName];
+    }
+
+    const normalizedName = countryName.toLowerCase();
+    for (const [key, code] of Object.entries(countryCodeMap)) {
+      if (key.toLowerCase() === normalizedName) {
+        return code;
+      }
+    }
+
+    return undefined;
+  };
+
   const handleAddressSelect = (place: google.maps.places.PlaceResult) => {
     if (!place.address_components) return;
+
+    // Validate country
+    const placeCountry = place.address_components.find(
+      (component) => component.types.includes('country')
+    )?.long_name;
+
+    if (placeCountry) {
+      const allowedCountryCodes = allowedCountries
+        .map((name) => getCountryCode(name))
+        .filter((code): code is string => code !== undefined);
+      const placeCountryCode = getCountryCode(placeCountry);
+
+      if (!placeCountryCode || !allowedCountryCodes.includes(placeCountryCode)) {
+        setError(`Address must be in one of the following countries: ${allowedCountries.join(', ')}`);
+        setFormData((prev) => ({
+          ...prev,
+          address: '',
+        }));
+        return;
+      }
+    }
 
     // Extract address components
     let city = '';
@@ -220,6 +277,7 @@ export default function CompanyOnboardingPage() {
       state: state || province || prev.state,
       postalCode: postalCode || prev.postalCode,
     }));
+    setError(''); // Clear any previous errors
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -487,9 +545,9 @@ export default function CompanyOnboardingPage() {
                   <p className="text-lg text-gray-600 mb-2">
                     You&apos;re all set! Your company is ready to accept bookings and start growing.
                   </p>
-                  {!isFirstShipmentComplete && (
+                  {!isPayoutSetupComplete && (
                     <p className="text-sm text-gray-500 mb-4">
-                      💡 Tip: You can create your first shipment slot anytime from your dashboard.
+                      💡 Tip: You can set up your payout account anytime from your dashboard.
                     </p>
                   )}
                   <div className="text-sm text-gray-500 mb-6">
@@ -573,12 +631,26 @@ export default function CompanyOnboardingPage() {
                               </div>
                             </div>
                           )}
-                          {!isFirstShipmentComplete && (
+                          {!isPayoutSetupComplete && (
                             <div className="flex items-start gap-3 p-3 rounded-lg border bg-gray-50 border-gray-200">
                               <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-600">First Shipment</p>
-                                <p className="text-xs text-gray-500 mt-0.5">Create your first shipment slot (optional)</p>
+                                <p className="text-sm font-medium text-gray-600">Setup Payout</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Set up payout account (optional)</p>
+                              </div>
+                            </div>
+                          )}
+                          {isPayoutSetupComplete && companyOnboardingStatus?.steps?.payout_setup && (
+                            <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50 border-green-200">
+                              <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900">Setup Payout</p>
+                                <p className="text-xs text-gray-500 mt-0.5">Set up payout account</p>
+                                {companyOnboardingStatus.steps.payout_setup.completedAt && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Completed {new Date(companyOnboardingStatus.steps.payout_setup.completedAt).toLocaleDateString()}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}
@@ -600,21 +672,21 @@ export default function CompanyOnboardingPage() {
                 </div>
 
                 <div className="flex justify-center gap-4">
-                  <Button
-                    onClick={() => router.push('/company/overview')}
-                    className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg"
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                  {!isFirstShipmentComplete && (
-                    <Link href="/company/shipments/new">
-                      <Button variant="outline" className="h-12 px-8">
-                        Create First Shipment
-                        <Truck className="ml-2 h-5 w-5" />
+                  {!isPayoutSetupComplete ? (
+                    <Link href="/onboarding/company/payout">
+                      <Button variant="outline" className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg">
+                        Setup Payout
+                        <CreditCard className="ml-2 h-5 w-5" />
                       </Button>
                     </Link>
-                  )}
+                  ) : <Button
+                  onClick={() => router.push('/company/overview')}
+                  className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                  }
                 </div>
               </CardContent>
             </Card>
@@ -718,7 +790,7 @@ export default function CompanyOnboardingPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label htmlFor="companyLogoUrl" className="text-sm font-medium">
                           Logo URL
                         </Label>
@@ -733,7 +805,7 @@ export default function CompanyOnboardingPage() {
                         <p className="text-xs text-gray-500">
                           Provide a direct link to your company logo image
                         </p>
-                      </div>
+                      </div> */}
 
                       <div className="space-y-2">
                         <Label htmlFor="contactEmail" className="text-sm font-medium">
@@ -781,6 +853,7 @@ export default function CompanyOnboardingPage() {
                           onPlaceSelect={handleAddressSelect}
                           label="Street Address"
                           placeholder="123 Business Street"
+                          allowedCountries={['UK', 'Ireland', 'France', 'Spain', 'Italy', 'Germany', 'Netherlands', 'Belgium', 'Switzerland', 'USA']}
                         />
                       </div>
 

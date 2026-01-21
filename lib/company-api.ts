@@ -20,11 +20,12 @@ export interface OverviewStats {
   activeShipments: number;
   upcomingDepartures: number;
   totalBookings: number;
-  revenue: number;
   pendingBookings: number;
   acceptedBookings: number;
-  revenueChangePercentage: number;
-  bookingsChangePercentage: number;
+  // Revenue fields are null for FREE plan users
+  revenue: number | null;
+  revenueChangePercentage: number | null;
+  bookingsChangePercentage: number | null;
 }
 
 export interface RecentBooking {
@@ -148,6 +149,38 @@ export interface Booking {
   pickupProofImages?: string[];
   deliveryProofImages?: string[];
   labelUrl?: string;
+  // Warehouse information
+  pickupWarehouse?: {
+    id: string;
+    companyId: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+    isDefault: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  deliveryWarehouse?: {
+    id: string;
+    companyId: string;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+    isDefault: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+  // Additional fields from API
+  pickupWarehouseId?: string;
+  deliveryWarehouseId?: string;
+  commissionAmount?: number | null;
+  companyName?: string;
 }
 
 // Helper functions to handle API response variations
@@ -283,7 +316,7 @@ export interface CompanyProfile {
       completed: boolean;
       completedAt?: string;
     };
-    first_shipment_slot?: {
+    payout_setup?: {
       completed: boolean;
       completedAt?: string;
     };
@@ -332,6 +365,7 @@ export interface Payment {
   adminFeeAmount?: number | null; // Admin fee
   processingFeeAmount?: number | null; // Processing fee
   totalAmount?: number | null; // Total amount including fees
+  commissionAmount?: number | null; // Commission amount
   currency: string;
   status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   paymentMethod?: string;
@@ -793,12 +827,59 @@ export const companyApi = {
 
   revokeInvitation: async (invitationId: string): Promise<{ message: string }> => {
     const response = await api.delete<ApiResponse<{ message: string }>>(`/companies/team/invitations/${invitationId}`);
-    return extractData(response);
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to revoke invitation');
+    }
+    return { message: response.data.message || 'Invitation revoked successfully' };
   },
 
   // ============================================
   // Company Profile & Settings
   // ============================================
+
+  getCompanyInfo: async (): Promise<{
+    id: string;
+    plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+    planActive: boolean;
+    rankingTier: 'STANDARD' | 'STARTER' | 'PRIORITY' | 'HIGHEST' | 'CUSTOM';
+    commissionRateBps: number | null;
+    [key: string]: any;
+  }> => {
+    const response = await api.get<ApiResponse<{
+      id: string;
+      plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+      planActive: boolean;
+      rankingTier: 'STANDARD' | 'STARTER' | 'PRIORITY' | 'HIGHEST' | 'CUSTOM';
+      commissionRateBps: number | null;
+      [key: string]: any;
+    }>>('/companies/me');
+    return extractData(response);
+  },
+
+  getCompanyUsage: async (): Promise<{
+    marketingEmailsSent: number;
+    promoCreditsBalance: number;
+    promoCreditsUsed: number;
+    periodStart: string;
+    periodEnd: string;
+    limits: {
+      marketingEmailLimit: number;
+      promoCreditsIncluded: number;
+    };
+  }> => {
+    const response = await api.get<ApiResponse<{
+      marketingEmailsSent: number;
+      promoCreditsBalance: number;
+      promoCreditsUsed: number;
+      periodStart: string;
+      periodEnd: string;
+      limits: {
+        marketingEmailLimit: number;
+        promoCreditsIncluded: number;
+      };
+    }>>('/companies/me/usage');
+    return extractData(response);
+  },
 
   getCompanyProfile: async (): Promise<CompanyProfile> => {
     const response = await api.get<ApiResponse<CompanyProfile>>('/companies/profile');
@@ -1088,8 +1169,11 @@ export const companyApi = {
   // Stripe Connect / Payouts
   // ============================================
 
-  createOnboardingLink: async (returnUrl: string): Promise<{ url: string }> => {
-    const response = await api.post<ApiResponse<{ url: string }>>('/connect/onboarding-link', { returnUrl });
+  createOnboardingLink: async (returnUrl: string, fromOnboarding: boolean = false): Promise<{ url: string }> => {
+    const response = await api.post<ApiResponse<{ url: string }>>('/connect/onboarding-link', { 
+      returnUrl,
+      fromOnboarding 
+    });
     return extractData(response);
   },
 

@@ -1194,9 +1194,9 @@ export default function LandingPage() {
                       <ul className="space-y-3 mb-6">
                         {[
                           'Free: £0/month (15% commission)',
-                          'Starter: £49/month (15% commission, most popular)',
-                          'Professional: £149/month (15% commission)',
-                          'Enterprise: From £500/month (12–14% negotiable)',
+                          'Starter: £49/month (0% commission, most popular)',
+                          'Professional: £149/month (0% commission)',
+                          'Enterprise: Contact support for dedicated plan',
                         ].map((item, index) => (
                           <li key={index} className="flex items-start gap-3">
                             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />

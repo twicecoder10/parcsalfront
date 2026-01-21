@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -121,8 +122,12 @@ function PaymentOnboardingContent() {
     staleTime: 300000, // Cache for 5 minutes
   });
 
-  // Transform plans for display
-  const displayPlans = plans?.map((plan: Plan) => {
+  // Transform plans for display (excluding Enterprise)
+  const displayPlans = plans?.filter((plan: Plan) => {
+    const planNameUpper = plan.name.toUpperCase();
+    const planIdUpper = (plan.id || '').toUpperCase();
+    return planNameUpper !== 'ENTERPRISE' && planIdUpper !== 'ENTERPRISE';
+  }).map((plan: Plan) => {
     const features: string[] = [];
 
     // Add shipment slots feature
@@ -145,35 +150,42 @@ function PaymentOnboardingContent() {
     
     if (planNameUpper === 'FREE' || planIdUpper === 'FREE' || plan.name === 'Free') {
       features.push(
-        'List services on Parcsal (standard ranking)',
-        'Basic analytics (shipments, revenue, average rating)',
-        'Standard payout within 48 hours'
+        'Up to 3 shipments per month List services on Parcsal (standard ranking).',
+        'Create/manage Slots & Bookings',
+        'View reviews/ratings',
+        'Reply to messages one-to-one.',
+        'View Payments &',
+        'Manage Payouts',
+        'Basic analytics (shipments, revenue, average rating).',
+        'Email & InApp notifications',
+        'Promo campaigns via pay-as-you-go credits.'
       );
     } else if (planNameUpper === 'STARTER' || planIdUpper === 'STARTER' || plan.name === 'Starter') {
       features.push(
-        'Verified Carrier badge',
-        'Enhanced analytics with corridor breakdown',
-        'Faster payouts (24–48 hours)',
-        'Email campaigns (up to 5,000/month)',
-        '100 SMS/WhatsApp credits/month'
+        'Everything in Free',
+        'up to 20 shipments per month List services on Parcsal (Starter ranking)',
+        'Access to Scan and Warehouses modules.',
+        '"Verified Carrier" badge on listings.',
+        'Enhanced analytics',
+        'Email campaigns to past customers (e.g., up to 1,000 / month; extra billed).',
+        '20 post on WhatsApp storis',
+        '100 promotional WhatsApp messages per month; extra billed via top-ups.',
+        'Via Email / InApp / Live chat success contact.'
       );
     } else if (planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL' || plan.name === 'Professional') {
       features.push(
-        'Priority search ranking',
-        'Full analytics suite with A/B testing',
-        'Next-day payout options',
-        'Email campaigns (up to 20,000/month)',
-        '500 SMS/WhatsApp credits/month',
-        'Access to Scan and Warehouses modules'
+        'Everything in Starter',
+        'Unlimited Listing per month.',
+        'Priority search ranking above Free & Starter.',
+        'Featured placement and "Recommended Carrier" rotation.',
+        'Higher email limits (e.g., up to 5,000 / month) extra billed.',
+        '50 post on WhatsApp stories + Billed extra',
+        '250 promotional WhatsApp messages per month; extra billed via top-ups.',
+        'Phone + Dedicated success contact.'
       );
     } else if (planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' || plan.name === 'Enterprise') {
       features.push(
-        'Dedicated account manager',
-        'Custom SLAs on support and payouts',
-        'Multi-branch/multi-country structure',
-        'Deep API integrations',
-        'Custom reporting and data feeds',
-        'Co-branded landing pages'
+        'Contact support for dedicated plan details'
       );
     }
     // Backward compatibility with old plan names
@@ -347,20 +359,20 @@ function PaymentOnboardingContent() {
             {/* Payment Plans */}
             <div className="md:col-span-2">
               <Card className="border-0 shadow-xl">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3 mb-1">
                     <div className="rounded-full bg-orange-100 p-3">
                       <CreditCard className="h-6 w-6 text-orange-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-2xl">Choose Your Plan</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-2xl font-bold">Choose Your Plan</CardTitle>
+                      <CardDescription className="mt-1">
                         Select a subscription plan to complete onboarding (Step 3 of 3)
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {successMessage && (
                     <div className="mb-6 p-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -390,49 +402,107 @@ function PaymentOnboardingContent() {
 
                   {!plansLoading && !plansError && displayPlans.length > 0 && (
                     <div className="grid md:grid-cols-3 gap-4 mb-6">
-                      {displayPlans.map((plan) => (
-                        <Card
-                          key={plan.id}
-                          className={`cursor-pointer transition-all ${selectedPlan === plan.id
-                              ? 'border-orange-600 border-2 shadow-lg'
-                              : 'border-gray-200 hover:border-gray-300'
-                            } ${plan.recommended ? 'md:scale-105' : ''}`}
-                          onClick={() => setSelectedPlan(plan.id)}
-                        >
-                          <CardHeader>
-                            <div className="flex items-center justify-between mb-2">
-                              <CardTitle className="text-lg">{plan.name}</CardTitle>
-                              {plan.recommended && (
-                                <Badge className="bg-orange-600">Recommended</Badge>
-                              )}
-                            </div>
-                            <div className="mt-4">
-                              <span className="text-3xl font-bold">
-                                {plan.priceDisplay}
-                              </span>
-                              <span className="text-gray-500 text-sm">/{plan.billingCycle}</span>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-2 mb-4">
-                              {plan.features.map((feature, index) => (
-                                <li key={index} className="flex items-start gap-2 text-sm">
-                                  <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                  <span>{feature}</span>
-                                </li>
-                              ))}
-                            </ul>
-                            {selectedPlan === plan.id && (
-                              <div className="mt-4 pt-4 border-t">
-                                <div className="flex items-center gap-2 text-sm text-green-600">
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  <span>Selected</span>
-                                </div>
+                      {displayPlans.map((plan) => {
+                        const planNameUpper = plan.name.toUpperCase();
+                        const planIdUpper = (plan.id || '').toUpperCase();
+                        
+                        // Key highlights - only 2-3 main features
+                        const keyHighlights: string[] = [];
+                        if (planNameUpper === 'FREE' || planIdUpper === 'FREE' || plan.name === 'Free') {
+                          keyHighlights.push('Up to 3 shipments/month');
+                          keyHighlights.push('Standard ranking');
+                          keyHighlights.push('1 admin user');
+                        } else if (planNameUpper === 'STARTER' || planIdUpper === 'STARTER' || plan.name === 'Starter') {
+                          keyHighlights.push('Up to 20 shipments/month');
+                          keyHighlights.push('Priority ranking');
+                          keyHighlights.push('Up to 3 team members');
+                        } else if (planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL' || plan.name === 'Professional') {
+                          keyHighlights.push('Unlimited shipments');
+                          keyHighlights.push('Highest priority ranking');
+                          keyHighlights.push('Unlimited team members');
+                        } else if (planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' || plan.name === 'Enterprise') {
+                          keyHighlights.push('Custom plan');
+                          keyHighlights.push('Dedicated support');
+                        } else {
+                          // Fallback - use first few features
+                          keyHighlights.push(...plan.features.slice(0, 3));
+                        }
+
+                        return (
+                          <Card
+                            key={plan.id}
+                            className={`relative transition-all hover:shadow-lg ${
+                              selectedPlan === plan.id
+                                ? 'border-orange-500 border-2 shadow-lg'
+                                : plan.recommended
+                                ? 'border-orange-300 border-2 shadow-md'
+                                : 'border-gray-200'
+                            }`}
+                          >
+                            {plan.recommended && (
+                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                                <Badge className="bg-orange-600 text-white px-3 py-0.5 text-xs font-medium">Most Popular</Badge>
                               </div>
                             )}
-                          </CardContent>
-                        </Card>
-                      ))}
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
+                                {selectedPlan === plan.id && (
+                                  <Badge className="bg-green-100 text-green-800 text-xs font-medium whitespace-nowrap">Selected</Badge>
+                                )}
+                              </div>
+                              <div className="mt-3">
+                                <span className="text-2xl font-bold text-gray-900">
+                                  {planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? 'Custom' : plan.priceDisplay}
+                                </span>
+                                {planNameUpper !== 'ENTERPRISE' && planIdUpper !== 'ENTERPRISE' && (
+                                  <span className="text-gray-600 text-sm ml-1">/month</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">
+                                Commission: {planNameUpper === 'FREE' || planIdUpper === 'FREE' ? '15%' : planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? 'Custom' : '0%'}
+                              </p>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <ul className="space-y-2.5 mb-5">
+                                {keyHighlights.slice(0, 3).map((highlight, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                                    <span className="text-xs text-gray-700 leading-relaxed break-words">{highlight}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="space-y-2">
+                                <Button
+                                  className="w-full"
+                                  variant={selectedPlan === plan.id ? 'default' : plan.recommended ? 'default' : 'outline'}
+                                  disabled={isProcessing}
+                                  onClick={() => {
+                                    if (plan.id) {
+                                      setSelectedPlan(plan.id);
+                                    }
+                                  }}
+                                >
+                                  {selectedPlan === plan.id ? (
+                                    <>
+                                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                                      Selected
+                                    </>
+                                  ) : (
+                                    'Select Plan'
+                                  )}
+                                </Button>
+                                <Link 
+                                  href="/pricing" 
+                                  className="block text-center text-xs text-gray-500 hover:text-orange-600 transition-colors"
+                                >
+                                  View all features →
+                                </Link>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   )}
 

@@ -93,7 +93,8 @@ export default function PayoutsPage() {
     const minimumPayout = 10;
 
     if (amountInPounds < minimumPayout) {
-      toast.error(`Minimum payout amount is £${minimumPayout}`);
+      const currencySymbol = balance?.currency?.toUpperCase() === 'EUR' ? '€' : balance?.currency?.toUpperCase() === 'USD' ? '$' : '£';
+      toast.error(`Minimum payout amount is ${currencySymbol}${minimumPayout}`);
       return;
     }
 
@@ -118,8 +119,26 @@ export default function PayoutsPage() {
     }
   };
 
-  const formatAmount = (pence: number): string => {
-    return `£${(pence / 100).toFixed(2)}`;
+  const formatAmount = (pence: number, currency: string = 'gbp'): string => {
+    const amount = (pence / 100).toFixed(2);
+    const currencyUpper = currency.toUpperCase();
+    
+    // Currency symbol mapping
+    const currencySymbols: Record<string, string> = {
+      'GBP': '£',
+      'EUR': '€',
+      'USD': '$',
+      'NGN': '₦',
+    };
+    
+    const symbol = currencySymbols[currencyUpper] || currencyUpper;
+    
+    // For EUR and some currencies, symbol comes after
+    if (currencyUpper === 'EUR') {
+      return `${amount} ${symbol}`;
+    }
+    
+    return `${symbol}${amount}`;
   };
 
   if (loading) {
@@ -234,7 +253,7 @@ export default function PayoutsPage() {
                     </div>
                   </div>
                   <span className="text-2xl font-bold text-green-600">
-                    {formatAmount(balance.available)}
+                    {formatAmount(balance.available, balance.currency)}
                   </span>
                 </div>
                 {balance.pending > 0 && (
@@ -247,7 +266,7 @@ export default function PayoutsPage() {
                       </div>
                     </div>
                     <span className="text-lg font-semibold text-yellow-600">
-                      {formatAmount(balance.pending)}
+                      {formatAmount(balance.pending, balance.currency)}
                     </span>
                   </div>
                 )}
@@ -255,7 +274,7 @@ export default function PayoutsPage() {
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <span className="text-sm font-medium text-blue-900">Total Balance</span>
                     <span className="text-lg font-bold text-blue-600">
-                      {formatAmount(balance.available + balance.pending)}
+                      {formatAmount(balance.available + balance.pending, balance.currency)}
                     </span>
                   </div>
                 )}
@@ -271,12 +290,12 @@ export default function PayoutsPage() {
                 )}
                 {balance.available < 1000 && balance.pending > 0 && (
                   <p className="text-xs text-gray-500 text-center">
-                    Minimum payout amount is £10.00. You have {formatAmount(balance.pending)} pending settlement.
+                    Minimum payout amount is {formatAmount(1000, balance.currency)}. You have {formatAmount(balance.pending, balance.currency)} pending settlement.
                   </p>
                 )}
                 {balance.available < 1000 && balance.pending === 0 && (
                   <p className="text-xs text-gray-500 text-center">
-                    Minimum payout amount is £10.00
+                    Minimum payout amount is {formatAmount(1000, balance.currency)}
                   </p>
                 )}
               </div>
@@ -295,12 +314,14 @@ export default function PayoutsPage() {
           <DialogHeader>
             <DialogTitle>Request Payout</DialogTitle>
             <DialogDescription>
-              Enter the amount you want to withdraw. Minimum payout is £10.00.
+              Enter the amount you want to withdraw. Minimum payout is {balance ? formatAmount(1000, balance.currency) : '£10.00'}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="payoutAmount">Amount (£)</Label>
+              <Label htmlFor="payoutAmount">
+                Amount {balance?.currency?.toUpperCase() === 'EUR' ? '(€)' : balance?.currency?.toUpperCase() === 'USD' ? '($)' : '(£)'}
+              </Label>
               <Input
                 id="payoutAmount"
                 type="number"
@@ -312,7 +333,7 @@ export default function PayoutsPage() {
               />
               {balance && (
                 <p className="text-xs text-gray-500">
-                  Available: {formatAmount(balance.available)}
+                  Available: {formatAmount(balance.available, balance.currency)}
                 </p>
               )}
             </div>

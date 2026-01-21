@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { GoogleMapsLoader } from './google-maps-loader';
-import { Loader2, Warehouse, Package, ShoppingCart } from 'lucide-react';
+import { Loader2, Warehouse, Package, ShoppingCart, AlertCircle } from 'lucide-react';
 import { companyApi } from '@/lib/company-api';
 import type { WarehouseAddress, Shipment, Booking } from '@/lib/company-api';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
+import { usePlanErrorHandler } from '@/lib/hooks/use-plan-error-handler';
+import { getErrorMessage } from '@/lib/api';
 
 interface MapMarker {
   id: string;
@@ -34,6 +37,8 @@ function MapContent() {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [routes, setRoutes] = useState<RouteLine[]>([]);
   const [warehousesMap, setWarehousesMap] = useState<Map<string, WarehouseAddress>>(new Map());
+  const { canAccessWarehouses } = useCompanyPlan();
+  const { handleError, UpgradeModal } = usePlanErrorHandler();
 
   // Geocode function
   const geocodeAddress = useCallback(async (address: string): Promise<{ lat: number; lng: number } | null> => {
@@ -75,14 +80,30 @@ function MapContent() {
         }
 
         // Fetch warehouses, shipments, and active bookings in parallel
-        const [warehouses, shipmentsResponse, bookingsResponse] = await Promise.all([
-          companyApi.getWarehouseAddresses(),
+        // Only fetch warehouses if plan supports it
+        const fetchPromises: [
+          Promise<WarehouseAddress[]>,
+          Promise<{ data: Shipment[]; pagination: any }>,
+          Promise<{ data: Booking[]; pagination: any }>
+        ] = [
+          canAccessWarehouses
+            ? companyApi.getWarehouseAddresses().catch((err) => {
+                // Handle 403 errors gracefully
+                if (err?.response?.status === 403) {
+                  handleError(err);
+                  return []; // Return empty array if not available
+                }
+                throw err;
+              })
+            : Promise.resolve([]),
           companyApi.getShipments({ limit: 1000 }), // Get all slots
           companyApi.getBookings({ 
             limit: 1000,
             status: 'ACCEPTED' // Only active bookings
           }),
-        ]);
+        ];
+
+        const [warehouses, shipmentsResponse, bookingsResponse] = await Promise.all(fetchPromises);
 
         const shipments = shipmentsResponse.data || [];
         const bookings = bookingsResponse.data || [];
@@ -279,7 +300,11 @@ function MapContent() {
         setRoutes([...slotRoutes, ...bookingRoutes]);
       } catch (err: any) {
         console.error('Failed to fetch map data:', err);
-        setError('Failed to load map data. Please try again.');
+        // Try to handle as plan error first
+        if (!handleError(err)) {
+          // If not a plan error, show regular error message
+          setError(getErrorMessage(err) || 'Failed to load map data. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -427,26 +452,31 @@ function MapContent() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <Warehouse className="w-4 h-4 text-blue-500" />
-          <span>Warehouses</span>
+    <>
+      <div className="space-y-4">
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 text-sm">
+          {canAccessWarehouses && (
+            <div className="flex items-center gap-2">
+              <Warehouse className="w-4 h-4 text-blue-500" />
+              <span>Warehouses</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-green-500" />
+            <span>Shipment Slots</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-4 h-4 text-orange-500" />
+            <span>Active Bookings</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-green-500" />
-          <span>Shipment Slots</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="w-4 h-4 text-orange-500" />
-          <span>Active Bookings</span>
-        </div>
-      </div>
 
-      {/* Map */}
-      <div ref={mapRef} className="w-full h-96 rounded-lg border" />
-    </div>
+        {/* Map */}
+        <div ref={mapRef} className="w-full h-96 rounded-lg border" />
+      </div>
+      <UpgradeModal />
+    </>
   );
 }
 

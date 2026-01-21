@@ -130,7 +130,7 @@ function PaymentContent() {
               {/* Admin Fee */}
               {booking.adminFeeAmount !== null && booking.adminFeeAmount !== undefined && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Parcsal admin fee (10%)</span>
+                  <span className="text-gray-600">Parcsal admin fee (15%)</span>
                   <span className="font-medium">
                     £{(booking.adminFeeAmount / 100).toFixed(2)}
                   </span>

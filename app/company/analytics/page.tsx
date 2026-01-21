@@ -9,6 +9,9 @@ import { companyApi } from '@/lib/company-api';
 import type { AnalyticsData } from '@/lib/company-api';
 import { getCachedAnalytics, setCachedAnalytics } from '@/lib/analytics-cache';
 import { toast } from 'sonner';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
+import { UpgradeModal } from '@/components/upgrade-modal';
+import { useRouter } from 'next/navigation';
 import { 
   LineChart, 
   Line, 
@@ -26,6 +29,9 @@ import {
 } from 'recharts';
 
 export default function AnalyticsPage() {
+  const router = useRouter();
+  const { plan, canAccessAnalytics, isLoading: isLoadingPlan } = useCompanyPlan();
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
   const [offset, setOffset] = useState(0);
@@ -119,8 +125,17 @@ export default function AnalyticsPage() {
     }
   }, [period, offset]);
 
+  // Check if user has access to analytics
+  useEffect(() => {
+    if (!isLoadingPlan && !canAccessAnalytics) {
+      setUpgradeModalOpen(true);
+    }
+  }, [isLoadingPlan, canAccessAnalytics]);
+
   // Debounced fetch for period/offset changes
   useEffect(() => {
+    if (!canAccessAnalytics) return;
+    
     // Clear any existing debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -146,7 +161,7 @@ export default function AnalyticsPage() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [period, offset, fetchAnalytics]);
+  }, [period, offset, fetchAnalytics, canAccessAnalytics]);
 
   // Cleanup retry timer on unmount
   useEffect(() => {
@@ -156,6 +171,71 @@ export default function AnalyticsPage() {
       }
     };
   }, []);
+
+  // Format revenue data for the chart - must be before early returns
+  const chartData = useMemo(() => {
+    if (!analytics?.revenueByPeriod) return [];
+
+    return analytics.revenueByPeriod.map((item) => {
+      let formattedPeriod = item.period;
+      
+      // Format period based on its format
+      if (item.period.includes('Q')) {
+        // Quarter format: "2025-Q4" -> "Q4 2025"
+        const [year, quarter] = item.period.split('-Q');
+        formattedPeriod = `Q${quarter} ${year}`;
+      } else if (item.period.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Daily format: "2025-12-18" -> "Dec 18"
+        const date = new Date(item.period);
+        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (item.period.match(/^\d{4}-\d{2}$/)) {
+        // Monthly format: "2025-12" -> "Dec 2025"
+        const [year, month] = item.period.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }
+      // Yearly format stays as is: "2025" -> "2025"
+
+      return {
+        period: formattedPeriod,
+        revenue: item.revenue,
+      };
+    });
+  }, [analytics?.revenueByPeriod]);
+
+  // Format booking status data for pie chart - must be before early returns
+  const bookingStatusData = useMemo(() => {
+    if (!analytics?.bookings) return [];
+    
+    return [
+      { name: 'Accepted', value: analytics.bookings.accepted, color: '#22c55e' },
+      { name: 'Pending', value: analytics.bookings.pending, color: '#eab308' },
+      { name: 'Rejected', value: analytics.bookings.rejected, color: '#ef4444' },
+    ].filter(item => item.value > 0);
+  }, [analytics?.bookings]);
+
+  // Format top routes data for bar chart - must be before early returns
+  const topRoutesData = useMemo(() => {
+    if (!analytics?.topRoutes) return [];
+    
+    return analytics.topRoutes.map((route) => ({
+      route: route.route.length > 20 ? `${route.route.substring(0, 20)}...` : route.route,
+      fullRoute: route.route,
+      bookings: route.bookingsCount,
+      revenue: route.revenue,
+    }));
+  }, [analytics?.topRoutes]);
+
+  // Format shipment performance data for bar chart - must be before early returns
+  const shipmentPerformanceData = useMemo(() => {
+    if (!analytics?.shipments) return [];
+    
+    return [
+      { name: 'Active', value: analytics.shipments.active, color: '#3b82f6' },
+      { name: 'Published', value: analytics.shipments.published, color: '#8b5cf6' },
+      { name: 'Completed', value: analytics.shipments.completed, color: '#22c55e' },
+    ];
+  }, [analytics?.shipments]);
 
   const handlePreviousPeriod = () => {
     setOffset(prev => prev + 1);
@@ -194,70 +274,50 @@ export default function AnalyticsPage() {
     }
   };
 
-  // Format revenue data for the chart
-  const chartData = useMemo(() => {
-    if (!analytics?.revenueByPeriod) return [];
+  // If user doesn't have access, show upgrade modal
+  if (isLoadingPlan) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      </div>
+    );
+  }
 
-    return analytics.revenueByPeriod.map((item) => {
-      let formattedPeriod = item.period;
-      
-      // Format period based on its format
-      if (item.period.includes('Q')) {
-        // Quarter format: "2025-Q4" -> "Q4 2025"
-        const [year, quarter] = item.period.split('-Q');
-        formattedPeriod = `Q${quarter} ${year}`;
-      } else if (item.period.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // Daily format: "2025-12-18" -> "Dec 18"
-        const date = new Date(item.period);
-        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      } else if (item.period.match(/^\d{4}-\d{2}$/)) {
-        // Monthly format: "2025-12" -> "Dec 2025"
-        const [year, month] = item.period.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1);
-        formattedPeriod = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      }
-      // Yearly format stays as is: "2025" -> "2025"
-
-      return {
-        period: formattedPeriod,
-        revenue: item.revenue,
-      };
-    });
-  }, [analytics?.revenueByPeriod]);
-
-  // Format booking status data for pie chart
-  const bookingStatusData = useMemo(() => {
-    if (!analytics?.bookings) return [];
-    
-    return [
-      { name: 'Accepted', value: analytics.bookings.accepted, color: '#22c55e' },
-      { name: 'Pending', value: analytics.bookings.pending, color: '#eab308' },
-      { name: 'Rejected', value: analytics.bookings.rejected, color: '#ef4444' },
-    ].filter(item => item.value > 0);
-  }, [analytics?.bookings]);
-
-  // Format top routes data for bar chart
-  const topRoutesData = useMemo(() => {
-    if (!analytics?.topRoutes) return [];
-    
-    return analytics.topRoutes.map((route) => ({
-      route: route.route.length > 20 ? `${route.route.substring(0, 20)}...` : route.route,
-      fullRoute: route.route,
-      bookings: route.bookingsCount,
-      revenue: route.revenue,
-    }));
-  }, [analytics?.topRoutes]);
-
-  // Format shipment performance data for bar chart
-  const shipmentPerformanceData = useMemo(() => {
-    if (!analytics?.shipments) return [];
-    
-    return [
-      { name: 'Active', value: analytics.shipments.active, color: '#3b82f6' },
-      { name: 'Published', value: analytics.shipments.published, color: '#8b5cf6' },
-      { name: 'Completed', value: analytics.shipments.completed, color: '#22c55e' },
-    ];
-  }, [analytics?.shipments]);
+  if (!canAccessAnalytics) {
+    return (
+      <>
+        <UpgradeModal
+          open={upgradeModalOpen}
+          onOpenChange={(open) => {
+            setUpgradeModalOpen(open);
+            if (!open) {
+              // Redirect to overview when modal is closed
+              router.push('/company/overview');
+            }
+          }}
+          currentPlan={plan || null}
+          feature="Analytics"
+          message="Analytics is not available on the Free plan. Upgrade to Starter or higher to access analytics."
+        />
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Analytics</h1>
+              <p className="text-gray-600 mt-2">Insights and performance metrics</p>
+            </div>
+          </div>
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-gray-500 mb-4">Analytics is not available on your current plan.</p>
+              <Button onClick={() => setUpgradeModalOpen(true)}>
+                Upgrade to Access Analytics
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">

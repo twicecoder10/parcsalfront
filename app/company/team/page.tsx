@@ -32,10 +32,15 @@ import { getErrorMessage } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useConfirm } from '@/lib/use-confirm';
 import { toast } from '@/lib/toast';
+import { useCompanyPlan } from '@/lib/hooks/use-company-plan';
+import { usePlanErrorHandler } from '@/lib/hooks/use-plan-error-handler';
+import { TeamUsageDisplay } from '@/components/team-usage-display';
 
 export default function TeamPage() {
   const user = getStoredUser();
   const { confirm, ConfirmDialog } = useConfirm();
+  const planFeatures = useCompanyPlan();
+  const { handleError, UpgradeModal } = usePlanErrorHandler();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -112,8 +117,12 @@ export default function TeamPage() {
       setMessage({ type: 'success', text: 'Invitation sent successfully!' });
     } catch (error: any) {
       console.error('Failed to invite team member:', error);
-      const errorMessage = getErrorMessage(error);
-      setMessage({ type: 'error', text: errorMessage });
+      // Try to handle as plan error first
+      if (!handleError(error)) {
+        // If not a plan error, show regular error message
+        const errorMessage = getErrorMessage(error);
+        setMessage({ type: 'error', text: errorMessage });
+      }
     } finally {
       setInviting(false);
     }
@@ -382,6 +391,13 @@ export default function TeamPage() {
           </CardContent>
         </Card>
       )}
+      {/* Team Usage Display */}
+      <TeamUsageDisplay
+        currentCount={teamMembers.length + invitations.filter(inv => inv.status === 'PENDING').length}
+        limit={planFeatures.maxTeamMembers}
+        plan={planFeatures.plan}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Team</h1>
@@ -389,7 +405,18 @@ export default function TeamPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button
+              disabled={
+                planFeatures.maxTeamMembers !== Infinity &&
+                teamMembers.length + invitations.filter(inv => inv.status === 'PENDING').length >= planFeatures.maxTeamMembers
+              }
+              title={
+                planFeatures.maxTeamMembers !== Infinity &&
+                teamMembers.length + invitations.filter(inv => inv.status === 'PENDING').length >= planFeatures.maxTeamMembers
+                  ? `Team member limit reached. Upgrade to add more team members.`
+                  : ''
+              }
+            >
               <Plus className="mr-2 h-4 w-4" />
               Invite Team Member
             </Button>
@@ -946,6 +973,7 @@ export default function TeamPage() {
         </DialogContent>
       </Dialog>
       <ConfirmDialog />
+      <UpgradeModal />
     </div>
   );
 }
