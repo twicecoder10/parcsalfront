@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStripeConnectOnboarding } from '@/hooks/useStripeConnectOnboarding';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,17 @@ export function StripeConnectOnboarding() {
     ? `${window.location.origin}${window.location.pathname}?from_stripe=true`
     : '';
 
+  // Memoize callbacks to prevent infinite loops
+  const handleComplete = useCallback(() => {
+    // Show success message
+    console.log('Stripe Connect setup completed!');
+    // Optionally navigate to next step
+  }, []);
+
+  const handleError = useCallback((error: Error) => {
+    console.error('Stripe Connect error:', error);
+  }, []);
+
   const {
     onboardingStatus,
     connectStatus,
@@ -25,14 +36,8 @@ export function StripeConnectOnboarding() {
     startOnboarding,
     refreshStatus,
   } = useStripeConnectOnboarding({
-    onComplete: () => {
-      // Show success message
-      console.log('Stripe Connect setup completed!');
-      // Optionally navigate to next step
-    },
-    onError: (error) => {
-      console.error('Stripe Connect error:', error);
-    },
+    onComplete: handleComplete,
+    onError: handleError,
   });
 
   // Clean up URL parameters after processing

@@ -31,6 +31,11 @@ export function useStripeConnectOnboarding(options: UseStripeConnectOnboardingOp
   const [isPolling, setIsPolling] = useState(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pollingStartTimeRef = useRef<number | null>(null);
+  const isRefreshingRef = useRef<boolean>(false);
+  const hasInitialLoadRef = useRef<boolean>(false);
+  const handledStripeReturnRef = useRef<string | null>(null);
+  const refreshStatusRef = useRef<() => Promise<void>>();
+  const startPollingRef = useRef<() => (() => void) | undefined>();
 
   // Fetch onboarding status
   const fetchOnboardingStatus = useCallback(async () => {
@@ -104,6 +109,12 @@ export function useStripeConnectOnboarding(options: UseStripeConnectOnboardingOp
 
   // Refresh status (calls both endpoints)
   const refreshStatus = useCallback(async () => {
+    // Prevent concurrent calls
+    if (isRefreshingRef.current) {
+      return;
+    }
+    
+    isRefreshingRef.current = true;
     setIsLoading(true);
     try {
       // First refresh Stripe Connect status (this will mark step complete if ready)
@@ -115,6 +126,7 @@ export function useStripeConnectOnboarding(options: UseStripeConnectOnboardingOp
       console.error('Failed to refresh status:', err);
     } finally {
       setIsLoading(false);
+      isRefreshingRef.current = false;
     }
   }, [fetchConnectStatus, fetchOnboardingStatus]);
 
@@ -169,28 +181,46 @@ export function useStripeConnectOnboarding(options: UseStripeConnectOnboardingOp
     pollingStartTimeRef.current = null;
   }, []);
 
-  // Check status on mount
+  // Keep refs up to date
   useEffect(() => {
-    refreshStatus();
-  }, [refreshStatus]);
+    refreshStatusRef.current = refreshStatus;
+    startPollingRef.current = startPolling;
+  }, [refreshStatus, startPolling]);
+
+  // Check status on mount (only once)
+  useEffect(() => {
+    if (!hasInitialLoadRef.current) {
+      hasInitialLoadRef.current = true;
+      refreshStatusRef.current?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Handle return from Stripe
   useEffect(() => {
     const fromStripe = searchParams?.get('from_stripe');
     const success = searchParams?.get('success');
+    const searchParamsString = searchParams?.toString() || '';
     
-    if (fromStripe === 'true' || success === 'true') {
+    // Only process if we have the params and haven't already handled this exact state
+    if ((fromStripe === 'true' || success === 'true') && handledStripeReturnRef.current !== searchParamsString) {
+      handledStripeReturnRef.current = searchParamsString;
+      
       // User returned from Stripe - refresh status
-      refreshStatus();
+      if (!isRefreshingRef.current && refreshStatusRef.current) {
+        refreshStatusRef.current();
+      }
       
-      // Start polling in case webhook hasn't processed yet
-      const cleanup = startPolling();
-      
-      return () => {
-        cleanup?.();
-      };
+      // Start polling in case webhook hasn't processed yet (only if not already polling)
+      if (!isPolling && startPollingRef.current) {
+        const cleanup = startPollingRef.current();
+        
+        return () => {
+          cleanup?.();
+        };
+      }
     }
-  }, [searchParams, refreshStatus, startPolling]);
+  }, [searchParams, isPolling]); // Only depend on searchParams and isPolling
 
   // Cleanup on unmount
   useEffect(() => {
