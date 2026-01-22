@@ -80,18 +80,9 @@ export function useCompanyPlan(): UseCompanyPlanReturn {
     queryFn: async () => {
       const data = await companyApi.getCompanyUsage();
       return {
-        shipmentsCreated: 0, // Not provided by API
-        marketingEmailsSent: data.marketingEmailsSent,
-        whatsappPromoSent: 0, // Not provided by API
-        whatsappStoriesPosted: 0, // Not provided by API
-        promoCreditsBalance: data.promoCreditsBalance,
-        promoCreditsUsed: data.promoCreditsUsed,
+        ...data,
         periodStart: new Date(data.periodStart),
         periodEnd: new Date(data.periodEnd),
-        limits: {
-          marketingEmailLimit: data.limits.marketingEmailLimit,
-          promoCreditsIncluded: data.limits.promoCreditsIncluded,
-        },
       };
     },
     enabled: !!companyInfo, // Only fetch if company info exists
@@ -109,7 +100,7 @@ export function useCompanyPlan(): UseCompanyPlanReturn {
   const marketingEmailsRemaining = Math.max(0, marketingEmailLimit - (usage?.marketingEmailsSent || 0));
   const isMarketingEmailLimitReached = marketingEmailLimit > 0 && marketingEmailsRemaining === 0;
 
-  const promoCreditsRemaining = usage?.promoCreditsBalance || 0;
+  const promoCreditsRemaining = usage?.creditWallets?.marketingEmail?.balance ?? 0;
   const promoCreditsIncluded = getPromoCreditsIncluded(plan);
   const isPromoCreditsLow = promoCreditsRemaining < 10; // Low threshold
 

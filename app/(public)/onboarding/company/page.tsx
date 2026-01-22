@@ -80,6 +80,30 @@ export default function CompanyOnboardingPage() {
     refetchOnWindowFocus: true,
   });
 
+  const { data: companyProfile } = useQuery({
+    queryKey: ['company-profile'],
+    queryFn: () => companyApi.getCompanyProfile(),
+    enabled: isMounted && !isStaff,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!companyProfile) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      companyDescription: prev.companyDescription || companyProfile.description || '',
+      companyWebsite: prev.companyWebsite || companyProfile.website || '',
+      companyLogoUrl: prev.companyLogoUrl || companyProfile.logoUrl || '',
+      contactEmail: prev.contactEmail || companyProfile.contactEmail || '',
+      contactPhone: prev.contactPhone || companyProfile.contactPhone || '',
+      address: prev.address || companyProfile.address || '',
+      city: prev.city || companyProfile.city || '',
+      state: prev.state || companyProfile.state || '',
+      postalCode: prev.postalCode || companyProfile.postalCode || '',
+    }));
+  }, [companyProfile]);
+
   const { data: companyOnboardingStatus, refetch: refetchCompanyStatus } = useQuery({
     queryKey: ['onboarding-status', 'company'],
     queryFn: () => getDetailedOnboardingStatus('company'),
@@ -288,15 +312,12 @@ export default function CompanyOnboardingPage() {
       setError('Contact phone is required (minimum 1 character)');
       return;
     }
-    if (!formData.contactEmail.trim()) {
-      setError('Contact email is required');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.contactEmail)) {
-      setError('Please enter a valid email address');
-      return;
+    if (formData.contactEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.contactEmail)) {
+        setError('Please enter a valid email address');
+        return;
+      }
     }
 
     if (formData.companyWebsite && formData.companyWebsite.trim()) {
@@ -809,7 +830,7 @@ export default function CompanyOnboardingPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="contactEmail" className="text-sm font-medium">
-                          Contact Email <span className="text-red-500">*</span>
+                          Contact Email
                         </Label>
                         <div className="relative">
                           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -820,9 +841,12 @@ export default function CompanyOnboardingPage() {
                             value={formData.contactEmail}
                             onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                             className="pl-10 h-11"
-                            required
                           />
                         </div>
+                        <p className="text-xs text-gray-500">
+                          Optional. If left blank, we will use the admin&apos;s signup email as the company email.
+                          If provided, please note that your account email is different from the company email, and you can only login with your account email.
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -903,16 +927,8 @@ export default function CompanyOnboardingPage() {
 
                       <div className="flex items-center justify-between pt-4 border-t">
                         <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => router.push('/company/overview')}
-                          className="text-gray-600"
-                        >
-                          Skip for now
-                        </Button>
-                        <Button
                           type="submit"
-                          disabled={updateCompanyMutation.isPending || !formData.contactPhone.trim() || !formData.contactEmail.trim()}
+                          disabled={updateCompanyMutation.isPending || !formData.contactPhone.trim()}
                           className="bg-orange-600 hover:bg-orange-700"
                         >
                           {updateCompanyMutation.isPending ? (

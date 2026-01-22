@@ -778,6 +778,11 @@ export const companyApi = {
     return extractData(response);
   },
 
+  createSubscriptionPortalSession: async (): Promise<{ url: string }> => {
+    const response = await api.post<ApiResponse<{ url: string }>>('/subscriptions/portal');
+    return extractData(response);
+  },
+
   cancelSubscription: async (reason?: string): Promise<Subscription> => {
     const response = await api.post<ApiResponse<Subscription>>('/companies/subscription/cancel', reason ? { reason } : {});
     return extractData(response);
@@ -857,25 +862,107 @@ export const companyApi = {
   },
 
   getCompanyUsage: async (): Promise<{
-    marketingEmailsSent: number;
-    promoCreditsBalance: number;
-    promoCreditsUsed: number;
+    id: string;
+    companyId: string;
     periodStart: string;
     periodEnd: string;
+    shipmentsCreated: number;
+    marketingEmailsSent: number;
+    whatsappPromoSent: number;
+    whatsappStoriesPosted: number;
+    whatsappPromoCreditsBalance: number;
+    whatsappPromoCreditsUsed: number;
+    whatsappStoryCreditsBalance: number;
+    whatsappStoryCreditsUsed: number;
+    marketingEmailCreditsBalance: number;
+    marketingEmailCreditsUsed: number;
+    updatedAt: string;
+    createdAt: string;
+    company: {
+      plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+    };
+    teamMembersCount: number;
+    revenueProcessed: number;
+    commissionPaid: number;
+    potentialSavings: number;
+    commissionRate: number;
+    commissionRatePercent: number;
+    rankingTier: 'STANDARD' | 'STARTER' | 'PRIORITY' | 'HIGHEST' | 'CUSTOM';
+    creditWallets: {
+      whatsappPromo: {
+        balance: number;
+        used: number;
+      };
+      whatsappStory: {
+        balance: number;
+        used: number;
+      };
+      marketingEmail: {
+        balance: number;
+        used: number;
+      };
+    };
     limits: {
       marketingEmailLimit: number;
-      promoCreditsIncluded: number;
+      monthlyWhatsappPromoCreditsIncluded: number;
+      monthlyWhatsappStoryCreditsIncluded: number;
+      monthlyMarketingEmailCreditsIncluded: number;
+      monthlyShipmentLimit: number;
+      teamMembersLimit: number;
+      whatsappPromoLimit: number;
+      whatsappStoryLimit: number;
     };
   }> => {
     const response = await api.get<ApiResponse<{
-      marketingEmailsSent: number;
-      promoCreditsBalance: number;
-      promoCreditsUsed: number;
+      id: string;
+      companyId: string;
       periodStart: string;
       periodEnd: string;
+      shipmentsCreated: number;
+      marketingEmailsSent: number;
+      whatsappPromoSent: number;
+      whatsappStoriesPosted: number;
+      whatsappPromoCreditsBalance: number;
+      whatsappPromoCreditsUsed: number;
+      whatsappStoryCreditsBalance: number;
+      whatsappStoryCreditsUsed: number;
+      marketingEmailCreditsBalance: number;
+      marketingEmailCreditsUsed: number;
+      updatedAt: string;
+      createdAt: string;
+      company: {
+        plan: 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+      };
+      teamMembersCount: number;
+      revenueProcessed: number;
+      commissionPaid: number;
+      potentialSavings: number;
+      commissionRate: number;
+      commissionRatePercent: number;
+      rankingTier: 'STANDARD' | 'STARTER' | 'PRIORITY' | 'HIGHEST' | 'CUSTOM';
+      creditWallets: {
+        whatsappPromo: {
+          balance: number;
+          used: number;
+        };
+        whatsappStory: {
+          balance: number;
+          used: number;
+        };
+        marketingEmail: {
+          balance: number;
+          used: number;
+        };
+      };
       limits: {
         marketingEmailLimit: number;
-        promoCreditsIncluded: number;
+        monthlyWhatsappPromoCreditsIncluded: number;
+        monthlyWhatsappStoryCreditsIncluded: number;
+        monthlyMarketingEmailCreditsIncluded: number;
+        monthlyShipmentLimit: number;
+        teamMembersLimit: number;
+        whatsappPromoLimit: number;
+        whatsappStoryLimit: number;
       };
     }>>('/companies/me/usage');
     return extractData(response);

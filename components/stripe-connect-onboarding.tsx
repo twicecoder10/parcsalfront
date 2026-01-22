@@ -118,7 +118,7 @@ export function StripeConnectOnboarding() {
             Stripe Connect Setup Complete!
           </CardTitle>
           <CardDescription className="text-green-700">
-            Your payout account is ready. You can now receive payments.
+            Your Stripe Connect account setup is complete. You can now receive payments.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,11 +128,11 @@ export function StripeConnectOnboarding() {
             </p>
           )}
           <Button
-            onClick={() => router.push('/company/payouts')}
+            onClick={() => router.push('/onboarding/company')}
             className="w-full"
             variant="outline"
           >
-            View Payouts
+            Finish Onboarding
           </Button>
         </CardContent>
       </Card>

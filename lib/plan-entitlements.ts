@@ -12,17 +12,55 @@ export interface CompanyInfo {
 }
 
 export interface CompanyUsage {
-  shipmentsCreated?: number; // Shipments created this month
-  marketingEmailsSent: number;
-  whatsappPromoSent?: number; // WhatsApp promo messages sent this month
-  whatsappStoriesPosted?: number; // WhatsApp stories posted this month
-  promoCreditsBalance: number;
-  promoCreditsUsed: number;
+  id?: string;
+  companyId?: string;
   periodStart: string | Date;
   periodEnd: string | Date;
+  shipmentsCreated: number; // Shipments created this month
+  marketingEmailsSent: number;
+  whatsappPromoSent: number; // WhatsApp promo messages sent this month
+  whatsappStoriesPosted: number; // WhatsApp stories posted this month
+  whatsappPromoCreditsBalance?: number;
+  whatsappPromoCreditsUsed?: number;
+  whatsappStoryCreditsBalance?: number;
+  whatsappStoryCreditsUsed?: number;
+  marketingEmailCreditsBalance?: number;
+  marketingEmailCreditsUsed?: number;
+  updatedAt?: string;
+  createdAt?: string;
+  company?: {
+    plan: CarrierPlan;
+  };
+  teamMembersCount?: number;
+  revenueProcessed?: number;
+  commissionPaid?: number;
+  potentialSavings?: number;
+  commissionRate?: number;
+  commissionRatePercent?: number;
+  rankingTier?: 'STANDARD' | 'STARTER' | 'PRIORITY' | 'HIGHEST' | 'CUSTOM';
+  creditWallets?: {
+    whatsappPromo: {
+      balance: number;
+      used: number;
+    };
+    whatsappStory: {
+      balance: number;
+      used: number;
+    };
+    marketingEmail: {
+      balance: number;
+      used: number;
+    };
+  };
   limits: {
     marketingEmailLimit: number;
-    promoCreditsIncluded: number;
+    monthlyWhatsappPromoCreditsIncluded?: number;
+    monthlyWhatsappStoryCreditsIncluded?: number;
+    monthlyMarketingEmailCreditsIncluded?: number;
+    monthlyShipmentLimit?: number;
+    teamMembersLimit?: number;
+    whatsappPromoLimit?: number;
+    whatsappStoryLimit?: number;
   };
 }
 

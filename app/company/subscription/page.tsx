@@ -9,6 +9,7 @@ import { Check, CheckCircle2, XCircle, AlertCircle, Loader2, ArrowRight, Externa
 import Link from 'next/link';
 import { companyApi } from '@/lib/company-api';
 import type { Subscription, Plan } from '@/lib/company-api';
+import type { CompanyUsage } from '@/lib/plan-entitlements';
 import { getErrorMessage } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
@@ -20,10 +21,17 @@ function SubscriptionContent() {
   const [loading, setLoading] = useState(true);
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [usage, setUsage] = useState<CompanyUsage | null>(null);
+
+  const formatCurrency = (value?: number | null) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return '—';
+    return `£${value.toLocaleString()}`;
+  };
 
   useEffect(() => {
     fetchSubscriptionData();
     fetchPlans();
+    fetchUsageData();
   }, []);
 
   const fetchSubscriptionData = async () => {
@@ -46,6 +54,15 @@ function SubscriptionContent() {
       setPlans(plansData);
     } catch (error) {
       console.error('Failed to fetch plans:', error);
+    }
+  };
+
+  const fetchUsageData = async () => {
+    try {
+      const usageData = await companyApi.getCompanyUsage();
+      setUsage(usageData);
+    } catch (error) {
+      console.error('Failed to fetch usage data:', error);
     }
   };
 
@@ -79,6 +96,16 @@ function SubscriptionContent() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      const { url } = await companyApi.createSubscriptionPortalSession();
+      window.location.href = url;
+    } catch (error: any) {
+      console.error('Failed to open subscription portal:', error);
+      toast.error(getErrorMessage(error) || 'Failed to manage subscription. Please try again.');
+    }
+  };
+
   useEffect(() => {
     const success = searchParams.get('success');
     const cancelled = searchParams.get('cancelled');
@@ -98,10 +125,74 @@ function SubscriptionContent() {
       setStatus('success');
       // Fetch updated subscription data
       fetchSubscriptionData();
+      fetchUsageData();
       // Clean URL
       window.history.replaceState({}, '', '/company/subscription');
     }
   }, [searchParams]);
+
+  const planNameUpper = (usage?.company?.plan || subscription?.companyPlan?.name || 'FREE').toUpperCase();
+  const isFreePlan = planNameUpper === 'FREE';
+  const isStarterPlan = planNameUpper === 'STARTER';
+  const isProfessionalPlan = planNameUpper === 'PROFESSIONAL';
+
+  const commissionRate = usage?.commissionRatePercent;
+  const commissionRateDisplay = commissionRate !== undefined
+    ? `${commissionRate}%`
+    : isFreePlan
+      ? '15%'
+      : '0%';
+
+  const shipmentLimit = usage?.limits?.monthlyShipmentLimit ?? subscription?.companyPlan?.maxActiveShipmentSlots ?? null;
+  const shipmentsUsedThisMonth = usage?.shipmentsCreated ?? 0;
+  const shipmentUsagePercent = shipmentLimit ? Math.min(100, (shipmentsUsedThisMonth / shipmentLimit) * 100) : 0;
+
+  const teamMembersUsed = usage?.teamMembersCount ?? 0;
+  const teamMembersAllowed = usage?.limits?.teamMembersLimit ?? subscription?.companyPlan?.maxTeamMembers ?? null;
+
+  const monthlyRevenue = usage?.revenueProcessed ?? 0;
+  const commissionPaidThisMonth = usage?.commissionPaid ?? 0;
+  const estimatedCommissionOnFree = commissionRate !== undefined
+    ? (monthlyRevenue * (commissionRate / 100))
+    : (monthlyRevenue * 0.15);
+  const potentialSavings = usage?.potentialSavings ?? (isFreePlan ? commissionPaidThisMonth : estimatedCommissionOnFree);
+
+  const rankingTier = usage?.rankingTier === 'PRIORITY'
+    ? 'Priority'
+    : usage?.rankingTier === 'STARTER'
+      ? 'Starter'
+      : usage?.rankingTier === 'HIGHEST'
+        ? 'Highest'
+        : usage?.rankingTier === 'CUSTOM'
+          ? 'Custom'
+          : isProfessionalPlan
+            ? 'Priority'
+            : isStarterPlan
+              ? 'Starter'
+              : 'Standard';
+
+  const shipmentLimitWarning = shipmentLimit
+    ? (shipmentsUsedThisMonth / shipmentLimit) >= 0.8
+    : false;
+
+  const marketingLimitUsed = usage?.marketingEmailsSent;
+  const marketingLimitTotal = usage?.limits?.marketingEmailLimit;
+  const marketingLimitWarning = marketingLimitUsed !== undefined && marketingLimitTotal
+    ? (marketingLimitUsed / marketingLimitTotal) >= 0.8
+    : false;
+
+  const upgradePlan = plans.find((plan) => {
+    const planName = plan.name.toUpperCase();
+    const planId = (plan.id || '').toUpperCase();
+    return planName !== 'FREE' && planId !== 'FREE' && planName !== 'ENTERPRISE' && planId !== 'ENTERPRISE';
+  });
+  const handleUpgradeClick = () => {
+    if (upgradePlan?.id) {
+      handlePlanSelect(upgradePlan.id);
+      return;
+    }
+    handleManageSubscription();
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -177,7 +268,6 @@ function SubscriptionContent() {
         </Card>
       )}
 
-      {/* Current Plan */}
       {loading ? (
         <Card>
           <CardContent className="text-center py-8">
@@ -199,23 +289,41 @@ function SubscriptionContent() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-2xl font-bold">{subscription.companyPlan.name} Plan</p>
-                <p className="text-gray-600">
-                  £{subscription.companyPlan.priceMonthly}/month
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Commission: {subscription.companyPlan.name.toUpperCase() === 'FREE' ? '15%' : subscription.companyPlan.name.toUpperCase() === 'ENTERPRISE' ? 'Contact support' : '0%'} per shipment
-                </p>
-                {subscription.currentPeriodEnd && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    Next billing date: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                  </p>
+                {isFreePlan && (
+                  <Badge className="bg-orange-100 text-orange-700">
+                    You pay 15% commission on every booking
+                  </Badge>
                 )}
+              <div className="flex flex-col gap-2 sm:items-end">
+                <Button variant="outline" onClick={handleUpdatePaymentMethod} className="w-full sm:w-auto">
+                  Manage Billing
+                </Button>
               </div>
-              <Button variant="outline" onClick={handleUpdatePaymentMethod} className="w-full sm:w-auto">
-                Manage Billing
-              </Button>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Commission Rate</p>
+                <p className={`mt-1 text-lg font-semibold ${commissionRateDisplay === '0%' ? 'text-green-700' : 'text-gray-900'}`}>
+                  {commissionRateDisplay}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Monthly Slot Limit</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {shipmentsUsedThisMonth} / {shipmentLimit ?? 'Unlimited'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Team Members</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {teamMembersUsed} / {teamMembersAllowed ?? 'Unlimited'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Slot Listing Ranking Tier</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">{rankingTier}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -223,6 +331,162 @@ function SubscriptionContent() {
         <Card>
           <CardContent className="text-center py-8">
             <p className="text-gray-500">No active subscription</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* This Month's Usage */}
+      {subscription && (
+        <Card>
+          <CardHeader>
+            <CardTitle>📊 This Month’s Usage</CardTitle>
+            <CardDescription>Track your usage and see commission savings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Shipments Used</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {shipmentsUsedThisMonth} / {shipmentLimit ?? 'Unlimited'}
+                </p>
+                {shipmentLimit && (
+                  <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className="h-2 rounded-full bg-orange-500"
+                      style={{ width: `${shipmentUsagePercent}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Commission Paid</p>
+                <p className={`mt-1 text-lg font-semibold ${isFreePlan ? 'text-gray-900' : 'text-green-700'}`}>
+                  {isFreePlan ? formatCurrency(commissionPaidThisMonth) : '£0'}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Potential Savings</p>
+                <p className={`mt-1 text-lg font-semibold ${isFreePlan ? 'text-gray-900' : 'text-green-700'}`}>
+                  {formatCurrency(potentialSavings)}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {isFreePlan
+                    ? `Upgrade to save ${formatCurrency(potentialSavings)} in commission`
+                    : `You saved ${formatCurrency(potentialSavings)} in commission this month`}
+                </p>
+              </div>
+            </div>
+            {commissionPaidThisMonth > 0 && (
+              <div className="mt-4">
+                <Button onClick={handleUpgradeClick} className="w-full sm:w-auto">
+                  Upgrade to stop paying commission
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Marketing & Promotions Usage */}
+      {subscription && (
+        <Card>
+          <CardHeader>
+            <CardTitle>📣 Marketing & Promotions</CardTitle>
+            <CardDescription>Monthly marketing activity and credits</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Marketing Emails</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.marketingEmailsSent ?? 0} / {usage?.limits?.marketingEmailLimit ?? '—'}
+                </p>
+                {usage?.limits?.marketingEmailLimit ? (
+                  <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className="h-2 rounded-full bg-orange-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (usage?.marketingEmailsSent ?? 0) / usage.limits.marketingEmailLimit * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">WhatsApp Promos</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.whatsappPromoSent ?? 0} / {usage?.limits?.whatsappPromoLimit ?? '—'}
+                </p>
+                {usage?.limits?.whatsappPromoLimit ? (
+                  <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className="h-2 rounded-full bg-orange-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (usage?.whatsappPromoSent ?? 0) / usage.limits.whatsappPromoLimit * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">WhatsApp Stories</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.whatsappStoriesPosted ?? 0} / {usage?.limits?.whatsappStoryLimit ?? '—'}
+                </p>
+                {usage?.limits?.whatsappStoryLimit ? (
+                  <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
+                    <div
+                      className="h-2 rounded-full bg-orange-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (usage?.whatsappStoriesPosted ?? 0) / usage.limits.whatsappStoryLimit * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">WhatsApp Promo Credits</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.creditWallets?.whatsappPromo?.balance ?? usage?.whatsappPromoCreditsBalance ?? 0} balance
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {usage?.creditWallets?.whatsappPromo?.used ?? usage?.whatsappPromoCreditsUsed ?? 0} used / {usage?.limits?.monthlyWhatsappPromoCreditsIncluded ?? 0} included
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">WhatsApp Story Credits</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.creditWallets?.whatsappStory?.balance ?? usage?.whatsappStoryCreditsBalance ?? 0} balance
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {usage?.creditWallets?.whatsappStory?.used ?? usage?.whatsappStoryCreditsUsed ?? 0} used / {usage?.limits?.monthlyWhatsappStoryCreditsIncluded ?? 0} included
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Marketing Email Credits</p>
+                <p className="mt-1 text-lg font-semibold text-gray-900">
+                  {usage?.creditWallets?.marketingEmail?.balance ?? usage?.marketingEmailCreditsBalance ?? 0} balance
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {usage?.creditWallets?.marketingEmail?.used ?? usage?.marketingEmailCreditsUsed ?? 0} used / {usage?.limits?.monthlyMarketingEmailCreditsIncluded ?? 0} included
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-gray-500">
+              Billing period: {usage?.periodStart ? new Date(usage.periodStart).toLocaleDateString() : '—'} →{' '}
+              {usage?.periodEnd ? new Date(usage.periodEnd).toLocaleDateString() : '—'}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -263,6 +527,23 @@ function SubscriptionContent() {
                 
                 const planNameUpper = plan.name.toUpperCase();
                 const planIdUpper = (plan.id || '').toUpperCase();
+
+                const planLabel = planNameUpper === 'FREE' || planIdUpper === 'FREE'
+                  ? '15% commission per shipment'
+                  : planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL'
+                    ? '0% commission + priority exposure'
+                    : '0% commission';
+
+                const bestFor = planNameUpper === 'FREE' || planIdUpper === 'FREE'
+                  ? 'Occasional shippers'
+                  : planNameUpper === 'PROFESSIONAL' || planIdUpper === 'PROFESSIONAL'
+                    ? 'High-volume operators'
+                    : 'Growing carriers';
+
+                const isDowngradeRestricted = isDowngrade && (
+                  (plan.maxActiveShipmentSlots !== null && shipmentsUsedThisMonth > plan.maxActiveShipmentSlots) ||
+                  (plan.maxTeamMembers !== null && teamMembersUsed > plan.maxTeamMembers)
+                );
                 
                 // Key highlights - only 2-3 main features
                 const keyHighlights: string[] = [];
@@ -332,9 +613,8 @@ function SubscriptionContent() {
                           <span className="text-gray-600 text-base ml-1">/month</span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        Commission: {planNameUpper === 'FREE' || planIdUpper === 'FREE' ? '15%' : planNameUpper === 'ENTERPRISE' || planIdUpper === 'ENTERPRISE' ? 'Custom' : '0%'}
-                      </p>
+                      <p className="text-sm text-gray-600 mt-2">{planLabel}</p>
+                      <p className="text-xs text-gray-500 mt-1">Best for: {bestFor}</p>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <ul className="space-y-2 mb-6 min-h-[80px]">
@@ -349,12 +629,12 @@ function SubscriptionContent() {
                         <Button
                           className="w-full"
                           variant={isCurrentPlan ? 'outline' : plan.isDefault ? 'default' : 'outline'}
-                          disabled={isCurrentPlan || processingPlan === plan.id}
+                          disabled={isCurrentPlan || processingPlan === plan.id || isDowngradeRestricted}
                           onClick={() => {
                             if (isUpgradingFromFree) {
                               handlePlanSelect(plan.id);
                             } else if (isUpgrade || isDowngrade) {
-                              handleUpdatePaymentMethod();
+                              handleManageSubscription();
                             } else {
                               handlePlanSelect(plan.id);
                             }
@@ -375,6 +655,11 @@ function SubscriptionContent() {
                             'Select Plan'
                           )}
                         </Button>
+                        {isDowngradeRestricted && (
+                          <p className="text-xs text-orange-600 text-center">
+                            Downgrade blocked due to current usage limits
+                          </p>
+                        )}
                         <Link 
                           href="/pricing" 
                           className="block text-center text-xs text-gray-500 hover:text-orange-600 transition-colors"
@@ -390,6 +675,93 @@ function SubscriptionContent() {
           </CardContent>
         </Card>
       )}
+
+      {/* Limit Warnings */}
+      {(shipmentLimitWarning || marketingLimitWarning) && (
+        <div className="space-y-3">
+          {shipmentLimitWarning && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-orange-900">You’ve used 80% of your shipment limit</p>
+                    <p className="text-sm text-orange-700">
+                      Upgrade to keep publishing without interruptions.
+                    </p>
+                  </div>
+                  <Button className="sm:w-auto w-full">Upgrade plan</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {marketingLimitWarning && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-orange-900">You’re close to your marketing limit</p>
+                    <p className="text-sm text-orange-700">
+                      Upgrade to keep reaching new customers without caps.
+                    </p>
+                  </div>
+                  <Button className="sm:w-auto w-full">Upgrade plan</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Billing & Payments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>💳 Billing & Payments</CardTitle>
+          <CardDescription>View billing details and manage your subscription</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Current Plan</p>
+              <p className="mt-1 text-sm font-medium text-gray-900">
+                {subscription?.companyPlan?.name ?? 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Subscription Status</p>
+              <p className="mt-1 text-sm font-medium text-gray-900">{subscription?.status ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Next Billing Date</p>
+              <p className="mt-1 text-sm font-medium text-gray-900">
+                {subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : '—'}
+              </p>
+            </div>
+            <div className="flex items-center">
+              <Button variant="outline" onClick={handleUpdatePaymentMethod} className="w-full">
+                Manage billing in Stripe
+              </Button>
+            </div>
+          </div>
+          {isFreePlan && (
+            <p className="mt-4 text-sm text-gray-500">You’re currently on the Free plan.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Enterprise CTA */}
+      <Card className="border-gray-200 bg-gray-50">
+        <CardHeader>
+          <CardTitle>Need more scale?</CardTitle>
+          <CardDescription>
+            For high-volume logistics companies with custom needs, SLAs, and integrations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild>
+            <Link href="/contact">Contact sales</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
