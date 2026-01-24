@@ -124,7 +124,8 @@ export default function PayoutsPage() {
     setDashboardLoading(true);
     try {
       const { url } = await companyApi.createDashboardLoginLink();
-      window.location.href = url;
+      window.open(url, '_blank');
+      setDashboardLoading(false);
     } catch (error) {
       console.error('Failed to open Stripe Connect dashboard:', error);
       toast.error(getErrorMessage(error) || 'Failed to open Stripe dashboard');
