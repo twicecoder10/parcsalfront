@@ -13,6 +13,7 @@ import { getErrorMessage } from '@/lib/api';
 import { GoogleMapsLoader } from '@/components/google-maps-loader';
 import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
+import { capture } from '@/lib/posthog';
 
 export default function NewShipmentPage() {
   const router = useRouter();
@@ -115,7 +116,22 @@ export default function NewShipmentPage() {
         status,
       };
 
-      await companyApi.createShipment(shipmentData);
+      const createdShipment = await companyApi.createShipment(shipmentData);
+      
+      // Track shipment creation event
+      capture('company_shipment_created', {
+        status: status,
+        mode: formData.mode,
+      });
+
+      // If published, also track publication
+      if (status === 'PUBLISHED') {
+        capture('company_shipment_published', {
+          shipmentId: createdShipment?.id,
+          mode: formData.mode,
+        });
+      }
+      
       router.push('/company/shipments');
     } catch (error: any) {
       console.error('Failed to create shipment:', error);

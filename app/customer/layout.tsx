@@ -5,6 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { CustomerHeader } from '@/components/customer-header';
 import { RouteGuard } from '@/lib/route-guards';
 import { AppFooter } from '@/components/AppFooter';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
+import { MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function CustomerLayout({
   children,
@@ -37,6 +40,20 @@ export default function CustomerLayout({
             {children}
           </div>
         </main>
+        <div className="fixed bottom-5 right-5 z-50">
+          <FeedbackDialog
+            trigger={
+              <Button
+                variant="secondary"
+                className="gap-2 shadow-md"
+                aria-label="Send feedback"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Feedback
+              </Button>
+            }
+          />
+        </div>
         <AppFooter />
       </div>
     </RouteGuard>

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Package, ShoppingCart, Settings, Truck, Users, CreditCard, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Settings, Truck, Users, CreditCard, ChevronDown, ChevronRight, X, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 
 export interface NavItem {
   title: string;
@@ -180,6 +181,16 @@ export function DashboardSidebar({ navItems, isOpen = false, onClose }: Dashboar
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           {navItems.map((item) => renderNavItem(item))}
         </nav>
+        <div className="border-t p-4">
+          <FeedbackDialog
+            trigger={
+              <Button variant="ghost" className="w-full justify-start gap-3 text-sm font-medium text-gray-700">
+                <MessageSquare className="h-5 w-5" />
+                Feedback
+              </Button>
+            }
+          />
+        </div>
       </aside>
     </>
   );

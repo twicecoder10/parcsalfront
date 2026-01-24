@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft, CreditCard, AlertCircle } from 'lucide-react';
 import { customerApi } from '@/lib/customer-api';
 import { getErrorMessage } from '@/lib/api';
 import Link from 'next/link';
+import { capture } from '@/lib/posthog';
 
 function PaymentContent() {
   const params = useParams();
@@ -48,6 +49,11 @@ function PaymentContent() {
     setError(null);
     
     try {
+      // Track payment started event
+      capture('payment_started', {
+        bookingId,
+      });
+      
       const { url } = await customerApi.createPaymentSession(bookingId);
       
       // Redirect to Stripe Checkout

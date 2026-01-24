@@ -115,7 +115,7 @@ export default function PrivacyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">10. Contact Us</h2>
               <p className="text-gray-700">
-                If you have any questions about this Privacy Policy, please contact us at privacy@parcsal.com or through our contact page.
+                If you have any questions about this Privacy Policy, please contact us at support@parcsal.com or through our contact page.
               </p>
             </section>
           </div>

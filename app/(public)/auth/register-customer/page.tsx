@@ -14,6 +14,7 @@ import { saveAuthData, getPostAuthPathAsync, getStoredUser, getDashboardPath } f
 import { useMutation } from '@tanstack/react-query';
 import { Mail, User, Lock, AlertCircle, Loader2, ArrowRight, Building2, Sparkles } from 'lucide-react';
 import { PasswordInput } from '@/components/password-input';
+import { identifyUser } from '@/lib/posthog';
 
 export default function RegisterCustomerPage() {
   const router = useRouter();
@@ -38,6 +39,8 @@ export default function RegisterCustomerPage() {
     mutationFn: authApi.registerCustomer,
     onSuccess: async (data) => {
       saveAuthData(data);
+      // Identify user in PostHog
+      identifyUser(data.user, null);
       // Get the appropriate onboarding step path or dashboard path
       const redirectPath = await getPostAuthPathAsync(data.user);
       router.push(redirectPath);

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { CookiePreferencesLink } from '@/components/cookie/CookiePreferencesLink';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -49,6 +51,15 @@ export function Footer() {
                   Pricing
                 </Link>
               </li>
+              <li>
+                <FeedbackDialog
+                  trigger={
+                    <button className="text-gray-600 hover:text-orange-600 transition-colors">
+                      Feedback
+                    </button>
+                  }
+                />
+              </li>
             </ul>
           </div>
 
@@ -65,6 +76,14 @@ export function Footer() {
                 <Link href="/terms" className="text-gray-600 hover:text-orange-600 transition-colors">
                   Terms
                 </Link>
+              </li>
+              <li>
+                <Link href="/cookie-policy" className="text-gray-600 hover:text-orange-600 transition-colors">
+                  Cookie Policy
+                </Link>
+              </li>
+              <li>
+                <CookiePreferencesLink />
               </li>
             </ul>
           </div>

@@ -51,6 +51,7 @@ export default function CompanyOnboardingPage() {
   const user = getStoredUser();
   const [error, setError] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+  const [isProgressOpen, setIsProgressOpen] = useState(false);
 
   // Check if user is COMPANY_STAFF (invited team member)
   const isStaff = user?.role === 'COMPANY_STAFF';
@@ -362,20 +363,20 @@ export default function CompanyOnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="rounded-full bg-orange-100 p-6">
                       <Mail className="h-12 w-12 text-orange-600" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     Step 1: Verify Your Email
                   </h2>
-                  <p className="text-lg text-gray-600 mb-4">
+                  <p className="text-base sm:text-lg text-gray-600 mb-4">
                     Please verify your email address before completing your company profile.
                   </p>
                   <div className="text-sm text-gray-500 mb-6">
@@ -399,9 +400,9 @@ export default function CompanyOnboardingPage() {
                   </Card>
                 </div>
 
-                <div className="flex justify-center gap-4">
-                  <Link href="/auth/verify-email">
-                    <Button className="bg-orange-600 hover:bg-orange-700 h-12 px-8">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                  <Link href="/auth/verify-email" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 h-12 px-8">
                       Verify Email
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
@@ -421,20 +422,20 @@ export default function CompanyOnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="rounded-full bg-blue-100 p-6">
                       <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     Completing Your Profile
                   </h2>
-                  <p className="text-lg text-gray-600 mb-4">
+                  <p className="text-base sm:text-lg text-gray-600 mb-4">
                     Your email has been verified. We&apos;re setting up your profile. This should only take a moment...
                   </p>
                   <div className="text-sm text-gray-500 mb-6">
@@ -471,20 +472,20 @@ export default function CompanyOnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="rounded-full bg-green-100 p-6">
                       <CheckCircle2 className="h-12 w-12 text-green-600" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     Company Profile Complete! 🎉
                   </h2>
-                  <p className="text-lg text-gray-600 mb-2">
+                  <p className="text-base sm:text-lg text-gray-600 mb-2">
                     Your company profile is set up. Now set up payment to complete onboarding.
                   </p>
                   {userOnboardingStatus?.completed && (
@@ -516,9 +517,9 @@ export default function CompanyOnboardingPage() {
                   </Card>
                 </div>
 
-                <div className="flex justify-center gap-4">
-                  <Link href="/onboarding/company/payment">
-                    <Button className="bg-orange-600 hover:bg-orange-700 h-12 px-8">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                  <Link href="/onboarding/company/payment" className="w-full sm:w-auto">
+                    <Button className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 h-12 px-8">
                       Set Up Payment
                       <CreditCard className="ml-2 h-5 w-5" />
                     </Button>
@@ -526,6 +527,7 @@ export default function CompanyOnboardingPage() {
                   <Button
                     variant="outline"
                     onClick={() => router.push('/company/overview')}
+                    className="w-full sm:w-auto"
                   >
                     Go to Dashboard
                   </Button>
@@ -545,10 +547,10 @@ export default function CompanyOnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="relative">
@@ -560,10 +562,10 @@ export default function CompanyOnboardingPage() {
                       </div>
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     🎉 Onboarding Complete!
                   </h2>
-                  <p className="text-lg text-gray-600 mb-2">
+                  <p className="text-base sm:text-lg text-gray-600 mb-2">
                     You&apos;re all set! Your company is ready to accept bookings and start growing.
                   </p>
                   {!isPayoutSetupComplete && (
@@ -692,17 +694,17 @@ export default function CompanyOnboardingPage() {
                   </Card>
                 </div>
 
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   {!isPayoutSetupComplete ? (
-                    <Link href="/onboarding/company/payout">
-                      <Button variant="outline" className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg">
+                    <Link href="/onboarding/company/payout" className="w-full sm:w-auto">
+                      <Button variant="outline" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg">
                         Setup Payout
                         <CreditCard className="ml-2 h-5 w-5" />
                       </Button>
                     </Link>
                   ) : <Button
                   onClick={() => router.push('/company/overview')}
-                  className="bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg"
+                  className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 h-12 px-8 text-lg"
                 >
                   Go to Dashboard
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -726,7 +728,7 @@ export default function CompanyOnboardingPage() {
       <GoogleMapsLoader>
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-5xl">
             <div className="mb-8">
               <div className="flex items-center justify-between mb-2">
@@ -739,22 +741,32 @@ export default function CompanyOnboardingPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="md:col-span-1 space-y-4">
-                <Card className="border-0 shadow-lg">
+              <div className="md:col-span-1 order-2 md:order-1 space-y-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full md:hidden"
+                  onClick={() => setIsProgressOpen((prev) => !prev)}
+                >
+                  {isProgressOpen ? 'Hide onboarding progress' : 'Show onboarding progress'}
+                </Button>
+                <div className={`${isProgressOpen ? 'block' : 'hidden'} md:block`}>
+                  <Card className="border-0 shadow-sm md:shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-lg">Onboarding Progress</CardTitle>
+                    <CardTitle className="text-base md:text-lg">Onboarding Progress</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 md:p-6">
                     <OnboardingChecklist
                       userStatus={userOnboardingStatus || null}
                       companyStatus={companyOnboardingStatus || null}
                       type="company"
                     />
                   </CardContent>
-                </Card>
+                  </Card>
+                </div>
               </div>
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 order-1 md:order-2">
                 <Card className="border-0 shadow-xl">
                   <CardHeader>
                     <div className="flex items-center gap-3 mb-2">
@@ -762,7 +774,7 @@ export default function CompanyOnboardingPage() {
                         <Building2 className="h-6 w-6 text-orange-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">Company Profile</CardTitle>
+                        <CardTitle className="text-xl sm:text-2xl">Company Profile</CardTitle>
                         <CardDescription>
                           Complete your company information (Step 2 of 3)
                         </CardDescription>
@@ -881,7 +893,7 @@ export default function CompanyOnboardingPage() {
                         />
                       </div>
 
-                      <div className="grid md:grid-cols-3 gap-4">
+                      <div className="grid gap-4 md:grid-cols-3">
                         <div className="space-y-2">
                           <Label htmlFor="city" className="text-sm font-medium">
                             City
@@ -925,11 +937,11 @@ export default function CompanyOnboardingPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t">
                         <Button
                           type="submit"
                           disabled={updateCompanyMutation.isPending || !formData.contactPhone.trim()}
-                          className="bg-orange-600 hover:bg-orange-700"
+                          className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
                         >
                           {updateCompanyMutation.isPending ? (
                             <>
@@ -962,34 +974,34 @@ export default function CompanyOnboardingPage() {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 via-white to-orange-50">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-start justify-center px-4 pt-24 pb-8 sm:pt-28 sm:pb-12">
           <div className="w-full max-w-4xl">
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-6">
                     <div className="rounded-full bg-orange-100 p-6">
                       <AlertCircle className="h-12 w-12 text-orange-600" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     Setting Up Your Account
                   </h2>
-                  <p className="text-lg text-gray-600 mb-4">
+                  <p className="text-base sm:text-lg text-gray-600 mb-4">
                     Please wait while we complete your profile setup. This page will refresh automatically.
                   </p>
                 </div>
-                <div className="flex justify-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   <Button
                     onClick={() => window.location.reload()}
-                    className="bg-orange-600 hover:bg-orange-700 h-12 px-8"
+                    className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 h-12 px-8"
                   >
                     Refresh Page
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => router.push('/company/overview')}
-                    className="h-12 px-8"
+                    className="w-full sm:w-auto h-12 px-8"
                   >
                     Go to Dashboard
                   </Button>

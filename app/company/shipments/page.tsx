@@ -30,6 +30,7 @@ import type { Shipment } from '@/lib/company-api';
 import { getErrorMessage } from '@/lib/api';
 import { usePermissions, canPerformAction } from '@/lib/permissions';
 import { toast } from '@/lib/toast';
+import { capture } from '@/lib/posthog';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -136,6 +137,14 @@ export default function ShipmentsPage() {
   const handlePublishShipment = async (shipmentId: string) => {
     try {
       await companyApi.updateShipmentStatus(shipmentId, 'PUBLISHED');
+      
+      // Track shipment published event
+      const shipment = shipments.find(s => s.id === shipmentId);
+      capture('company_shipment_published', {
+        shipmentId,
+        mode: shipment?.mode,
+      });
+      
       // Refresh the list
       fetchShipments();
       toast.success('Shipment published successfully');

@@ -106,6 +106,7 @@ export interface User {
     name: string;
     slug: string;
     isVerified: boolean;
+    plan?: string;
   };
   createdAt?: string;
   updatedAt?: string;

@@ -390,6 +390,83 @@ export interface BookingStats {
   };
 }
 
+// Feedback Types
+export type FeedbackStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED';
+export type FeedbackPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+export type FeedbackType = 'BUG' | 'FEATURE' | 'COMPLAINT' | 'GENERAL';
+export type FeedbackApp = 'WEB' | 'MOBILE';
+
+export interface AdminFeedback {
+  id: string;
+  userId?: string | null;
+  companyId?: string | null;
+  type: FeedbackType;
+  rating?: number | null;
+  message: string;
+  pageUrl?: string | null;
+  app: FeedbackApp;
+  status: FeedbackStatus;
+  priority: FeedbackPriority;
+  attachments?: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: string;
+    email: string;
+    fullName: string;
+    role: string;
+  } | null;
+  company?: {
+    id: string;
+    name: string;
+    plan: string;
+  } | null;
+}
+
+export interface FeedbackListParams extends PaginationParams {
+  status?: FeedbackStatus;
+  type?: FeedbackType;
+  app?: FeedbackApp;
+}
+
+export interface FeedbackListResponse {
+  data: AdminFeedback[];
+  pagination: PaginationResponse;
+}
+
+// Contact Message Types
+export type ContactMessageStatus = 'NEW' | 'READ' | 'RESOLVED';
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: ContactMessageStatus;
+  isRead?: boolean;
+  createdAt: string;
+}
+
+export interface ContactMessageListParams {
+  page?: number;
+  limit?: number;
+  status?: ContactMessageStatus;
+  search?: string;
+}
+
+export interface ContactMessagePagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface ContactMessageListResponse {
+  data: ContactMessage[];
+  pagination: ContactMessagePagination;
+}
+
 // Settings Types
 export interface PlatformSettings {
   platformName: string;
@@ -670,6 +747,82 @@ export const adminApi = {
     const response = await api.post<ApiResponse<AdminBooking>>(`/admin/bookings/${id}/cancel`, {
       reason,
     });
+    return extractData(response);
+  },
+
+  // ==========================================================================
+  // Contact Messages
+  // ==========================================================================
+
+  getContactMessages: async (params?: ContactMessageListParams): Promise<ContactMessageListResponse> => {
+    const response = await api.get<ApiResponse<ContactMessage[]> & { pagination: ContactMessagePagination }>(
+      '/admin/contact-messages',
+      { params }
+    );
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to load contact messages');
+    }
+    return {
+      data: response.data.data || [],
+      pagination: (response.data as any).pagination || { page: 1, limit: 20, total: 0, totalPages: 0 },
+    };
+  },
+
+  getContactMessage: async (id: string): Promise<ContactMessage> => {
+    const response = await api.get<ApiResponse<ContactMessage>>(`/admin/contact-messages/${id}`);
+    return extractData(response);
+  },
+
+  updateContactMessageStatus: async (id: string, status: ContactMessageStatus): Promise<ContactMessage> => {
+    const response = await api.patch<ApiResponse<ContactMessage>>(`/admin/contact-messages/${id}`, {
+      status,
+    });
+    return extractData(response);
+  },
+
+  // ==========================================================================
+  // Feedback
+  // ==========================================================================
+
+  getFeedback: async (params?: FeedbackListParams): Promise<FeedbackListResponse> => {
+    const response = await api.get<ApiResponse<{ data: AdminFeedback[]; pagination: PaginationResponse }>>(
+      '/admin/feedback',
+      { params }
+    );
+
+    if (response.data.status === 'error') {
+      throw new Error(response.data.message || 'Failed to load feedback');
+    }
+
+    const payload = response.data.data;
+    if (Array.isArray(payload)) {
+      return {
+        data: payload,
+        pagination: (response.data as ApiResponse<AdminFeedback[]> & { pagination?: PaginationResponse })
+          .pagination || { limit: 0, offset: 0, total: 0, hasMore: false },
+      };
+    }
+
+    if (payload && Array.isArray(payload.data)) {
+      return {
+        data: payload.data,
+        pagination: payload.pagination || { limit: 0, offset: 0, total: 0, hasMore: false },
+      };
+    }
+
+    return { data: [], pagination: { limit: 0, offset: 0, total: 0, hasMore: false } };
+  },
+
+  getFeedbackById: async (id: string): Promise<AdminFeedback> => {
+    const response = await api.get<ApiResponse<AdminFeedback>>(`/admin/feedback/${id}`);
+    return extractData(response);
+  },
+
+  updateFeedback: async (
+    id: string,
+    data: { status?: FeedbackStatus; priority?: FeedbackPriority }
+  ): Promise<AdminFeedback> => {
+    const response = await api.patch<ApiResponse<AdminFeedback>>(`/admin/feedback/${id}`, data);
     return extractData(response);
   },
 

@@ -14,6 +14,7 @@ import { authApi, getErrorMessage } from '@/lib/api';
 import { saveAuthData, getPostAuthPathAsync, getStoredUser, getDashboardPath } from '@/lib/auth';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, Lock, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { identifyUser } from '@/lib/posthog';
 
 function LoginForm() {
   const router = useRouter();
@@ -47,6 +48,8 @@ function LoginForm() {
     mutationFn: authApi.login,
     onSuccess: async (data) => {
       saveAuthData(data);
+      // Identify user in PostHog
+      identifyUser(data.user, data.user.company?.plan || null);
       // If there's a redirect URL, use it; otherwise get the appropriate onboarding step path or dashboard path
       if (redirectUrl) {
         router.push(redirectUrl);
@@ -93,7 +96,7 @@ function LoginForm() {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 mt-12">Welcome Back</h1>
             <p className="text-gray-600">Sign in to continue to Parcsal</p>
           </div>
 

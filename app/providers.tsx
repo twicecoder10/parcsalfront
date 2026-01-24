@@ -1,9 +1,10 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { SocketProvider } from '@/lib/use-socket';
+import { PostHogProvider } from '@/lib/posthog';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -20,10 +21,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SocketProvider>
-        {children}
-        <Toaster position="top-right" richColors />
-      </SocketProvider>
+      <Suspense fallback={null}>
+        <PostHogProvider>
+          <SocketProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </SocketProvider>
+        </PostHogProvider>
+      </Suspense>
     </QueryClientProvider>
   );
 }

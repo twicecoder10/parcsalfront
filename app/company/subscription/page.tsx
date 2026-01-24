@@ -12,6 +12,8 @@ import type { Subscription, Plan } from '@/lib/company-api';
 import type { CompanyUsage } from '@/lib/plan-entitlements';
 import { getErrorMessage } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import { capture, identifyUser } from '@/lib/posthog';
+import { getStoredUser } from '@/lib/auth';
 
 function SubscriptionContent() {
   const searchParams = useSearchParams();
@@ -40,6 +42,12 @@ function SubscriptionContent() {
     try {
       const subscriptionData = await companyApi.getSubscription();
       setSubscription(subscriptionData);
+      
+      // Update user identification with current plan
+      const user = getStoredUser();
+      if (user && subscriptionData?.companyPlan?.name) {
+        identifyUser(user, subscriptionData.companyPlan.name);
+      }
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
     } finally {
@@ -71,6 +79,16 @@ function SubscriptionContent() {
     
     setProcessingPlan(planId);
     try {
+      const selectedPlan = plans.find(p => p.id === planId);
+      const currentPlanName = subscription?.companyPlan?.name || 'FREE';
+      const toPlanName = selectedPlan?.name || planId;
+      
+      // Track upgrade_clicked event
+      capture('upgrade_clicked', {
+        fromPlan: currentPlanName,
+        toPlan: toPlanName,
+      });
+      
       const checkoutSession = await companyApi.createCheckoutSession({
         planId,
         returnUrl: `${window.location.origin}/company/subscription?success=true`,

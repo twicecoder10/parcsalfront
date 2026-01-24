@@ -1,20 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { RouteGuard } from '@/lib/route-guards';
-import { LayoutDashboard, Building2, Users, Package, ShoppingCart, Settings, Mail } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Package, ShoppingCart, Settings, Mail, Inbox } from 'lucide-react';
 import { AppFooter } from '@/components/AppFooter';
 
-const navItems = [
-  { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { title: 'Companies', href: '/admin/companies', icon: Building2 },
-  { title: 'Users', href: '/admin/users', icon: Users },
-  { title: 'Shipments', href: '/admin/shipments', icon: Package },
-  { title: 'Bookings', href: '/admin/bookings', icon: ShoppingCart },
-  { title: 'Marketing', href: '/admin/marketing', icon: Mail },
-  { title: 'Settings', href: '/admin/settings', icon: Settings },
+const buildNavItems = (basePath: string) => [
+  { title: 'Dashboard', href: `${basePath}/dashboard`, icon: LayoutDashboard },
+  { title: 'Companies', href: `${basePath}/companies`, icon: Building2 },
+  { title: 'Users', href: `${basePath}/users`, icon: Users },
+  { title: 'Shipments', href: `${basePath}/shipments`, icon: Package },
+  { title: 'Bookings', href: `${basePath}/bookings`, icon: ShoppingCart },
+  { title: 'Support Inbox', href: `${basePath}/support`, icon: Inbox },
+  { title: 'Marketing', href: `${basePath}/marketing`, icon: Mail },
+  { title: 'Settings', href: `${basePath}/settings`, icon: Settings },
 ];
 
 export default function AdminLayout({
@@ -23,6 +25,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const basePath = pathname?.startsWith('/super-admin') ? '/super-admin' : '/admin';
+  const navItems = useMemo(() => buildNavItems(basePath), [basePath]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);

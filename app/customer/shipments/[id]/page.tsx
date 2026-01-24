@@ -24,6 +24,7 @@ import Image from 'next/image';
 import countries from 'i18n-iso-countries';
 import enLocale from 'i18n-iso-countries/langs/en.json';
 import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
+import { capture } from '@/lib/posthog';
 
 // Register the locale
 countries.registerLocale(enLocale);
@@ -480,6 +481,12 @@ export default function ShipmentDetailPage() {
       }
 
       const booking = await customerApi.createBooking(bookingData);
+      
+      // Track booking creation event
+      capture('customer_booking_created', {
+        bookingId: booking.id,
+        shipmentId: shipmentId,
+      });
       
       // Redirect to payment page
       router.push(`/customer/bookings/${booking.id}/payment`);

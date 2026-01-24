@@ -17,6 +17,7 @@ import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { Mail, User, Building2, Lock, AlertCircle, Loader2, ArrowRight, Sparkles, MapPin } from 'lucide-react';
 import { PasswordInput } from '@/components/password-input';
+import { identifyUser } from '@/lib/posthog';
 
 export default function RegisterCompanyPage() {
   const router = useRouter();
@@ -44,6 +45,8 @@ export default function RegisterCompanyPage() {
     mutationFn: authApi.registerCompany,
     onSuccess: async (data) => {
       saveAuthData(data);
+      // Identify user in PostHog
+      identifyUser(data.user, null);
       // Get the appropriate onboarding step path or dashboard path
       const redirectPath = await getPostAuthPathAsync(data.user);
       router.push(redirectPath);
@@ -74,7 +77,7 @@ export default function RegisterCompanyPage() {
         <div className="flex-1 flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Company Account</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 mt-12">Create Company Account</h1>
               <p className="text-gray-600">Sign up to start listing your shipment slots</p>
             </div>
 

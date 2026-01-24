@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -7,8 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Check, Package, ArrowRight } from 'lucide-react';
+import { capture } from '@/lib/posthog';
+import { useEffect } from 'react';
 
 export default function PricingPage() {
+  useEffect(() => {
+    capture('plan_viewed');
+  }, []);
+
   const plans = [
     {
       id: 'FREE',

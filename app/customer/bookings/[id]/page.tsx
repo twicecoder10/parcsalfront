@@ -22,6 +22,7 @@ import Image from 'next/image';
 import { ExtraChargesList } from '@/components/extra-charges/ExtraChargesList';
 import { getStoredUser, hasRoleAccess, getDashboardPath } from '@/lib/auth';
 import { chatApi } from '@/lib/chat-api';
+import { capture } from '@/lib/posthog';
 
 function BookingDetailContent() {
   const params = useParams();
@@ -152,6 +153,13 @@ function BookingDetailContent() {
     
     if (payment === 'success') {
       setPaymentStatus('verifying');
+      
+      // Track payment success event
+      capture('payment_succeeded', {
+        bookingId,
+        sessionId: sessionId || undefined,
+      });
+      
       syncPaymentStatus(sessionId || undefined);
       // Clean URL immediately
       window.history.replaceState({}, '', `/customer/bookings/${bookingId}`);

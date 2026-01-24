@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PoweredByCosonas } from './PoweredByCosonas';
+import { CookiePreferencesLink } from '@/components/cookie/CookiePreferencesLink';
 
 export function AppFooter() {
   const currentYear = new Date().getFullYear();
@@ -14,6 +15,15 @@ export function AppFooter() {
           </div>
           <div className="flex items-center">
             <PoweredByCosonas />
+          </div>
+          <Link
+            href="/cookie-policy"
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Cookie Policy
+          </Link>
+          <div className="text-sm text-gray-600">
+            <CookiePreferencesLink />
           </div>
           {/* <div className="flex items-center gap-2">
             <Link
@@ -53,6 +63,15 @@ export function AppFooter() {
           >
             Terms
           </Link>
+          <span className="text-gray-300">|</span>
+          <Link
+            href="/cookie-policy"
+            className="text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Cookie Policy
+          </Link>
+          <span className="text-gray-300">|</span>
+          <CookiePreferencesLink />
         </div>
       </div>
     </footer>

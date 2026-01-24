@@ -22,7 +22,7 @@ export default function Error({
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-orange-50">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-4 py-12 mt-12">
         <div className="w-full max-w-2xl text-center">
           {/* Error Icon */}
           <div className="mb-8 flex justify-center">
