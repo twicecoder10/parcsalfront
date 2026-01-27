@@ -17,7 +17,6 @@ import { CountrySelect } from '@/components/country-select';
 import { CitySelect } from '@/components/city-select';
 import { Navbar } from '@/components/navbar';
 import { CustomerHeader } from '@/components/customer-header';
-import { Footer } from '@/components/footer';
 import { isShipmentAvailable } from '@/lib/utils';
 import { getStoredUser } from '@/lib/auth';
 
@@ -786,7 +785,6 @@ export default function BrowseShipmentsPage() {
           </div>
           </div>
         </main>
-        <Footer />
       </div>
     </GoogleMapsLoader>
   );

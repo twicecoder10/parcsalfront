@@ -15,7 +15,6 @@ import { format } from 'date-fns';
 import type { Shipment } from '@/lib/api-types';
 import { Navbar } from '@/components/navbar';
 import { CustomerHeader } from '@/components/customer-header';
-import { Footer } from '@/components/footer';
 import Image from 'next/image';
 
 export default function PublicShipmentDetailPage() {
@@ -111,7 +110,6 @@ export default function PublicShipmentDetailPage() {
             <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -130,7 +128,6 @@ export default function PublicShipmentDetailPage() {
             </Card>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -500,7 +497,6 @@ export default function PublicShipmentDetailPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
