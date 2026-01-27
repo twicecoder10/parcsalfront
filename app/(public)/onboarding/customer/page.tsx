@@ -261,20 +261,6 @@ export default function CustomerOnboardingPage() {
               {/* Navigation Buttons */}
               {currentStep < 3 && (
                 <div className="flex items-center justify-between mt-8 pt-6 border-t">
-                  <div>
-                    {currentStep > 0 && (
-                      <Button
-                        variant="ghost"
-                        onClick={async () => {
-                          await markOnboardingComplete();
-                          router.push('/customer/dashboard');
-                        }}
-                        className="text-gray-600"
-                      >
-                        Skip for now
-                      </Button>
-                    )}
-                  </div>
                   <div className="flex gap-3">
                     {currentStep > 0 && (
                       <Button
@@ -416,7 +402,7 @@ function ProfileStep({ formData, setFormData }: ProfileStepProps) {
           <Input
             id="phoneNumber"
             type="tel"
-            placeholder="+1 (555) 123-4567"
+            placeholder="+447123456789"
             value={formData.phoneNumber}
             onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
             className="h-11"

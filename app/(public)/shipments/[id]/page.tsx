@@ -106,7 +106,7 @@ export default function PublicShipmentDetailPage() {
     return (
       <div className="min-h-screen flex flex-col">
         {isCustomer ? <CustomerHeader /> : <Navbar />}
-        <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
+        <main className="flex-1 container mx-auto px-4 pt-20 md:pt-24 pb-4 md:pb-8">
           <div className="max-w-6xl mx-auto flex items-center justify-center min-h-[300px] md:min-h-[400px]">
             <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-orange-600" />
           </div>
@@ -120,7 +120,7 @@ export default function PublicShipmentDetailPage() {
     return (
       <div className="min-h-screen flex flex-col">
         {isCustomer ? <CustomerHeader /> : <Navbar />}
-        <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
+        <main className="flex-1 container mx-auto px-4 pt-20 md:pt-24 pb-4 md:pb-8">
           <div className="max-w-6xl mx-auto">
             <Card>
               <CardContent className="text-center py-8 md:py-12">
@@ -143,7 +143,7 @@ export default function PublicShipmentDetailPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {isCustomer ? <CustomerHeader /> : <Navbar />}
-      <main className="flex-1 container mx-auto px-4 py-4 md:py-8">
+      <main className="flex-1 container mx-auto px-4 pt-20 md:pt-24 pb-4 md:pb-8">
         <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
           {/* Back Button */}
           <Link href="/">

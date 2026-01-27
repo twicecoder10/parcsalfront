@@ -302,7 +302,7 @@ export default function SettingsPage() {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-10 sm:h-11"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+447123456789"
                   />
                 </div>
 
